@@ -1,0 +1,319 @@
+<?xml version="1.0"?>
+<!--Phoronix Test Suite v3.0.0a3 (Iveland) [ http://www.phoronix-test-suite.com/ ]-->
+<PhoronixTestSuite>
+  <SuiteInformation>
+    <Title>Desktop Graphics</Title>
+    <Version>1.3.1</Version>
+    <TestType>System</TestType>
+    <Description>This test suite contains free and retail graphics tests designed to test out the desktop graphics performance.</Description>
+    <Maintainer>Michael Larabel</Maintainer>
+  </SuiteInformation>
+  <Execute>
+    <Test>pts/xonotic</Test>
+    <Arguments>+vid_width $VIDEO_WIDTH +vid_height $VIDEO_HEIGHT +exec effects-low.cfg</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Effects Quality: Low</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/xonotic</Test>
+    <Arguments>+vid_width $VIDEO_WIDTH +vid_height $VIDEO_HEIGHT +exec effects-high.cfg</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Effects Quality: High</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/xonotic</Test>
+    <Arguments>+vid_width $VIDEO_WIDTH +vid_height $VIDEO_HEIGHT +exec effects-ultra.cfg</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Effects Quality: Ultra</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/xonotic</Test>
+    <Arguments>+vid_width $VIDEO_WIDTH +vid_height $VIDEO_HEIGHT +exec effects-ultimate.cfg</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Effects Quality: Ultimate</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/openarena</Test>
+    <Arguments>+set r_customWidth 1920 +set r_customHeight 1080</Arguments>
+    <Description>Resolution: 1920 x 1080</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/tesseract</Test>
+    <Arguments>-w$VIDEO_WIDTH -h$VIDEO_HEIGHT</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/paraview</Test>
+    <Arguments>manyspheres.py -s 100 -r 726 -f 30 -v $VIDEO_WIDTH,$VIDEO_HEIGHT</Arguments>
+    <Description>Test: Many Spheres - Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/paraview</Test>
+    <Arguments>waveletcontour.py -d 256 -f 30 -v $VIDEO_WIDTH,$VIDEO_HEIGHT</Arguments>
+    <Description>Test: Wavelet Contour - Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/paraview</Test>
+    <Arguments>/waveletvolume.py -d 256 -f 30 -v $VIDEO_WIDTH,$VIDEO_HEIGHT</Arguments>
+    <Description>Test: Wavelet Volume - Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/unigine</Test>
+  </Execute>
+  <Execute>
+    <Test>pts/glmark2</Test>
+    <Arguments>-s $VIDEO_WIDTHx$VIDEO_HEIGHT</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/furmark</Test>
+    <Arguments>--width $VIDEO_WIDTH --height $VIDEO_HEIGHT --demo furmark-gl --msaa 0</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Demo: FurMark OpenGL - MSAA: Off</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/furmark</Test>
+    <Arguments>--width $VIDEO_WIDTH --height $VIDEO_HEIGHT --demo furmark-vk --msaa 0</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Demo: FurMark Vulkan - MSAA: Off</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/furmark</Test>
+    <Arguments>--width $VIDEO_WIDTH --height $VIDEO_HEIGHT --demo furmark-knot-gl --msaa 0</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Demo: FurMark Knot OpenGL - MSAA: Off</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/furmark</Test>
+    <Arguments>--width $VIDEO_WIDTH --height $VIDEO_HEIGHT --demo furmark-knot-vk --msaa 0</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Demo: Furmark Knot Vulkan - MSAA: Off</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/gravitymark</Test>
+    <Arguments>-width $VIDEO_WIDTH -height $VIDEO_HEIGHT -opengl</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Renderer: OpenGL</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/gravitymark</Test>
+    <Arguments>-width $VIDEO_WIDTH -height $VIDEO_HEIGHT -opengles</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Renderer: OpenGL ES</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/gravitymark</Test>
+    <Arguments>-width $VIDEO_WIDTH -height $VIDEO_HEIGHT -vulkan</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Renderer: Vulkan</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/gravitymark</Test>
+    <Arguments>-width $VIDEO_WIDTH -height $VIDEO_HEIGHT -vulkan -raytracing 1</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Renderer: Vulkan Ray-Tracing</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/supertuxkart</Test>
+    <Arguments>--screensize=$VIDEO_WIDTHx$VIDEO_HEIGHT --enable-glow --disable-bloom --disable-light-shaft --disable-dof --enable-motion-blur --disable-mlaa --disable-ssao --disable-ibl --disable-hd-textures --enable-dynamic-lights --anisotropic=4 --shadows=0 --render-driver=gl</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Graphics Effects: Low - Renderer: OpenGL</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/supertuxkart</Test>
+    <Arguments>--screensize=$VIDEO_WIDTHx$VIDEO_HEIGHT --enable-glow --disable-bloom --disable-light-shaft --disable-dof --enable-motion-blur --disable-mlaa --disable-ssao --disable-ibl --disable-hd-textures --enable-dynamic-lights --anisotropic=4 --shadows=0 --render-driver=vulkan</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Graphics Effects: Low - Renderer: Vulkan</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/supertuxkart</Test>
+    <Arguments>--screensize=$VIDEO_WIDTHx$VIDEO_HEIGHT --enable-glow --enable-bloom --disable-light-shaft --disable-dof --enable-motion-blur --enable-mlaa --enable-ssao --enable-ibl --disable-hd-textures --enable-dynamic-lights --anisotropic=4 --shadows=0 --render-driver=gl</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Graphics Effects: Medium - Renderer: OpenGL</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/supertuxkart</Test>
+    <Arguments>--screensize=$VIDEO_WIDTHx$VIDEO_HEIGHT --enable-glow --enable-bloom --disable-light-shaft --disable-dof --enable-motion-blur --enable-mlaa --enable-ssao --enable-ibl --disable-hd-textures --enable-dynamic-lights --anisotropic=4 --shadows=0 --render-driver=vulkan</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Graphics Effects: Medium - Renderer: Vulkan</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/supertuxkart</Test>
+    <Arguments>--screensize=$VIDEO_WIDTHx$VIDEO_HEIGHT --enable-glow --enable-bloom --enable-light-shaft --enable-dof --enable-motion-blur --enable-mlaa --enable-ssao --enable-ibl --enable-hd-textures --enable-dynamic-lights --anisotropic=16 --shadows=512 --render-driver=gl</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Graphics Effects: High - Renderer: OpenGL</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/supertuxkart</Test>
+    <Arguments>--screensize=$VIDEO_WIDTHx$VIDEO_HEIGHT --enable-glow --enable-bloom --enable-light-shaft --enable-dof --enable-motion-blur --enable-mlaa --enable-ssao --enable-ibl --enable-hd-textures --enable-dynamic-lights --anisotropic=16 --shadows=512 --render-driver=vulkan</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Graphics Effects: High - Renderer: Vulkan</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/supertuxkart</Test>
+    <Arguments>--screensize=$VIDEO_WIDTHx$VIDEO_HEIGHT --enable-glow --enable-bloom --enable-light-shaft --enable-dof --enable-motion-blur --enable-mlaa --enable-ssao --enable-ibl --enable-hd-textures --enable-dynamic-lights --anisotropic=16 --shadows=1024 --render-driver=gl</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Graphics Effects: Ultimate - Renderer: OpenGL</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/supertuxkart</Test>
+    <Arguments>--screensize=$VIDEO_WIDTHx$VIDEO_HEIGHT --enable-glow --enable-bloom --enable-light-shaft --enable-dof --enable-motion-blur --enable-mlaa --enable-ssao --enable-ibl --enable-hd-textures --enable-dynamic-lights --anisotropic=16 --shadows=1024 --render-driver=vulkan</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Graphics Effects: Ultimate - Renderer: Vulkan</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/unvanquished</Test>
+    <Arguments>+set r_customWidth $VIDEO_WIDTH +set r_customHeight $VIDEO_HEIGHT +preset presets/graphics/medium.cfg</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Effects Quality: Medium</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/unvanquished</Test>
+    <Arguments>+set r_customWidth $VIDEO_WIDTH +set r_customHeight $VIDEO_HEIGHT +preset presets/graphics/high.cfg</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Effects Quality: High</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/unvanquished</Test>
+    <Arguments>+set r_customWidth $VIDEO_WIDTH +set r_customHeight $VIDEO_HEIGHT +preset presets/graphics/ultra.cfg</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Effects Quality: Ultra</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/vkmark</Test>
+    <Arguments>--size $VIDEO_WIDTHx$VIDEO_HEIGHT -p mailbox</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Present Mode: Mailbox</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/vkmark</Test>
+    <Arguments>--size $VIDEO_WIDTHx$VIDEO_HEIGHT -p immediate</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Present Mode: Immediate</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/warsow</Test>
+    <Arguments>+vid_width $VIDEO_WIDTH +vid_height $VIDEO_HEIGHT</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/yquake2</Test>
+    <Arguments>+set vid_renderer gl3 +set r_anisotropic 0 +set r_msaa_samples 0 +set r_mode 21</Arguments>
+    <Description>Renderer: OpenGL 3.x - AF: Off - MSAA: Off - Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/yquake2</Test>
+    <Arguments>+set vid_renderer gl3 +set r_anisotropic 0 +set r_msaa_samples 16 +set r_mode 21</Arguments>
+    <Description>Renderer: OpenGL 3.x - AF: Off - MSAA: On - Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/yquake2</Test>
+    <Arguments>+set vid_renderer gl3 +set r_anisotropic 16 +set r_msaa_samples 0 +set r_mode 21</Arguments>
+    <Description>Renderer: OpenGL 3.x - AF: On - MSAA: Off - Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/yquake2</Test>
+    <Arguments>+set vid_renderer gl3 +set r_anisotropic 16 +set r_msaa_samples 16 +set r_mode 21</Arguments>
+    <Description>Renderer: OpenGL 3.x - AF: On - MSAA: On - Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/yquake2</Test>
+    <Arguments>+set vid_renderer vk +set r_anisotropic 0 +set r_msaa_samples 0 +set r_mode 21</Arguments>
+    <Description>Renderer: Vulkan - AF: Off - MSAA: Off - Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/yquake2</Test>
+    <Arguments>+set vid_renderer vk +set r_anisotropic 0 +set r_msaa_samples 16 +set r_mode 21</Arguments>
+    <Description>Renderer: Vulkan - AF: Off - MSAA: On - Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/yquake2</Test>
+    <Arguments>+set vid_renderer vk +set r_anisotropic 16 +set r_msaa_samples 0 +set r_mode 21</Arguments>
+    <Description>Renderer: Vulkan - AF: On - MSAA: Off - Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/yquake2</Test>
+    <Arguments>+set vid_renderer vk +set r_anisotropic 16 +set r_msaa_samples 16 +set r_mode 21</Arguments>
+    <Description>Renderer: Vulkan - AF: On - MSAA: On - Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/gputest</Test>
+    <Arguments>/test=fur /width=$VIDEO_WIDTH /height=$VIDEO_HEIGHT /fullscreen</Arguments>
+    <Description>Test: Furmark - Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Mode: Fullscreen</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/gputest</Test>
+    <Arguments>/test=tess_x64 /width=$VIDEO_WIDTH /height=$VIDEO_HEIGHT /fullscreen</Arguments>
+    <Description>Test: TessMark - Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Mode: Fullscreen</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/gputest</Test>
+    <Arguments>/test=gi /width=$VIDEO_WIDTH /height=$VIDEO_HEIGHT /fullscreen</Arguments>
+    <Description>Test: GiMark - Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Mode: Fullscreen</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/gputest</Test>
+    <Arguments>/test=pixmark_piano /width=$VIDEO_WIDTH /height=$VIDEO_HEIGHT /fullscreen</Arguments>
+    <Description>Test: Pixmark Piano - Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Mode: Fullscreen</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/gputest</Test>
+    <Arguments>/test=pixmark_volplosion /width=$VIDEO_WIDTH /height=$VIDEO_HEIGHT /fullscreen</Arguments>
+    <Description>Test: Pixmark Volplosion - Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Mode: Fullscreen</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/gputest</Test>
+    <Arguments>/test=triangle /width=$VIDEO_WIDTH /height=$VIDEO_HEIGHT /fullscreen</Arguments>
+    <Description>Test: Triangle - Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Mode: Fullscreen</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/gputest</Test>
+    <Arguments>/test=plot3d /width=$VIDEO_WIDTH /height=$VIDEO_HEIGHT /fullscreen</Arguments>
+    <Description>Test: Plot3D - Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Mode: Fullscreen</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/reaction</Test>
+    <Arguments>+set r_customwidth $VIDEO_WIDTH +set r_customheight $VIDEO_HEIGHT</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/etlegacy</Test>
+    <Arguments>+set r_customwidth $VIDEO_WIDTH +set r_customheight $VIDEO_HEIGHT</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/ddnet</Test>
+    <Arguments>"gfx_screen_width $VIDEO_WIDTH" "gfx_screen_height $VIDEO_HEIGHT" "gfx_fullscreen 1" "gfx_backend Vulkan" "cl_default_zoom 10" "play demos/Multeasymap_bench.demo"</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Mode: Fullscreen - Renderer: Vulkan - Zoom: Default - Demo: Multeasymap</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/ddnet</Test>
+    <Arguments>"gfx_screen_width $VIDEO_WIDTH" "gfx_screen_height $VIDEO_HEIGHT" "gfx_fullscreen 1" "gfx_backend Vulkan" "cl_default_zoom 10" "play demos/RaiNyMore2_bench.demo"</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Mode: Fullscreen - Renderer: Vulkan - Zoom: Default - Demo: RaiNyMore2</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/ddnet</Test>
+    <Arguments>"gfx_screen_width $VIDEO_WIDTH" "gfx_screen_height $VIDEO_HEIGHT" "gfx_fullscreen 1" "gfx_backend OpenGL" "gfx_opengl_major 3" "gfx_opengl_minor 3" "gfx_opengl_patch 0" "cl_default_zoom 10" "play demos/Multeasymap_bench.demo"</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Mode: Fullscreen - Renderer: OpenGL 3.3 - Zoom: Default - Demo: Multeasymap</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/ddnet</Test>
+    <Arguments>"gfx_screen_width $VIDEO_WIDTH" "gfx_screen_height $VIDEO_HEIGHT" "gfx_fullscreen 1" "gfx_backend OpenGL" "gfx_opengl_major 3" "gfx_opengl_minor 3" "gfx_opengl_patch 0" "cl_default_zoom 10" "play demos/RaiNyMore2_bench.demo"</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Mode: Fullscreen - Renderer: OpenGL 3.3 - Zoom: Default - Demo: RaiNyMore2</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/breaking-limit</Test>
+    <Arguments>WindowResolution $VIDEO_WIDTHx$VIDEO_HEIGHT RenderResolution $VIDEO_WIDTHx$VIDEO_HEIGHT DisableRaytracing false</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Ray-Tracing: On</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/breaking-limit</Test>
+    <Arguments>WindowResolution $VIDEO_WIDTHx$VIDEO_HEIGHT RenderResolution $VIDEO_WIDTHx$VIDEO_HEIGHT DisableRaytracing true</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Ray-Tracing: Off</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/basemark</Test>
+    <Arguments>BasemarkGPU_vk  WindowResolution $VIDEO_WIDTHx$VIDEO_HEIGHT RenderResolution $VIDEO_WIDTHx$VIDEO_HEIGHT RenderPipeline highend</Arguments>
+    <Description>Renderer: Vulkan - Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Graphics Preset: High</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/basemark</Test>
+    <Arguments>BasemarkGPU_vk  WindowResolution $VIDEO_WIDTHx$VIDEO_HEIGHT RenderResolution $VIDEO_WIDTHx$VIDEO_HEIGHT RenderPipeline medium</Arguments>
+    <Description>Renderer: Vulkan - Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Graphics Preset: Medium</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/basemark</Test>
+    <Arguments>BasemarkGPU_gl  WindowResolution $VIDEO_WIDTHx$VIDEO_HEIGHT RenderResolution $VIDEO_WIDTHx$VIDEO_HEIGHT RenderPipeline highend</Arguments>
+    <Description>Renderer: OpenGL - Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Graphics Preset: High</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/basemark</Test>
+    <Arguments>BasemarkGPU_gl  WindowResolution $VIDEO_WIDTHx$VIDEO_HEIGHT RenderResolution $VIDEO_WIDTHx$VIDEO_HEIGHT RenderPipeline medium</Arguments>
+    <Description>Renderer: OpenGL - Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT - Graphics Preset: Medium</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/3dmark</Test>
+    <Arguments>$VIDEO_WIDTH $VIDEO_HEIGHT</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT</Description>
+  </Execute>
+  <Execute>
+    <Test>pts/3dmark-solar-bay</Test>
+    <Arguments>$VIDEO_WIDTH $VIDEO_HEIGHT</Arguments>
+    <Description>Resolution: $VIDEO_WIDTH x $VIDEO_HEIGHT</Description>
+  </Execute>
+</PhoronixTestSuite>
