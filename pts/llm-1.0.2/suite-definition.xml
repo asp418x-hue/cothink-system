@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<!--Phoronix Test Suite v10.8.5-->
+<PhoronixTestSuite>
+  <SuiteInformation>
+    <Title>GenAI / Large Language Models</Title>
+    <Version>1.0.2</Version>
+    <TestType>System</TestType>
+    <Description>Various large language model (LLM) AI and Generative AI (GenAI) benchmarks, complementing other AI / machine learning benchmarks within the Phoronix Test Suite / OpenBenchmarking.org.</Description>
+    <Maintainer>Michael Larabel</Maintainer>
+  </SuiteInformation>
+  <Execute>
+    <Test>pts/llama-cpp</Test>
+    <Mode>BATCH</Mode>
+  </Execute>
+  <Execute>
+    <Test>pts/llamafile</Test>
+    <Mode>BATCH</Mode>
+  </Execute>
+  <Execute>
+    <Test>pts/vllm</Test>
+    <Mode>BATCH</Mode>
+  </Execute>
+  <Execute>
+    <Test>pts/ollama</Test>
+    <Mode>BATCH</Mode>
+  </Execute>
+  <Execute>
+    <Test>pts/whisper-cpp</Test>
+    <Mode>BATCH</Mode>
+  </Execute>
+  <Execute>
+    <Test>pts/whisperfile</Test>
+    <Mode>BATCH</Mode>
+  </Execute>
+  <Execute>
+    <Test>pts/openvino-genai</Test>
+    <Mode>BATCH</Mode>
+  </Execute>
+</PhoronixTestSuite>
