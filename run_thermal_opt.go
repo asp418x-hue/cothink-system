@@ -6,7 +6,7 @@ import (
 	"cothink-system/thermalopt"
 )
 
-func main() {
+func RunThermalOpt() {
 	fmt.Println("Initializing Go Thermal & Clock Speed Optimizer...")
 
 	zones := []thermalopt.ThermalZone{

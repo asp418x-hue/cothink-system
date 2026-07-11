@@ -93,7 +93,7 @@ func (s *SimultaneousStack) Dispatch(workerID int, wg *sync.WaitGroup) {
 	}
 }
 
-func main() {
+func RunScalarLogphiPstack() {
 	stack := NewSimultaneousStack()
 	var wg sync.WaitGroup
 

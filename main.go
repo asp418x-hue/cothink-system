@@ -23,4 +23,10 @@ func main() {
 	root := &cothink.AgentNode{ID: 0, Depth: 0}
 	
 	orch.ScalarSpawn(ctx, root)
+
+	fmt.Println("\n--- Execution Results ---")
+	for _, child := range root.Children {
+		fmt.Printf("Agent ID: %d | Depth: %d\n", child.ID, child.Depth)
+		fmt.Printf("Output:\n%s\n", child.Metadata["output"])
+	}
 }

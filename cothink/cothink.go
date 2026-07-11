@@ -34,6 +34,7 @@ type Orchestrator struct {
 	MaxChildren   int
 	BaseDelay     time.Duration
 	ActiveWorkers sync.WaitGroup
+	Semaphore     *DynamicSemaphore
 }
 
 // ZeroResiduals performs the "sync -f / && hash -r" rhythm
