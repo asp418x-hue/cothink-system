@@ -1,5 +1,4 @@
 use std::io::{BufRead, BufReader};
-use std::process::Command as StdCommand;
 use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, BufReader as AsyncBufReader};
 use tokio::process::Command;
@@ -206,11 +205,14 @@ mod tests {
             .expect("child should start");
 
         let stdout = child.stdout.take().expect("child stdout");
-        let mut reader = BufReader::new(stdout);
+        let mut reader = AsyncBufReader::new(stdout);
         let mut line = String::new();
-        let _ = reader.read_line(&mut line);
+        let _ = reader
+            .read_line(&mut line)
+            .await
+            .expect("failed to read child stdout");
 
-        let status = child.wait().expect("child wait");
+        let status = child.wait().await.expect("child wait");
         assert!(status.success());
         assert_eq!(line.trim(), "ready");
     }
