@@ -1,6 +1,6 @@
 use std::fs;
 use std::path::Path;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 /// S.M.A.R.T. equivalent block device stats
 #[derive(Debug, Clone)]

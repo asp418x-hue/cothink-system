@@ -1,4 +1,3 @@
-use std::io::{BufRead, BufReader};
 use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, BufReader as AsyncBufReader};
 use tokio::process::Command;
@@ -140,6 +139,7 @@ async fn spawn_concurrent_subagents(task_ids: &[usize]) -> Vec<usize> {
     completed
 }
 
+#[allow(dead_code)]
 async fn spawn_concurrent_subagents_from_arc(task_ids: Arc<Vec<usize>>) -> Vec<usize> {
     spawn_concurrent_subagents(&task_ids).await
 }

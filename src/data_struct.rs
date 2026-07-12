@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::process::{Child, Command, Stdio};
+use std::process::{Child, Stdio};
 
 // The core identifier for tracking background jobs
 pub type JobId = u32;
