@@ -1,8 +1,10 @@
-use std::io::{BufRead, BufReader, Write};
-use std::process::{Command, Stdio};
-use std::sync::{Arc, Mutex};
+use std::io::{BufRead, BufReader};
+use std::process::Command as StdCommand;
+use std::sync::Arc;
+use tokio::io::{AsyncBufReadExt, BufReader as AsyncBufReader};
+use tokio::process::Command;
 use tokio::task::JoinSet;
-use tokio::time::{sleep, Duration};
+use std::process::Stdio;
 
 fn main() {
     println!("cothink-system is booting...");
@@ -33,7 +35,7 @@ fn spiral_order(task_count: usize, truncation_depth: usize) -> Vec<usize> {
 
     let size = (task_count as f64).sqrt().ceil() as usize;
     let mut order = Vec::with_capacity(task_count);
-    let layers = truncation_depth.min(size);
+    let layers = truncation_depth.min((size + 1) / 2);
 
     for layer in 0..layers {
         let top = layer;
@@ -48,39 +50,51 @@ fn spiral_order(task_count: usize, truncation_depth: usize) -> Vec<usize> {
         let stride = radial_layer(layer + 1).max(1);
 
         for col in left..=right {
-            if order.len() >= task_count {
+            if order.len() == task_count {
                 return order;
             }
             if (col + top) % stride == 0 || layer == 0 {
-                order.push(order.len());
+                let index = top * size + col;
+                if index < task_count {
+                    order.push(index);
+                }
             }
         }
 
         for row in (top + 1)..=bottom {
-            if order.len() >= task_count {
+            if order.len() == task_count {
                 return order;
             }
-            if (row + left) % stride == 0 || layer == 0 {
-                order.push(order.len());
+            if (row + right) % stride == 0 || layer == 0 {
+                let index = row * size + right;
+                if index < task_count {
+                    order.push(index);
+                }
             }
         }
 
         if top < bottom && left < right {
             for col in (left..right).rev() {
-                if order.len() >= task_count {
+                if order.len() == task_count {
                     return order;
                 }
                 if (col + bottom) % stride == 0 || layer == 0 {
-                    order.push(order.len());
+                    let index = bottom * size + col;
+                    if index < task_count {
+                        order.push(index);
+                    }
                 }
             }
 
             for row in (top + 1..bottom).rev() {
-                if order.len() >= task_count {
+                if order.len() == task_count {
                     return order;
                 }
                 if (row + left) % stride == 0 || layer == 0 {
-                    order.push(order.len());
+                    let index = row * size + left;
+                    if index < task_count {
+                        order.push(index);
+                    }
                 }
             }
         }
@@ -89,30 +103,34 @@ fn spiral_order(task_count: usize, truncation_depth: usize) -> Vec<usize> {
     order
 }
 
+async fn spawn_subagent(task_id: usize) -> usize {
+    let mut child = Command::new("sh")
+        .arg("-c")
+        .arg(format!("echo subagent:{}; sleep 0.02", task_id))
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("failed to spawn child process");
+
+    let stdout = child.stdout.take().expect("child stdout");
+    let mut reader = AsyncBufReader::new(stdout);
+    let mut line = String::new();
+    let _ = reader
+        .read_line(&mut line)
+        .await
+        .expect("failed to read child stdout");
+
+    let status = child.wait().await.expect("child wait");
+    assert!(status.success(), "subagent child failed");
+    task_id
+}
+
 async fn spawn_concurrent_subagents(task_ids: &[usize]) -> Vec<usize> {
     let mut set = JoinSet::new();
 
-    for task_id in task_ids {
-        let task_id = *task_id;
-        set.spawn(async move {
-            let mut child = Command::new("sh")
-                .arg("-c")
-                .arg(format!("echo subagent:{}; sleep 0.02", task_id))
-                .stdin(Stdio::piped())
-                .stdout(Stdio::piped())
-                .stderr(Stdio::piped())
-                .spawn()
-                .expect("failed to spawn child process");
-
-            let stdout = child.stdout.take().expect("child stdout");
-            let reader = BufReader::new(stdout);
-            let mut lines = reader.lines();
-            let _ = lines.next();
-
-            let status = child.wait().expect("child wait");
-            assert!(status.success(), "subagent child failed");
-            task_id
-        });
+    for &task_id in task_ids {
+        set.spawn(spawn_subagent(task_id));
     }
 
     let mut completed = Vec::with_capacity(task_ids.len());
@@ -124,36 +142,7 @@ async fn spawn_concurrent_subagents(task_ids: &[usize]) -> Vec<usize> {
 }
 
 async fn spawn_concurrent_subagents_from_arc(task_ids: Arc<Vec<usize>>) -> Vec<usize> {
-    let mut set = JoinSet::new();
-
-    for task_id in task_ids.iter().copied() {
-        set.spawn(async move {
-            let mut child = Command::new("sh")
-                .arg("-c")
-                .arg(format!("echo subagent:{}; sleep 0.02", task_id))
-                .stdin(Stdio::piped())
-                .stdout(Stdio::piped())
-                .stderr(Stdio::piped())
-                .spawn()
-                .expect("failed to spawn child process");
-
-            let stdout = child.stdout.take().expect("child stdout");
-            let reader = BufReader::new(stdout);
-            let mut lines = reader.lines();
-            let _ = lines.next();
-
-            let status = child.wait().expect("child wait");
-            assert!(status.success(), "subagent child failed");
-            task_id
-        });
-    }
-
-    let mut completed = Vec::with_capacity(task_ids.len());
-    while let Some(join_result) = set.join_next().await {
-        completed.push(join_result.expect("subagent task panicked"));
-    }
-
-    completed
+    spawn_concurrent_subagents(&task_ids).await
 }
 
 #[cfg(test)]
