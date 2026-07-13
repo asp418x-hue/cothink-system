@@ -266,15 +266,14 @@ class DeterministicEncryption:
         self.kdf = DeterministicKDF(self.config)
         self.rhash = InFoldingRhash(self.config)
     
-    def _generate_deterministic_iv(self, plaintext: bytes,
-                                   salt: bytes) -> bytes:
+    def _generate_deterministic_iv(self, salt: bytes) -> bytes:
         """
-        Generate deterministic IV from plaintext.
+        Generate deterministic IV from salt.
         
-        Same plaintext + salt produces same IV, enabling deterministic encryption.
-        IV is derived using rhash refactorization of plaintext+salt.
+        Same salt produces same IV, enabling deterministic encryption.
+        IV is derived using rhash refactorization of salt.
         """
-        iv_material = self.rhash.refactorize(plaintext + b"IV_GEN", salt)
+        iv_material = self.rhash.refactorize(salt + b"IV_GEN", salt)
         return iv_material[:16]  # 128-bit IV for AES
     
     def encrypt(self, plaintext: bytes, password: bytes,
@@ -301,7 +300,7 @@ class DeterministicEncryption:
         )
         
         # Generate deterministic IV
-        iv = self._generate_deterministic_iv(plaintext, salt)
+        iv = self._generate_deterministic_iv(salt)
         
         # Encrypt using AES-256-CTR
         cipher = Cipher(
@@ -364,19 +363,8 @@ class DeterministicEncryption:
         if not hmac.compare_digest(received_hmac, expected_hmac):
             raise ValueError("Authentication failed")
         
-        # Decrypt: generate IV from salt (but we need plaintext for IV!)
-        # For deterministic decryption, we derive IV differently:
-        # Use a fixed reference or previous encryption marker
-        # For now, use constant-based IV for demonstration
-        
-        # NOTE: Deterministic decryption requires either:
-        # 1. Storing a plaintext hash for IV recovery
-        # 2. Using a constant IV (less secure but deterministic)
-        # 3. Or using the salt directly
-        
-        # Use salt-based IV (consistent with deterministic property)
-        iv_material = self.rhash.refactorize(salt + b"IV_DEC", salt)
-        iv = iv_material[:16]
+        # Generate deterministic IV
+        iv = self._generate_deterministic_iv(salt)
         
         # Decrypt
         cipher = Cipher(
