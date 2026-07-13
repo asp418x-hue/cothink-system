@@ -1,0 +1,137 @@
+#!/bin/bash
+################################################################################
+# .cothink_hooks
+# Shell hooks for cothink-shell
+# 
+# Hook functions allow you to execute custom logic at various points in
+# cothink-shell's execution. Define hook functions with the pattern:
+#   hook_<hook_name>() { ... }
+#
+# Available hooks:
+#   - hook_pre_interactive()      Before entering interactive mode
+#   - hook_post_interactive()     After exiting interactive mode
+#   - hook_pre_execute()          Before executing a command
+#   - hook_post_execute()         After executing a command
+#   - hook_pre_passthrough()      Before passing args to cothink-system
+#   - hook_post_passthrough()     After cothink-system completes
+#   - hook_pre_login()            Before login shell mode
+#   - hook_post_login()           After login shell mode
+#   - hook_task_spawned()         When a subagent spawns
+#   - hook_task_completed()       When a subagent completes
+#
+################################################################################
+
+################################################################################
+# Example: Pre-execution setup
+################################################################################
+
+hook_pre_execute() {
+    local cmd="$1"
+    
+    # Optionally validate command
+    if [[ "$cmd" == "run" ]]; then
+        # Could check system resources, log execution, etc.
+        :
+    fi
+}
+
+################################################################################
+# Example: Post-execution logging
+################################################################################
+
+hook_post_execute() {
+    local exit_code="$1"
+    local cmd="$2"
+    
+    # Log execution to file
+    # echo "[$(date)] Executed: $cmd (exit: $exit_code)" >> ~/.cothink_history
+    :
+}
+
+################################################################################
+# Example: Pre-passthrough environment setup
+################################################################################
+
+hook_pre_passthrough() {
+    # Can set environment variables before passing args to cothink-system
+    # export COTHINK_LOG_LEVEL="DEBUG"
+    # export RUST_LOG="debug"
+    :
+}
+
+################################################################################
+# Example: Post-passthrough result handling
+################################################################################
+
+hook_post_passthrough() {
+    local exit_code="$1"
+    shift
+    local args=("$@")
+    
+    if [[ $exit_code -ne 0 ]]; then
+        # Handle errors from cothink-system
+        # echo "cothink-system failed with code $exit_code"
+        :
+    fi
+}
+
+################################################################################
+# Example: Task spawning notification
+################################################################################
+
+hook_task_spawned() {
+    local task_id="$1"
+    local worker_id="$2"
+    
+    # Could update external monitoring, log to database, etc.
+    # echo "Task $task_id spawned on worker $worker_id"
+    :
+}
+
+################################################################################
+# Example: Task completion notification
+################################################################################
+
+hook_task_completed() {
+    local task_id="$1"
+    local exit_code="$2"
+    local duration="$3"
+    
+    # Could aggregate results, trigger next phase of pipeline, etc.
+    # echo "Task $task_id completed in ${duration}ms (exit: $exit_code)"
+    :
+}
+
+################################################################################
+# Advanced: Environment customization
+################################################################################
+
+# hook_pre_interactive() {
+#     # Set up environment for interactive mode
+#     export PS1="[cothink] \$ "
+#     export HISTFILE="$HOME/.cothink_history"
+# }
+
+################################################################################
+# Advanced: Resource monitoring
+################################################################################
+
+# hook_pre_passthrough() {
+#     # Check system resources before running tasks
+#     local available_memory=$(free -b | awk 'NR==2 {print $7}')
+#     if [[ $available_memory -lt 1073741824 ]]; then  # 1GB
+#         echo "[WARNING] Low memory available: $((available_memory / 1024 / 1024))MB"
+#     fi
+# }
+
+################################################################################
+# Advanced: Metrics collection
+################################################################################
+
+# hook_post_execute() {
+#     local exit_code="$1"
+#     local cmd="$2"
+#     
+#     # Collect metrics via prometheus push-gateway or similar
+#     # curl -X POST --data-binary @- http://localhost:9091/metrics/job/cothink_shell
+# }

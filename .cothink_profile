@@ -1,0 +1,38 @@
+#!/bin/bash
+################################################################################
+# .cothink_profile
+# Login profile for cothink-shell (sourced when using: chsh -s /usr/local/bin/cothink-shell)
+# Similar to .bash_profile but for cothink-shell login sessions
+################################################################################
+
+# Source standard shell profile if it exists
+if [[ -f "$HOME/.profile" ]]; then
+    source "$HOME/.profile"
+fi
+
+# Set cothink environment variables
+export COTHINK_HOME="${COTHINK_HOME:-/home/adrian/cothink-system}"
+export COTHINK_BINARY="${COTHINK_BINARY:-$COTHINK_HOME/target/release/cothink-system}"
+export COTHINK_WORKERS="${COTHINK_WORKERS:-4}"
+export COTHINK_SUBAGENTS="${COTHINK_SUBAGENTS:-8}"
+export COTHINK_SCHEDULE="${COTHINK_SCHEDULE:-spiral}"
+
+# Display welcome message
+echo "╔═══════════════════════════════════════════════════════╗"
+echo "║  Welcome to cothink-shell - Task Orchestration Shell  ║"
+echo "╚═══════════════════════════════════════════════════════╝"
+echo ""
+echo "Quick Start:"
+echo "  run          Run cothink-system with default settings"
+echo "  help         Show available commands"
+echo "  exit         Exit cothink-shell"
+echo ""
+
+# Optional: Initialize Python virtual environment for crypto tools
+if [[ -d "$COTHINK_HOME/venv" ]]; then
+    source "$COTHINK_HOME/venv/bin/activate"
+    export PYTHONPATH="$COTHINK_HOME:$PYTHONPATH"
+fi
+
+# Optional: Add cothink-system utilities to PATH
+export PATH="$COTHINK_HOME:$COTHINK_HOME/scripts:$PATH"

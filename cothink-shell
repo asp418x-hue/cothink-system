@@ -1,0 +1,343 @@
+#!/bin/bash
+################################################################################
+# cothink-shell
+# Shell wrapper for cothink-system task orchestration
+# Compatible with /etc/shells and system shell registry
+################################################################################
+
+set -euo pipefail
+
+# Configuration - Define early, before any functions
+COTHINK_BINARY="${COTHINK_BINARY:-/home/adrian/cothink-system/target/release/cothink-system}"
+COTHINK_HOME="${COTHINK_HOME:-/home/adrian/cothink-system}"
+COTHINK_VERSION="1.0.0"
+
+################################################################################
+# Display Help
+################################################################################
+
+show_help() {
+    cat << 'EOF'
+cothink-shell - Task orchestration shell wrapper
+
+Usage:
+  cothink-shell [options] [arguments ...]
+
+Options:
+  -h, --help         Show this help message
+  -v, --version      Show version
+  -i, --interactive  Start interactive mode
+  -c COMMAND         Execute command and exit
+  -l, --login        Login shell mode (runs .cothink_profile)
+
+Pass-Through Arguments:
+  Any other arguments are passed directly to cothink-system:
+  
+  cothink-shell --workers 4              Pass --workers flag
+  cothink-shell --schedule spiral        Pass --schedule flag
+  cothink-shell --tasks task_def.json    Pass task definition file
+  cothink-shell task1 task2 task3        Pass task names verbatim
+  cothink-shell @task_config.txt         Pass config file
+
+Interactive Commands (when no args given):
+  help               Show this help
+  run [N]            Run cothink-system with N subagents
+  status             Show system status
+  shell              Drop to bash (exit to return)
+  clear              Clear screen
+  exit               Exit cothink-shell
+
+Hook System:
+  cothink-shell supports a hook system for customizing behavior:
+  
+  - Pre/post execution hooks: hook_pre_execute, hook_post_execute
+  - Pre/post passthrough hooks: hook_pre_passthrough, hook_post_passthrough
+  - Pre/post interactive hooks: hook_pre_interactive, hook_post_interactive
+  - Task-level hooks: hook_task_spawned, hook_task_completed
+  - Pre/post login hooks: hook_pre_login, hook_post_login
+  
+  Define hooks in ~/.cothink_hooks or ${COTHINK_HOME}/.cothink_hooks:
+  
+    hook_pre_execute() { echo "About to execute: $1"; }
+    hook_post_execute() { echo "Execution completed with code: $1"; }
+    hook_task_spawned() { echo "Task $1 started on worker $2"; }
+  
+  See .cothink_hooks for examples and documentation.
+
+Examples:
+  cothink-shell                          Start interactive mode
+  cothink-shell --workers 8 --subagents 32
+  cothink-shell -c "run 8"
+  cothink-shell task_name task_name2     Pass task names to binary
+  chsh -s /usr/local/bin/cothink-shell   Set as login shell
+
+Configuration:
+  COTHINK_HOME       Location of cothink-system (default: /home/adrian/cothink-system)
+  COTHINK_BINARY     Path to binary (default: $COTHINK_HOME/target/release/cothink-system)
+  COTHINK_WORKERS    Default worker count (default: 4)
+  COTHINK_SUBAGENTS  Default subagent count (default: 8)
+  COTHINK_SCHEDULE   Scheduling algorithm (default: spiral)
+EOF
+}
+
+show_version() {
+    echo "cothink-shell version $COTHINK_VERSION"
+    echo "Backend: cothink-system (task orchestrator)"
+}
+
+################################################################################
+# Interactive REPL
+################################################################################
+
+interactive_mode() {
+    local prompt="${USER}@cothink:~$ "
+    
+    echo "cothink-shell v$COTHINK_VERSION - Interactive Mode"
+    echo "Type 'help' for commands or 'exit' to quit"
+    echo ""
+    
+    while true; do
+        read -e -p "$prompt" -r cmd || true
+        
+        # Empty input
+        [[ -z "$cmd" ]] && continue
+        
+        # Parse command
+        local cmd_name="${cmd%% *}"
+        local cmd_args="${cmd#* }"
+        [[ "$cmd_name" == "$cmd" ]] && cmd_args=""
+        
+        # Run pre-command hook
+        run_hook "pre_command" "$cmd_name" "$cmd_args"
+        
+        case "$cmd_name" in
+            help)
+                show_help
+                ;;
+            run)
+                local agents="${cmd_args:-8}"
+                echo "[cothink-shell] Running orchestrator with $agents agents..."
+                run_hook "pre_run" "$agents"
+                "$COTHINK_BINARY" || true
+                run_hook "post_run" "$?" "$agents"
+                ;;
+            status)
+                echo "[cothink-shell] Status:"
+                echo "  Version: $COTHINK_VERSION"
+                echo "  Backend: $COTHINK_BINARY"
+                echo "  User: $USER"
+                echo "  Shell: $SHELL"
+                if command -v cargo &>/dev/null; then
+                    echo "  Rust: $(rustc --version)"
+                fi
+                run_hook "status_display"
+                ;;
+            shell)
+                echo "[cothink-shell] Dropping to bash (type 'exit' to return)"
+                run_hook "pre_bash_shell"
+                bash --norc || true
+                run_hook "post_bash_shell" "$?"
+                ;;
+            clear)
+                clear
+                ;;
+            exit|quit)
+                run_hook "pre_exit" "$cmd_name"
+                echo "[cothink-shell] Goodbye!"
+                exit 0
+                ;;
+            "")
+                ;;
+            *)
+                echo "[cothink-shell] Unknown command: $cmd_name"
+                echo "Type 'help' for available commands"
+                ;;
+        esac
+        
+        # Run post-command hook
+        run_hook "post_command" "$cmd_name" "$cmd_args"
+    done
+}
+
+################################################################################
+# Command Execution & Task Pass-Through
+################################################################################
+
+execute_command() {
+    local cmd="$1"
+    
+    case "$cmd" in
+        run)
+            "$COTHINK_BINARY"
+            ;;
+        *)
+            echo "[cothink-shell] Running: $cmd"
+            eval "$cmd"
+            ;;
+    esac
+}
+
+# Pass-through arguments directly to cothink-system
+pass_through_args() {
+    # All arguments are passed verbatim to the binary
+    # Allows: cothink-shell --workers 4 --schedule spiral
+    #         cothink-shell task_def.json
+    #         cothink-shell -v
+    "$COTHINK_BINARY" "$@"
+}
+
+################################################################################
+# Login Shell Mode
+################################################################################
+
+login_shell_mode() {
+    # Source login profile if it exists
+    local profile="$HOME/.cothink_profile"
+    if [[ -f "$profile" ]]; then
+        source "$profile"
+    fi
+    
+    # Start interactive mode
+    interactive_mode
+}
+
+################################################################################
+# Main
+################################################################################
+
+################################################################################
+# Hook System
+################################################################################
+
+run_hook() {
+    local hook_name="$1"
+    shift
+    local hook_args=("$@")
+    
+    # Look for hook functions in loaded hook files
+    if declare -f "hook_$hook_name" >/dev/null; then
+        "hook_$hook_name" "${hook_args[@]}"
+    fi
+}
+
+load_hooks() {
+    # Load user-defined hooks
+    local hook_files=(
+        "$HOME/.cothink_hooks"
+        "$HOME/.cothink_hooks.local"
+        "${COTHINK_HOME}/.cothink_hooks"
+    )
+    
+    for hook_file in "${hook_files[@]}"; do
+        if [[ -f "$hook_file" ]]; then
+            source "$hook_file"
+        fi
+    done
+}
+
+################################################################################
+# Main
+################################################################################
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    # Check if binary exists
+    if [[ ! -x "$COTHINK_BINARY" ]]; then
+        echo "[ERROR] cothink-system binary not found or not executable: $COTHINK_BINARY" >&2
+        exit 1
+    fi
+    
+    # Load hooks early
+    load_hooks
+    
+    # No arguments: start interactive mode
+    if [[ $# -eq 0 ]]; then
+        run_hook "pre_interactive"
+        interactive_mode
+        local exit_code=$?
+        run_hook "post_interactive" "$exit_code"
+        exit "$exit_code"
+    fi
+    
+    # Parse shell-wrapper-specific arguments
+    mode=""
+    command=""
+    passthrough_args=()
+    
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            -v|--version)
+                show_version
+                exit 0
+                ;;
+            -i|--interactive)
+                mode="interactive"
+                shift
+                ;;
+            -c)
+                # Execute single command
+                mode="execute"
+                command="$2"
+                shift 2
+                ;;
+            -l|--login)
+                # Login shell mode
+                mode="login"
+                shift
+                ;;
+            *)
+                # Everything else: pass through to cothink-system
+                passthrough_args+=("$@")
+                break
+                ;;
+        esac
+    done
+    
+    # Execute based on mode
+    if [[ -n "$mode" ]]; then
+        case "$mode" in
+            interactive)
+                run_hook "pre_interactive"
+                interactive_mode
+                exit_code=$?
+                run_hook "post_interactive" "$exit_code"
+                exit "$exit_code"
+                ;;
+            execute)
+                run_hook "pre_execute" "$command"
+                if [[ -z "$command" ]]; then
+                    "$COTHINK_BINARY"
+                else
+                    execute_command "$command"
+                fi
+                exit_code=$?
+                run_hook "post_execute" "$exit_code" "$command"
+                exit "$exit_code"
+                ;;
+            login)
+                run_hook "pre_login"
+                login_shell_mode
+                exit_code=$?
+                run_hook "post_login" "$exit_code"
+                exit "$exit_code"
+                ;;
+        esac
+    elif [[ ${#passthrough_args[@]} -gt 0 ]]; then
+        # Pass arguments directly to cothink-system
+        run_hook "pre_passthrough" "${passthrough_args[@]}"
+        pass_through_args "${passthrough_args[@]}"
+        exit_code=$?
+        run_hook "post_passthrough" "$exit_code" "${passthrough_args[@]}"
+        exit "$exit_code"
+    else
+        # Default: run interactive
+        run_hook "pre_interactive"
+        interactive_mode
+        exit_code=$?
+        run_hook "post_interactive" "$exit_code"
+        exit "$exit_code"
+    fi
+fi

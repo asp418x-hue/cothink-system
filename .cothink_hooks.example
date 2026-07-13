@@ -1,0 +1,228 @@
+#!/bin/bash
+################################################################################
+# .cothink_hooks.example
+# Real-world hook examples for cothink-shell
+# Copy to ~/.cothink_hooks or ~/.cothink_hooks.local to use
+################################################################################
+
+################################################################################
+# 1. Logging & Audit Trail
+################################################################################
+
+hook_pre_execute() {
+    local cmd="$1"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] EXECUTE: $cmd" >> ~/.cothink_shell.log
+}
+
+hook_post_execute() {
+    local exit_code="$1"
+    local cmd="$2"
+    local status=$( [[ $exit_code -eq 0 ]] && echo "OK" || echo "FAIL" )
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] RESULT: $cmd [$status]" >> ~/.cothink_shell.log
+}
+
+################################################################################
+# 2. Environment Setup for cothink-system
+################################################################################
+
+hook_pre_passthrough() {
+    # Set Rust logging
+    export RUST_LOG="${RUST_LOG:-info}"
+    
+    # Set cothink environment
+    export COTHINK_TELEMETRY="${COTHINK_TELEMETRY:-1}"
+    
+    # Check minimum memory requirement
+    local avail_mem_kb=$(awk '/MemAvailable/ {print $2}' /proc/meminfo)
+    if [[ $avail_mem_kb -lt 262144 ]]; then  # 256MB
+        echo "[WARNING] Low memory: ${avail_mem_kb}KB available" >&2
+    fi
+}
+
+hook_post_passthrough() {
+    local exit_code="$1"
+    shift
+    local args=("$@")
+    
+    if [[ $exit_code -eq 0 ]]; then
+        echo "✓ cothink-system completed successfully"
+    else
+        echo "✗ cothink-system exited with code: $exit_code" >&2
+    fi
+}
+
+################################################################################
+# 3. Interactive Mode Enhancements
+################################################################################
+
+hook_pre_interactive() {
+    clear
+    cat << 'EOF'
+╔══════════════════════════════════════════════════════════════════╗
+║           cothink-shell - Task Orchestration Engine              ║
+║                                                                  ║
+║  Commands: run | status | shell | clear | help | exit          ║
+╚══════════════════════════════════════════════════════════════════╝
+
+EOF
+}
+
+hook_post_interactive() {
+    local exit_code="$1"
+    echo ""
+    echo "Session ended (exit: $exit_code)"
+}
+
+hook_pre_command() {
+    local cmd="$1"
+    local args="$2"
+    # Could add input validation here
+    # if [[ "$cmd" == "run" ]] && ! [[ "$args" =~ ^[0-9]+$ ]]; then
+    #     echo "Invalid agent count" >&2
+    #     return 1
+    # fi
+    :
+}
+
+################################################################################
+# 4. Resource Monitoring
+################################################################################
+
+hook_status_display() {
+    # Show additional system info beyond default status
+    echo ""
+    echo "System Resources:"
+    
+    if command -v free &>/dev/null; then
+        echo "  Memory: $(free -h | awk 'NR==2 {print $3 " / " $2}')"
+    fi
+    
+    if command -v uptime &>/dev/null; then
+        echo "  Uptime: $(uptime | awk -F'up' '{print $2}' | cut -d',' -f1)"
+    fi
+    
+    if [[ -f /proc/loadavg ]]; then
+        local load=$(cat /proc/loadavg | awk '{print $1, $2, $3}')
+        echo "  Load Average: $load"
+    fi
+}
+
+################################################################################
+# 5. Task Execution Tracking
+################################################################################
+
+hook_pre_run() {
+    local agent_count="$1"
+    echo "[$(date '+%H:%M:%S')] Starting orchestrator with $agent_count agents..."
+}
+
+hook_post_run() {
+    local exit_code="$1"
+    local agent_count="$2"
+    
+    if [[ $exit_code -eq 0 ]]; then
+        echo "[$(date '+%H:%M:%S')] ✓ Orchestrator completed ($agent_count agents)"
+    else
+        echo "[$(date '+%H:%M:%S')] ✗ Orchestrator failed (exit: $exit_code)" >&2
+    fi
+}
+
+################################################################################
+# 6. Metrics Collection (Optional - requires external system)
+################################################################################
+
+# Uncomment to enable metrics collection to external system
+
+# hook_post_execute() {
+#     local exit="$1"
+#     local cmd="$2"
+#     local timestamp=$(date +%s)
+#     
+#     # Send to influxdb
+#     # curl -X POST http://localhost:8086/write?db=cothink \
+#     #   --data-binary "cothink_exec,cmd=$cmd,exit=$exit value=1 ${timestamp}000000000"
+#     
+#     # Or log to local database
+#     # sqlite3 ~/.cothink_metrics.db \
+#     #   "INSERT INTO executions (cmd, exit_code, timestamp) VALUES ('$cmd', $exit, $timestamp)"
+# }
+
+################################################################################
+# 7. Bash Shell Integration
+################################################################################
+
+hook_pre_bash_shell() {
+    echo "[Entering bash - type 'exit' to return to cothink-shell]"
+    # Could set bash-specific environment here
+}
+
+hook_post_bash_shell() {
+    local exit_code="$1"
+    echo "[Returned from bash (exit: $exit_code)]"
+}
+
+################################################################################
+# 8. Error Handling
+################################################################################
+
+hook_pre_exit() {
+    local exit_cmd="$1"
+    # Could save state, upload logs, etc. before exiting
+    # echo "Finalizing..."
+    :
+}
+
+################################################################################
+# Advanced: Integration with systemd (if running as service)
+################################################################################
+
+# hook_post_execute() {
+#     local exit="$1"
+#     
+#     # Notify systemd of status
+#     if command -v systemd-notify &>/dev/null; then
+#         if [[ $exit -eq 0 ]]; then
+#             systemd-notify STATUS="OK"
+#         else
+#             systemd-notify STATUS="Failed with code $exit"
+#         fi
+#     fi
+# }
+
+################################################################################
+# Advanced: Git tracking of execution history
+################################################################################
+
+# hook_post_execute() {
+#     local exit="$1"
+#     local cmd="$2"
+#     
+#     # Track in git history file
+#     local history_file="$HOME/.cothink_exec_history"
+#     git init "$history_file" 2>/dev/null || true
+#     
+#     echo "[$exit] $cmd" >> "$history_file"
+# }
+
+################################################################################
+# Advanced: Slack/Discord notification on errors
+################################################################################
+
+# hook_post_passthrough() {
+#     local exit="$1"
+#     
+#     if [[ $exit -ne 0 ]] && [[ -n "${SLACK_WEBHOOK:-}" ]]; then
+#         curl -X POST "$SLACK_WEBHOOK" \
+#           -H 'Content-Type: application/json' \
+#           -d "{
+#             \"text\": \"⚠️  cothink-system failed\",
+#             \"attachments\": [{
+#               \"color\": \"danger\",
+#               \"fields\": [
+#                 {\"title\": \"Exit Code\", \"value\": \"$exit\", \"short\": true},
+#                 {\"title\": \"Time\", \"value\": \"$(date)\", \"short\": true}
+#               ]
+#             }]
+#           }" 2>/dev/null &
+#     fi
+# }
