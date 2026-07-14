@@ -27,11 +27,8 @@
 
 hook_pre_execute() {
     local cmd="$1"
-    
-    # Optionally validate command
-    if [[ "$cmd" == "run" ]]; then
-        # Could check system resources, log execution, etc.
-        :
+    if [[ "$cmd" == *"run"* ]]; then
+        /home/adrian/cothink-system/pip_btop.sh start
     fi
 }
 
@@ -42,10 +39,9 @@ hook_pre_execute() {
 hook_post_execute() {
     local exit_code="$1"
     local cmd="$2"
-    
-    # Log execution to file
-    # echo "[$(date)] Executed: $cmd (exit: $exit_code)" >> ~/.cothink_history
-    :
+    if [[ "$cmd" == *"run"* ]]; then
+        /home/adrian/cothink-system/pip_btop.sh stop
+    fi
 }
 
 ################################################################################
@@ -53,10 +49,7 @@ hook_post_execute() {
 ################################################################################
 
 hook_pre_passthrough() {
-    # Can set environment variables before passing args to cothink-system
-    # export COTHINK_LOG_LEVEL="DEBUG"
-    # export RUST_LOG="debug"
-    :
+    /home/adrian/cothink-system/pip_btop.sh start
 }
 
 ################################################################################
@@ -65,14 +58,15 @@ hook_pre_passthrough() {
 
 hook_post_passthrough() {
     local exit_code="$1"
-    shift
-    local args=("$@")
-    
-    if [[ $exit_code -ne 0 ]]; then
-        # Handle errors from cothink-system
-        # echo "cothink-system failed with code $exit_code"
-        :
-    fi
+    /home/adrian/cothink-system/pip_btop.sh stop
+}
+
+hook_pre_run() {
+    /home/adrian/cothink-system/pip_btop.sh start
+}
+
+hook_post_run() {
+    /home/adrian/cothink-system/pip_btop.sh stop
 }
 
 ################################################################################
