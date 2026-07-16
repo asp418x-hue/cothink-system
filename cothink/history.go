@@ -107,9 +107,10 @@ func (orch *Orchestrator) GetFOV(device string) FOV {
 		entry := historyBuffer[idx]
 		seq := atomic.LoadUint64(&entry.Sequence)
 		if seq == i+1 && entry.OrchestratorID == orch.ID {
-			if entry.Event == "subagent_success" {
+			switch entry.Event {
+			case "subagent_success":
 				successes++
-			} else if entry.Event == "subagent_fail" {
+			case "subagent_fail", "subagent_perl_fail", "subagent_lua_fail":
 				failures++
 			}
 		}
