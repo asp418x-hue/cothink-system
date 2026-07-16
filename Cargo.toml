@@ -22,3 +22,6 @@ path = "src/bin/thermal_monitor.rs"
 [dependencies]
 tokio = { version = "1.40", features = ["macros", "rt-multi-thread", "sync", "time", "process", "io-util", "net"] }
 
+[profile.release]
+debug = true
+
