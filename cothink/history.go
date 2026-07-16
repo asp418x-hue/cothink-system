@@ -41,7 +41,7 @@ func RecordEvent(orchID int64, subagentID int, event string, success bool, detai
 	entry.Event = event
 	entry.Success = success
 	entry.Detail = detail
-	
+
 	// Publish the update atomically with release semantics
 	atomic.StoreUint64(&entry.Sequence, seq+1)
 }
@@ -53,7 +53,7 @@ func GetHistory() []HistoryEntry {
 	if cursor > HistoryCapacity {
 		start = cursor - HistoryCapacity
 	}
-	
+
 	results := make([]HistoryEntry, 0, HistoryCapacity)
 	for i := start; i < cursor; i++ {
 		idx := i % HistoryCapacity
