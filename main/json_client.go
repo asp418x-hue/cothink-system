@@ -32,4 +32,21 @@ func RunClient(port int) {
 	for _, agent := range status.Agents {
 		fmt.Printf("    - Agent %d (Depth %d)\n", agent.ID, agent.Depth)
 	}
+	if len(status.History) > 0 {
+		fmt.Printf("  Execution History Trace:\n")
+		for _, entry := range status.History {
+			successStr := "SUCCESS"
+			if !entry.Success {
+				successStr = "FAIL"
+			}
+			fmt.Printf("    [%s] Orch ID: %d | Agent ID: %d | Event: %-22s | Result: %-7s | Detail: %s\n",
+				entry.Timestamp.Format("15:04:05.000"),
+				entry.OrchestratorID,
+				entry.SubagentID,
+				entry.Event,
+				successStr,
+				entry.Detail,
+			)
+		}
+	}
 }

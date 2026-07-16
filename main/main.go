@@ -47,6 +47,7 @@ func main() {
 				MaxChildren:   orch.MaxChildren,
 				BaseDelayMs:   120,
 				Agents:        agents,
+				History:       cothink.GetHistory(),
 			})
 		}
 	}()

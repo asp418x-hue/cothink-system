@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -30,11 +31,21 @@ type AgentNode struct {
 
 // Orchestrator manages the Logarithmic Async Scalar
 type Orchestrator struct {
+	ID            int64 // Unique identifier for tracing concurrent orchestrators
 	RootTTY       *os.File
 	MaxChildren   int
 	BaseDelay     time.Duration
 	ActiveWorkers sync.WaitGroup
 	Semaphore     *DynamicSemaphore
+}
+
+var globalOrchestratorSeq int64
+
+// ensureID assigns a unique orchestrator ID atomically if one is not set.
+func (orch *Orchestrator) ensureID() {
+	if atomic.LoadInt64(&orch.ID) == 0 {
+		atomic.CompareAndSwapInt64(&orch.ID, 0, atomic.AddInt64(&globalOrchestratorSeq, 1))
+	}
 }
 
 // ZeroResiduals performs the "sync -f / && hash -r" rhythm

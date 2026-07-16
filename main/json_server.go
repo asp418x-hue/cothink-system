@@ -11,10 +11,11 @@ import (
 )
 
 type OrchestratorStatus struct {
-	ActiveWorkers int      `json:"active_workers"`
-	MaxChildren   int      `json:"max_children"`
-	BaseDelayMs   int64    `json:"base_delay_ms"`
-	Agents        []Agent  `json:"agents"`
+	ActiveWorkers int                    `json:"active_workers"`
+	MaxChildren   int                    `json:"max_children"`
+	BaseDelayMs   int64                  `json:"base_delay_ms"`
+	Agents        []Agent                `json:"agents"`
+	History       []cothink.HistoryEntry `json:"history"`
 }
 
 type Agent struct {

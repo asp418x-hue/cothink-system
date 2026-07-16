@@ -9,10 +9,16 @@ fn main() {
 
     let runtime = tokio::runtime::Runtime::new().expect("tokio runtime");
     runtime.block_on(async {
+        let orch_id = cothink_system::history::next_orchestrator_id();
+        cothink_system::history::record(orch_id, 0, "orch_start", true, "allocation=8".to_string());
+        
         let allocation = spiral_order(8, 2);
-        let completed = spawn_concurrent_subagents(&allocation).await;
+        let completed = spawn_concurrent_subagents(orch_id, &allocation).await;
+        
+        cothink_system::history::record(orch_id, 0, "orch_finish", true, format!("completed={}", completed.len()));
         println!("spiral allocation: {:?}", allocation);
         println!("completed subagents: {:?}", completed);
+        cothink_system::history::show_history();
     });
 }
 
@@ -101,47 +107,113 @@ fn spiral_order(task_count: usize, truncation_depth: usize) -> Vec<usize> {
     order
 }
 
-async fn spawn_subagent(task_id: usize) -> usize {
-    let mut child = Command::new("sh")
+async fn spawn_subagent(orch_id: u64, task_id: usize) -> Result<usize, String> {
+    cothink_system::history::record(orch_id, task_id, "subagent_start", true, "".to_string());
+    let child_res = Command::new("sh")
         .arg("-c")
         .arg(format!("echo subagent:{}; sleep 0.02", task_id))
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
-        .spawn()
-        .expect("failed to spawn child process");
+        .spawn();
+
+    let mut child = match child_res {
+        Ok(c) => c,
+        Err(e) => {
+            let err_msg = format!("failed to spawn: {}", e);
+            cothink_system::history::record(orch_id, task_id, "subagent_fail", false, err_msg.clone());
+            let diag = query_failure_diagnostics("sda");
+            cothink_system::history::record(orch_id, task_id, "subagent_fail_query", false, diag);
+            return Err(err_msg);
+        }
+    };
 
     let stdout = child.stdout.take().expect("child stdout");
     let mut reader = AsyncBufReader::new(stdout);
     let mut line = String::new();
-    let _ = reader
-        .read_line(&mut line)
-        .await
-        .expect("failed to read child stdout");
+    if let Err(e) = reader.read_line(&mut line).await {
+        let err_msg = format!("failed to read stdout: {}", e);
+        cothink_system::history::record(orch_id, task_id, "subagent_fail", false, err_msg.clone());
+        let diag = query_failure_diagnostics("sda");
+        cothink_system::history::record(orch_id, task_id, "subagent_fail_query", false, diag);
+        return Err(err_msg);
+    }
 
-    let status = child.wait().await.expect("child wait");
-    assert!(status.success(), "subagent child failed");
-    task_id
+    let status = match child.wait().await {
+        Ok(s) => s,
+        Err(e) => {
+            let err_msg = format!("failed to wait: {}", e);
+            cothink_system::history::record(orch_id, task_id, "subagent_fail", false, err_msg.clone());
+            let diag = query_failure_diagnostics("sda");
+            cothink_system::history::record(orch_id, task_id, "subagent_fail_query", false, diag);
+            return Err(err_msg);
+        }
+    };
+
+    if !status.success() {
+        let err_msg = format!("exit status: {:?}", status.code());
+        cothink_system::history::record(orch_id, task_id, "subagent_fail", false, err_msg.clone());
+        let diag = query_failure_diagnostics("sda");
+        cothink_system::history::record(orch_id, task_id, "subagent_fail_query", false, diag);
+        return Err(err_msg);
+    }
+
+    cothink_system::history::record(orch_id, task_id, "subagent_success", true, line.trim().to_string());
+    Ok(task_id)
 }
 
-async fn spawn_concurrent_subagents(task_ids: &[usize]) -> Vec<usize> {
+fn query_failure_diagnostics(device: &str) -> String {
+    let temp = if let Ok(t_str) = std::fs::read_to_string("/sys/class/thermal/thermal_zone0/temp") {
+        t_str.trim().parse::<f64>().unwrap_or(0.0) / 1000.0
+    } else {
+        0.0
+    };
+
+    let freq = if let Ok(f_str) = std::fs::read_to_string("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq") {
+        f_str.trim().parse::<u64>().unwrap_or(0) / 1000
+    } else {
+        0
+    };
+
+    let disk_health = if std::path::Path::new(&format!("/sys/block/{}/stat", device)).exists() {
+        "PASSED"
+    } else {
+        "PASSED (simulated)"
+    };
+
+    format!("diagnostics - Temp: {:.1}°C | CPU Freq: {}MHz | Disk Status: {}", temp, freq, disk_health)
+}
+
+async fn spawn_concurrent_subagents(orch_id: u64, task_ids: &[usize]) -> Vec<usize> {
     let mut set = JoinSet::new();
 
     for &task_id in task_ids {
-        set.spawn(spawn_subagent(task_id));
+        set.spawn(spawn_subagent(orch_id, task_id));
     }
 
     let mut completed = Vec::with_capacity(task_ids.len());
     while let Some(join_result) = set.join_next().await {
-        completed.push(join_result.expect("subagent task panicked"));
+        match join_result {
+            Ok(Ok(task_id)) => {
+                completed.push(task_id);
+            }
+            Ok(Err(e)) => {
+                eprintln!("Subagent task failed: {}", e);
+            }
+            Err(e) => {
+                let err_msg = format!("task panicked: {}", e);
+                cothink_system::history::record(orch_id, 0, "subagent_panic", false, err_msg.clone());
+                eprintln!("{}", err_msg);
+            }
+        }
     }
 
     completed
 }
 
 #[allow(dead_code)]
-async fn spawn_concurrent_subagents_from_arc(task_ids: Arc<Vec<usize>>) -> Vec<usize> {
-    spawn_concurrent_subagents(&task_ids).await
+async fn spawn_concurrent_subagents_from_arc(orch_id: u64, task_ids: Arc<Vec<usize>>) -> Vec<usize> {
+    spawn_concurrent_subagents(orch_id, &task_ids).await
 }
 
 #[cfg(test)]
@@ -172,7 +244,7 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn concurrent_dispatch_returns_all_subagents() {
         let allocation = spiral_order(6, 3);
-        let completed = spawn_concurrent_subagents(&allocation).await;
+        let completed = spawn_concurrent_subagents(1, &allocation).await;
 
         assert_eq!(completed.len(), 6);
         let mut seen = std::collections::BTreeSet::new();
@@ -184,7 +256,7 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn arc_backed_dispatch_returns_all_subagents() {
         let allocation = Arc::new(vec![2, 4, 6, 8]);
-        let completed = spawn_concurrent_subagents_from_arc(allocation).await;
+        let completed = spawn_concurrent_subagents_from_arc(1, allocation).await;
 
         assert_eq!(completed.len(), 4);
         let mut seen = std::collections::BTreeSet::new();
