@@ -10,10 +10,12 @@ from PySide6.QtWidgets import (
     QGraphicsRectItem, QGraphicsTextItem, QPushButton,
     QComboBox, QLabel, QApplication
 )
+# pyrefly: ignore [missing-import]
 from PySide6.QtGui import QColor, QPen, QBrush, QFont
 
 from graphics_shell import ResultType, GraphicsShellManager
 
+# pyrefly: ignore [missing-import]
 from .models import InputDevice, InputEvent
 from .core import InputDeviceMonitor
 
