@@ -44,6 +44,14 @@ def process_task(task_id, context):
                 "resolution": text.strip(),
                 "raw_context": context
             })
+    except urllib.error.HTTPError as e:
+        return json.dumps({
+            "task_id": task_id,
+            "status": "error",
+            "provider": "gemini",
+            "error_msg": str(e),
+            "details": e.read().decode("utf-8")
+        })
     except Exception as e:
         return json.dumps({
             "task_id": task_id,
