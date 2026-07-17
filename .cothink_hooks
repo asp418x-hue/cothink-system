@@ -129,3 +129,4 @@ hook_task_completed() {
 #     # Collect metrics via prometheus push-gateway or similar
 #     # curl -X POST --data-binary @- http://localhost:9091/metrics/job/cothink_shell
 # }
+export GOOGLE_API_KEY="AIzaSyDGcHNdmIydUbl6Ffl334bTUUgYQL3nY4U"
