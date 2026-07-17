@@ -4,37 +4,53 @@ import json
 import os
 import time
 
+import urllib.request
+import urllib.error
+
 def process_task(task_id, context):
-    """
-    This is where the actual LLM call would happen.
-    For example, using the `google-genai` or `openai` library:
+    # Check for API key in environment
+    api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
     
-    import google.genai
-    client = google.genai.Client(api_key=os.environ.get('GEMINI_API_KEY'))
-    response = client.models.generate_content(
-        model='gemini-2.5-flash',
-        contents=f"Solve task {task_id} with context {context}"
-    )
-    return response.text
-    """
+    if not api_key:
+        # Fallback to mock if no key is provided
+        time.sleep(0.5)
+        result = {
+            "task_id": task_id,
+            "status": "success",
+            "provider": "mock-provider",
+            "resolution": f"LLM generated response for task {task_id}",
+            "raw_context": context,
+            "note": "No API key found in GEMINI_API_KEY or GOOGLE_API_KEY, returned mock."
+        }
+        return json.dumps(result)
+        
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+    prompt = f"Please act as an autonomous agent and process the following task.\nTask ID: {task_id}\nContext: {context}"
+    payload = {"contents": [{"parts": [{"text": prompt}]}]}
+    data = json.dumps(payload).encode("utf-8")
+    headers = {"Content-Type": "application/json"}
     
-    # Check for API key (Simulating LLM connection)
-    api_key = os.environ.get("LLM_API_KEY", "mock-key")
-    provider = os.environ.get("LLM_PROVIDER", "mock-provider")
+    req = urllib.request.Request(url, data=data, headers=headers)
     
-    # Simulate processing time
-    time.sleep(0.5)
-    
-    # Generate structured output
-    result = {
-        "task_id": task_id,
-        "status": "success",
-        "provider": provider,
-        "resolution": f"LLM generated response for task {task_id}",
-        "raw_context": context
-    }
-    
-    return json.dumps(result)
+    try:
+        with urllib.request.urlopen(req) as response:
+            result_json = json.loads(response.read().decode("utf-8"))
+            text = result_json.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+            
+            return json.dumps({
+                "task_id": task_id,
+                "status": "success",
+                "provider": "gemini",
+                "resolution": text.strip(),
+                "raw_context": context
+            })
+    except Exception as e:
+        return json.dumps({
+            "task_id": task_id,
+            "status": "error",
+            "provider": "gemini",
+            "error_msg": str(e)
+        })
 
 def main():
     if len(sys.argv) < 2:
