@@ -1,0 +1,94 @@
+16:05:03.987794 rseq(0x7efd008bb500, 0x21, 0, 0x53053053) = 0
+16:05:03.988211 set_robust_list(0x7efd008bb9a0, 24) = 0
+16:05:03.988825 rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+16:05:03.989237 mmap(0x7efcf0000000, 67108864, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7efcf0000000
+16:05:03.989457 mprotect(0x7efcf0000000, 135168, PROT_READ|PROT_WRITE) = 0
+16:05:03.989526 sched_getaffinity(5747, 32, [0 1 2 3]) = 16
+16:05:03.989611 sigaltstack(NULL, {ss_sp=NULL, ss_flags=SS_DISABLE, ss_size=0}) = 0
+16:05:03.989687 mmap(NULL, 12288, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK, -1, 0) = 0x7efd011dc000
+16:05:03.989761 mprotect(0x7efd011dc000, 4096, PROT_NONE) = 0
+16:05:03.989865 sigaltstack({ss_sp=0x7efd011dd000, ss_flags=0, ss_size=8192}, NULL) = 0
+16:05:03.989967 prctl(PR_SET_NAME, "tokio-rt-worker"...) = 0
+16:05:03.990060 rt_sigprocmask(SIG_BLOCK, ~[], [], 8) = 0
+16:05:03.990162 rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+16:05:03.990310 getrandom("\x63\xc7\x05\x67\x55\x81\x0d\x54\xf8\xb1\xc0\xb2\x6f\x2c\x02\xd5\x6f\xc0\x21\xa4\x76\xe3\xd9\xbe\xe5\x1a\x7b\x4a\x30\x33\x07\x19", 32, 0) = 32
+16:05:03.990452 pipe2([21<pipe:[30169]>, 22<pipe:[30169]>], O_CLOEXEC) = 0
+16:05:03.990581 pipe2([23<pipe:[29345]>, 24<pipe:[29345]>], O_CLOEXEC) = 0
+16:05:03.990811 pipe2([25<pipe:[25591]>, 26<pipe:[25591]>], O_CLOEXEC) = 0
+16:05:03.991275 prlimit64(0, RLIMIT_NOFILE, NULL, {rlim_cur=4*1024, rlim_max=4*1024}) = 0
+16:05:03.991389 prlimit64(0, RLIMIT_NOFILE, NULL, {rlim_cur=4*1024, rlim_max=4*1024}) = 0
+16:05:03.991501 prlimit64(0, RLIMIT_NOFILE, NULL, {rlim_cur=4*1024, rlim_max=4*1024}) = 0
+16:05:03.991606 prlimit64(0, RLIMIT_NOFILE, NULL, {rlim_cur=4*1024, rlim_max=4*1024}) = 0
+16:05:03.991713 prlimit64(0, RLIMIT_NOFILE, NULL, {rlim_cur=4*1024, rlim_max=4*1024}) = 0
+16:05:03.991822 prlimit64(0, RLIMIT_NOFILE, NULL, {rlim_cur=4*1024, rlim_max=4*1024}) = 0
+16:05:03.992886 mmap(NULL, 36864, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK, -1, 0) = 0x7efd00648000
+16:05:03.993121 rt_sigprocmask(SIG_BLOCK, ~[], [], 8) = 0
+16:05:03.993274 clone3({flags=CLONE_VM|CLONE_VFORK|CLONE_CLEAR_SIGHAND, exit_signal=SIGCHLD, stack=0x7efd00648000, stack_size=0x9000}, 88) = 5751
+16:05:04.004880 munmap(0x7efd00648000, 36864) = 0
+16:05:04.005198 rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+16:05:04.005561 close(21<pipe:[30169]>) = 0
+16:05:04.005847 close(24<pipe:[29345]>) = 0
+16:05:04.006080 close(26<pipe:[25591]>) = 0
+16:05:04.006317 fcntl(22<pipe:[30169]>, F_GETFL) = 0x1 (flags O_WRONLY)
+16:05:04.006607 fcntl(22<pipe:[30169]>, F_SETFL, O_WRONLY|O_NONBLOCK) = 0
+16:05:04.006903 epoll_ctl(5<anon_inode:[eventpoll]>, EPOLL_CTL_ADD, 22<pipe:[30169]>, {events=EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLET, data=0x7efcf0000f80}) = 0
+16:05:04.007166 fcntl(23<pipe:[29345]>, F_GETFL) = 0 (flags O_RDONLY)
+16:05:04.007398 fcntl(23<pipe:[29345]>, F_SETFL, O_RDONLY|O_NONBLOCK) = 0
+16:05:04.007588 epoll_ctl(5<anon_inode:[eventpoll]>, EPOLL_CTL_ADD, 23<pipe:[29345]>, {events=EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLET, data=0x7efcf0001100}) = 0
+16:05:04.007837 fcntl(25<pipe:[25591]>, F_GETFL) = 0 (flags O_RDONLY)
+16:05:04.008018 fcntl(25<pipe:[25591]>, F_SETFL, O_RDONLY|O_NONBLOCK) = 0
+16:05:04.008412 epoll_ctl(5<anon_inode:[eventpoll]>, EPOLL_CTL_ADD, 25<pipe:[25591]>, {events=EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLET, data=0x7efcf0001280}) = 0
+16:05:04.008626 pidfd_open(5751, PIDFD_NONBLOCK) = 21<pid:5751>
+16:05:04.008918 epoll_ctl(5<anon_inode:[eventpoll]>, EPOLL_CTL_ADD, 21<pid:5751>, {events=EPOLLIN|EPOLLRDHUP|EPOLLET, data=0x7efcf0001400}) = 0
+16:05:04.009226 epoll_ctl(5<anon_inode:[eventpoll]>, EPOLL_CTL_DEL, 22<pipe:[30169]>, NULL) = 0
+16:05:04.009508 close(22<pipe:[30169]>) = 0
+16:05:04.009849 pipe2([22<pipe:[29378]>, 26<pipe:[29378]>], O_CLOEXEC) = 0
+16:05:04.010166 pipe2([30<pipe:[29380]>, 32<pipe:[29380]>], O_CLOEXEC) = 0
+16:05:04.010450 pipe2([43<pipe:[29382]>, 49<pipe:[29382]>], O_CLOEXEC) = 0
+16:05:04.010745 prlimit64(0, RLIMIT_NOFILE, NULL, {rlim_cur=4*1024, rlim_max=4*1024}) = 0
+16:05:04.011025 prlimit64(0, RLIMIT_NOFILE, NULL, {rlim_cur=4*1024, rlim_max=4*1024}) = 0
+16:05:04.011216 prlimit64(0, RLIMIT_NOFILE, NULL, {rlim_cur=4*1024, rlim_max=4*1024}) = 0
+16:05:04.011415 prlimit64(0, RLIMIT_NOFILE, NULL, {rlim_cur=4*1024, rlim_max=4*1024}) = 0
+16:05:04.011590 prlimit64(0, RLIMIT_NOFILE, NULL, {rlim_cur=4*1024, rlim_max=4*1024}) = 0
+16:05:04.011725 prlimit64(0, RLIMIT_NOFILE, NULL, {rlim_cur=4*1024, rlim_max=4*1024}) = 0
+16:05:04.011915 mmap(NULL, 36864, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK, -1, 0) = 0x7efd00648000
+16:05:04.012063 rt_sigprocmask(SIG_BLOCK, ~[], [], 8) = 0
+16:05:04.012188 clone3({flags=CLONE_VM|CLONE_VFORK|CLONE_CLEAR_SIGHAND, exit_signal=SIGCHLD, stack=0x7efd00648000, stack_size=0x9000}, 88) = 5755
+16:05:04.025302 munmap(0x7efd00648000, 36864) = 0
+16:05:04.025573 rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+16:05:04.025900 close(22<pipe:[29378]>) = 0
+16:05:04.026182 close(32<pipe:[29380]>) = 0
+16:05:04.026417 close(49<pipe:[29382]>) = 0
+16:05:04.026764 fcntl(26<pipe:[29378]>, F_GETFL) = 0x1 (flags O_WRONLY)
+16:05:04.027859 fcntl(26<pipe:[29378]>, F_SETFL, O_WRONLY|O_NONBLOCK) = 0
+16:05:04.028360 epoll_ctl(5<anon_inode:[eventpoll]>, EPOLL_CTL_ADD, 26<pipe:[29378]>, {events=EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLET, data=0x7efcf0003580}) = 0
+16:05:04.028784 fcntl(30<pipe:[29380]>, F_GETFL) = 0 (flags O_RDONLY)
+16:05:04.029142 fcntl(30<pipe:[29380]>, F_SETFL, O_RDONLY|O_NONBLOCK) = 0
+16:05:04.030337 epoll_ctl(5<anon_inode:[eventpoll]>, EPOLL_CTL_ADD, 30<pipe:[29380]>, {events=EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLET, data=0x7efcf0003700}) = 0
+16:05:04.033031 fcntl(43<pipe:[29382]>, F_GETFL) = 0 (flags O_RDONLY)
+16:05:04.035328 fcntl(43<pipe:[29382]>, F_SETFL, O_RDONLY|O_NONBLOCK) = 0
+16:05:04.037027 epoll_ctl(5<anon_inode:[eventpoll]>, EPOLL_CTL_ADD, 43<pipe:[29382]>, {events=EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLET, data=0x7efcf0003880}) = 0
+16:05:04.037363 pidfd_open(5755, PIDFD_NONBLOCK) = 16<pid:5755>
+16:05:04.037770 epoll_ctl(5<anon_inode:[eventpoll]>, EPOLL_CTL_ADD, 16<pid:5755>, {events=EPOLLIN|EPOLLRDHUP|EPOLLET, data=0x7efcf0003a00}) = 0
+16:05:04.038097 epoll_ctl(5<anon_inode:[eventpoll]>, EPOLL_CTL_DEL, 26<pipe:[29378]>, NULL) = 0
+16:05:04.038368 close(26<pipe:[29378]>) = 0
+16:05:04.038601 futex(0x55827856cc48, FUTEX_WAIT_BITSET_PRIVATE, 0, NULL, FUTEX_BITSET_MATCH_ANY) = ? ERESTARTSYS (To be restarted if SA_RESTART is set)
+16:05:05.330504 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=5751, si_uid=1000, si_status=0, si_utime=12 /* 0.12 s */, si_stime=2 /* 0.02 s */} ---
+16:05:05.330538 futex(0x55827856cc48, FUTEX_WAIT_BITSET_PRIVATE, 0, NULL, FUTEX_BITSET_MATCH_ANY) = ? ERESTARTSYS (To be restarted if SA_RESTART is set)
+16:05:05.338376 futex(0x55827856cc48, FUTEX_WAIT_BITSET_PRIVATE, 0, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+16:05:05.418607 futex(0x55827856b1c8, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+16:05:05.420742 futex(0x55827856ba48, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+16:05:05.421027 futex(0x55827856c348, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+16:05:05.422252 futex(0x55827856cc48, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+16:05:05.422382 futex(0x55827856a6c0, FUTEX_WAKE_PRIVATE, 1) = 0
+16:05:05.422514 futex(0x55827856d120, FUTEX_WAKE_PRIVATE, 1) = 1
+16:05:05.422752 close(3<anon_inode:[eventpoll]>) = 0
+16:05:05.422982 close(8<UNIX-STREAM:[29339->29340]>) = 0
+16:05:05.423169 close(5<anon_inode:[eventpoll]>) = 0
+16:05:05.424586 close(4<{eventfd-count=0x1, eventfd-id=192, eventfd-semaphore=0}>) = 0
+16:05:05.427600 sigaltstack({ss_sp=NULL, ss_flags=SS_DISABLE, ss_size=8192}, NULL) = 0
+16:05:05.427663 munmap(0x7efd011dc000, 12288) = 0
+16:05:05.427726 rt_sigprocmask(SIG_BLOCK, ~[RT_1], NULL, 8) = 0
+16:05:05.427781 madvise(0x7efd006bb000, 2076672, MADV_DONTNEED) = 0
+16:05:05.427825 exit(0)                 = ?
+16:05:05.427941 +++ exited with 0 +++

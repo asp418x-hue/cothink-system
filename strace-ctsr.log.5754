@@ -1,0 +1,1381 @@
+16:05:04.005728 rt_sigprocmask(SIG_BLOCK, NULL, ~[KILL STOP], 8) = 0
+16:05:04.006952 rt_sigaction(SIGPIPE, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=SA_RESTORER, sa_restorer=0x7efd00f00df0}, NULL, 8) = 0
+16:05:04.007750 dup2(10<pipe:[29360]>, 0</dev/pts/3<char 136:3>>) = 0<pipe:[29360]>
+16:05:04.009562 dup2(38<pipe:[30189]>, 1</dev/pts/3<char 136:3>>) = 1<pipe:[30189]>
+16:05:04.009885 dup2(40<pipe:[30190]>, 2</dev/pts/3<char 136:3>>) = 2<pipe:[30190]>
+16:05:04.010202 rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+16:05:04.010486 execve("/home/adrian/.local/bin/python3", ["python3", "agent.py", "1"], 0x7fffb33b0748 /* 63 vars */) = -1 ENOENT (No such file or directory)
+16:05:04.010785 execve("/home/adrian/.local/bin/python3", ["python3", "agent.py", "1"], 0x7fffb33b0748 /* 63 vars */) = -1 ENOENT (No such file or directory)
+16:05:04.011066 execve("/home/adrian/.local/bin/python3", ["python3", "agent.py", "1"], 0x7fffb33b0748 /* 63 vars */) = -1 ENOENT (No such file or directory)
+16:05:04.011254 execve("/home/adrian/.local/bin/python3", ["python3", "agent.py", "1"], 0x7fffb33b0748 /* 63 vars */) = -1 ENOENT (No such file or directory)
+16:05:04.011450 execve("/home/adrian/.local/bin/python3", ["python3", "agent.py", "1"], 0x7fffb33b0748 /* 63 vars */) = -1 ENOENT (No such file or directory)
+16:05:04.011620 execve("/home/adrian/.local/bin/python3", ["python3", "agent.py", "1"], 0x7fffb33b0748 /* 63 vars */) = -1 ENOENT (No such file or directory)
+16:05:04.011771 execve("/usr/src/linux-headers-7.0.14-1-liquorix-amd64/tools/power/x86/x86_energy_perf_policy/python3", ["python3", "agent.py", "1"], 0x7fffb33b0748 /* 63 vars */) = -1 ENOENT (No such file or directory)
+16:05:04.012603 execve("/usr/src/linux-headers-7.0.14-1-liquorix-amd64/tools/power/x86/turbostat/python3", ["python3", "agent.py", "1"], 0x7fffb33b0748 /* 63 vars */) = -1 ENOENT (No such file or directory)
+16:05:04.012762 execve("/usr/src/linux-headers-7.0.14-1-liquorix-amd64/tools/power/cpupower/python3", ["python3", "agent.py", "1"], 0x7fffb33b0748 /* 63 vars */) = -1 ENOENT (No such file or directory)
+16:05:04.013371 execve("/usr/src/linux-headers-7.0.14-1-liquorix-amd64/tools/perf/python3", ["python3", "agent.py", "1"], 0x7fffb33b0748 /* 63 vars */) = -1 ENOENT (No such file or directory)
+16:05:04.013649 execve("/usr/local/bin/python3", ["python3", "agent.py", "1"], 0x7fffb33b0748 /* 63 vars */) = -1 ENOENT (No such file or directory)
+16:05:04.014038 execve("/usr/bin/python3", ["python3", "agent.py", "1"], 0x7fffb33b0748 /* 63 vars */) = 0
+16:05:04.014721 brk(NULL)               = 0x2a4e2000
+16:05:04.015207 mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f23663e3000
+16:05:04.015889 access("/etc/ld.so.preload", R_OK) = -1 ENOENT (No such file or directory)
+16:05:04.016432 openat(AT_FDCWD</home/adrian/cothink-system>, "/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3</etc/ld.so.cache>
+16:05:04.016981 fstat(3</etc/ld.so.cache>, {st_mode=S_IFREG|0644, st_size=109359, ...}) = 0
+16:05:04.017256 mmap(NULL, 109359, PROT_READ, MAP_PRIVATE, 3</etc/ld.so.cache>, 0) = 0x7f23663c8000
+16:05:04.017410 close(3</etc/ld.so.cache>) = 0
+16:05:04.017574 openat(AT_FDCWD</home/adrian/cothink-system>, "/lib/x86_64-linux-gnu/libm.so.6", O_RDONLY|O_CLOEXEC) = 3</usr/lib/x86_64-linux-gnu/libm.so.6>
+16:05:04.017751 read(3</usr/lib/x86_64-linux-gnu/libm.so.6>, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+16:05:04.018039 fstat(3</usr/lib/x86_64-linux-gnu/libm.so.6>, {st_mode=S_IFREG|0644, st_size=977112, ...}) = 0
+16:05:04.018374 mmap(NULL, 978968, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libm.so.6>, 0) = 0x7f23662d8000
+16:05:04.018599 mmap(0x7f23662e9000, 512000, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libm.so.6>, 0x11000) = 0x7f23662e9000
+16:05:04.018696 mmap(0x7f2366366000, 393216, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libm.so.6>, 0x8e000) = 0x7f2366366000
+16:05:04.018874 mmap(0x7f23663c6000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libm.so.6>, 0xed000) = 0x7f23663c6000
+16:05:04.020572 close(3</usr/lib/x86_64-linux-gnu/libm.so.6>) = 0
+16:05:04.023162 openat(AT_FDCWD</home/adrian/cothink-system>, "/lib/x86_64-linux-gnu/libz.so.1", O_RDONLY|O_CLOEXEC) = 3</usr/lib/x86_64-linux-gnu/libz.so.1.3.1>
+16:05:04.027972 read(3</usr/lib/x86_64-linux-gnu/libz.so.1.3.1>, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+16:05:04.028481 fstat(3</usr/lib/x86_64-linux-gnu/libz.so.1.3.1>, {st_mode=S_IFREG|0644, st_size=125376, ...}) = 0
+16:05:04.028882 mmap(NULL, 127376, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libz.so.1.3.1>, 0) = 0x7f23662b8000
+16:05:04.029230 mmap(0x7f23662bb000, 81920, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libz.so.1.3.1>, 0x3000) = 0x7f23662bb000
+16:05:04.029951 mmap(0x7f23662cf000, 28672, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libz.so.1.3.1>, 0x17000) = 0x7f23662cf000
+16:05:04.030538 mmap(0x7f23662d6000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libz.so.1.3.1>, 0x1d000) = 0x7f23662d6000
+16:05:04.031836 close(3</usr/lib/x86_64-linux-gnu/libz.so.1.3.1>) = 0
+16:05:04.032405 openat(AT_FDCWD</home/adrian/cothink-system>, "/lib/x86_64-linux-gnu/libexpat.so.1", O_RDONLY|O_CLOEXEC) = 3</usr/lib/x86_64-linux-gnu/libexpat.so.1.10.2>
+16:05:04.032739 read(3</usr/lib/x86_64-linux-gnu/libexpat.so.1.10.2>, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+16:05:04.033409 fstat(3</usr/lib/x86_64-linux-gnu/libexpat.so.1.10.2>, {st_mode=S_IFREG|0644, st_size=178272, ...}) = 0
+16:05:04.033862 mmap(NULL, 176256, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libexpat.so.1.10.2>, 0) = 0x7f236628c000
+16:05:04.034219 mmap(0x7f2366290000, 118784, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libexpat.so.1.10.2>, 0x4000) = 0x7f2366290000
+16:05:04.034436 mmap(0x7f23662ad000, 32768, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libexpat.so.1.10.2>, 0x21000) = 0x7f23662ad000
+16:05:04.034666 mmap(0x7f23662b5000, 12288, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libexpat.so.1.10.2>, 0x29000) = 0x7f23662b5000
+16:05:04.035175 close(3</usr/lib/x86_64-linux-gnu/libexpat.so.1.10.2>) = 0
+16:05:04.035759 openat(AT_FDCWD</home/adrian/cothink-system>, "/lib/x86_64-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC) = 3</usr/lib/x86_64-linux-gnu/libc.so.6>
+16:05:04.036931 read(3</usr/lib/x86_64-linux-gnu/libc.so.6>, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0p\236\2\0\0\0\0\0"..., 832) = 832
+16:05:04.037293 pread64(3</usr/lib/x86_64-linux-gnu/libc.so.6>, "\6\0\0\0\4\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0"..., 840, 64) = 840
+16:05:04.037713 fstat(3</usr/lib/x86_64-linux-gnu/libc.so.6>, {st_mode=S_IFREG|0755, st_size=1995216, ...}) = 0
+16:05:04.038024 pread64(3</usr/lib/x86_64-linux-gnu/libc.so.6>, "\6\0\0\0\4\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0"..., 840, 64) = 840
+16:05:04.038322 mmap(NULL, 2047568, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libc.so.6>, 0) = 0x7f2366098000
+16:05:04.038564 mmap(0x7f23660c0000, 1454080, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libc.so.6>, 0x28000) = 0x7f23660c0000
+16:05:04.038728 mmap(0x7f2366223000, 352256, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libc.so.6>, 0x18b000) = 0x7f2366223000
+16:05:04.038875 mmap(0x7f2366279000, 24576, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libc.so.6>, 0x1e0000) = 0x7f2366279000
+16:05:04.039070 mmap(0x7f236627f000, 52816, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x7f236627f000
+16:05:04.039279 close(3</usr/lib/x86_64-linux-gnu/libc.so.6>) = 0
+16:05:04.039479 mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f2366096000
+16:05:04.039627 mmap(NULL, 12288, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f2366093000
+16:05:04.039773 arch_prctl(ARCH_SET_FS, 0x7f2366093780) = 0
+16:05:04.039921 set_tid_address(0x7f2366093a50) = 5754
+16:05:04.040150 set_robust_list(0x7f2366093a60, 24) = 0
+16:05:04.040331 rseq(0x7f2366093680, 0x21, 0, 0x53053053) = 0
+16:05:04.040617 mprotect(0x7f2366279000, 16384, PROT_READ) = 0
+16:05:04.040810 mprotect(0x7f23662b5000, 8192, PROT_READ) = 0
+16:05:04.040972 mprotect(0x7f23662d6000, 4096, PROT_READ) = 0
+16:05:04.041186 mprotect(0x7f23663c6000, 4096, PROT_READ) = 0
+16:05:04.041336 mprotect(0x9f2000, 4096, PROT_READ) = 0
+16:05:04.041477 mprotect(0x7f2366421000, 8192, PROT_READ) = 0
+16:05:04.041558 prlimit64(0, RLIMIT_STACK, NULL, {rlim_cur=8192*1024, rlim_max=RLIM64_INFINITY}) = 0
+16:05:04.041796 munmap(0x7f23663c8000, 109359) = 0
+16:05:04.042088 getrandom("\x5f\xf8\xea\xa0\xed\x92\xf5\x20\x6e\x14\x64\xa7\x65\x14\x46\x47\xa3\xee\x90\xf9\x44\x07\x63\x7d\xfa\x95\x91\x8e\x99\x61\x4c\x2e", 32, GRND_NONBLOCK) = 32
+16:05:04.042352 open("/proc/sys/vm/overcommit_memory", O_RDONLY) = 3</proc/sys/vm/overcommit_memory>
+16:05:04.042620 read(3</proc/sys/vm/overcommit_memory>, "0\n", 32) = 2
+16:05:04.042916 close(3</proc/sys/vm/overcommit_memory>) = 0
+16:05:04.043232 getrandom("\xa2\x2d\x68\xad\x9e\x06\x4b\x1b", 8, GRND_NONBLOCK) = 8
+16:05:04.043458 brk(NULL)               = 0x2a4e2000
+16:05:04.043576 brk(0x2a503000)         = 0x2a503000
+16:05:04.043672 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/locale/locale-archive", O_RDONLY|O_CLOEXEC) = 3</usr/lib/locale/locale-archive>
+16:05:04.043819 fstat(3</usr/lib/locale/locale-archive>, {st_mode=S_IFREG|0644, st_size=74216944, ...}) = 0
+16:05:04.044098 mmap(NULL, 74216944, PROT_READ, MAP_PRIVATE, 3</usr/lib/locale/locale-archive>, 0) = 0x7f2361800000
+16:05:04.044330 close(3</usr/lib/locale/locale-archive>) = 0
+16:05:04.044610 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/x86_64-linux-gnu/gconv/gconv-modules.cache", O_RDONLY|O_CLOEXEC) = 3</usr/lib/x86_64-linux-gnu/gconv/gconv-modules.cache>
+16:05:04.044886 fstat(3</usr/lib/x86_64-linux-gnu/gconv/gconv-modules.cache>, {st_mode=S_IFREG|0644, st_size=27028, ...}) = 0
+16:05:04.045160 mmap(NULL, 27028, PROT_READ, MAP_SHARED, 3</usr/lib/x86_64-linux-gnu/gconv/gconv-modules.cache>, 0) = 0x7f23663dc000
+16:05:04.045366 close(3</usr/lib/x86_64-linux-gnu/gconv/gconv-modules.cache>) = 0
+16:05:04.048716 futex(0x7f236627e72c, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+16:05:04.048956 getcwd("/home/adrian/cothink-system", 4096) = 28
+16:05:04.049194 rt_sigprocmask(SIG_BLOCK, ~[], [], 8) = 0
+16:05:04.049653 mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_DROPPABLE|MAP_ANONYMOUS, -1, 0) = 0x7f23663db000
+16:05:04.050179 mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f23663da000
+16:05:04.050402 rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+16:05:04.050575 getrandom("\xe5\xd1\x90\x00\x1a\xc0\xff\x0e\x4c\xf9\x2f\x53\xff\xdd\xfc\x88\x53\x00\x5d\xa3\x3b\x0c\xc2\x3c\x26\x48\xbe\x7e\x6c\x6b\x05\x18", 32, 0) = 32
+16:05:04.052409 gettid()                = 5754
+16:05:04.053236 mmap(NULL, 1048576, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f2365f93000
+16:05:04.055233 mmap(NULL, 266240, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f2365f52000
+16:05:04.055850 mmap(NULL, 135168, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f2365f31000
+16:05:04.057707 brk(0x2a525000)         = 0x2a525000
+16:05:04.059426 mmap(NULL, 16384, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f23663d6000
+16:05:04.066183 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/.local/bin/python3", 0x7ffc75e200b0, 0) = -1 ENOENT (No such file or directory)
+16:05:04.068965 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/.local/bin/python3", 0x7ffc75e200b0, 0) = -1 ENOENT (No such file or directory)
+16:05:04.069602 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/.local/bin/python3", 0x7ffc75e200b0, 0) = -1 ENOENT (No such file or directory)
+16:05:04.069840 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/.local/bin/python3", 0x7ffc75e200b0, 0) = -1 ENOENT (No such file or directory)
+16:05:04.070295 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/.local/bin/python3", 0x7ffc75e200b0, 0) = -1 ENOENT (No such file or directory)
+16:05:04.070539 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/.local/bin/python3", 0x7ffc75e200b0, 0) = -1 ENOENT (No such file or directory)
+16:05:04.071632 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/src/linux-headers-7.0.14-1-liquorix-amd64/tools/power/x86/x86_energy_perf_policy/python3", 0x7ffc75e200b0, 0) = -1 ENOENT (No such file or directory)
+16:05:04.072122 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/src/linux-headers-7.0.14-1-liquorix-amd64/tools/power/x86/turbostat/python3", 0x7ffc75e200b0, 0) = -1 ENOENT (No such file or directory)
+16:05:04.072664 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/src/linux-headers-7.0.14-1-liquorix-amd64/tools/power/cpupower/python3", 0x7ffc75e200b0, 0) = -1 ENOENT (No such file or directory)
+16:05:04.073537 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/src/linux-headers-7.0.14-1-liquorix-amd64/tools/perf/python3", 0x7ffc75e200b0, 0) = -1 ENOENT (No such file or directory)
+16:05:04.073714 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/local/bin/python3", 0x7ffc75e200b0, 0) = -1 ENOENT (No such file or directory)
+16:05:04.075176 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/bin/python3", {st_mode=S_IFREG|0755, st_size=6828688, ...}, 0) = 0
+16:05:04.075577 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/pyvenv.cfg", O_RDONLY) = -1 ENOENT (No such file or directory)
+16:05:04.076693 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/bin/pyvenv.cfg", O_RDONLY) = -1 ENOENT (No such file or directory)
+16:05:04.076983 readlink("/usr/bin/python3", "python3.13", 4096) = 10
+16:05:04.077379 readlink("/usr/bin/python3.13", 0x7ffc75e1b0d0, 4096) = -1 EINVAL (Invalid argument)
+16:05:04.077781 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/bin/python3._pth", O_RDONLY) = -1 ENOENT (No such file or directory)
+16:05:04.078110 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/bin/python3.13._pth", O_RDONLY) = -1 ENOENT (No such file or directory)
+16:05:04.078457 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/bin/pybuilddir.txt", O_RDONLY) = -1 ENOENT (No such file or directory)
+16:05:04.078710 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/bin/Modules/Setup.local", 0x7ffc75e200b0, 0) = -1 ENOENT (No such file or directory)
+16:05:04.078917 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/bin/lib/python313.zip", 0x7ffc75e1fe40, 0) = -1 ENOENT (No such file or directory)
+16:05:04.079116 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python313.zip", 0x7ffc75e1fe90, 0) = -1 ENOENT (No such file or directory)
+16:05:04.079337 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/bin/lib/python3.13/os.py", 0x7ffc75e1fe90, 0) = -1 ENOENT (No such file or directory)
+16:05:04.079539 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/bin/lib/python3.13/os.pyc", 0x7ffc75e1fe90, 0) = -1 ENOENT (No such file or directory)
+16:05:04.079850 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/os.py", {st_mode=S_IFREG|0644, st_size=41635, ...}, 0) = 0
+16:05:04.080161 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/bin/lib/python3.13/lib-dynload", 0x7ffc75e1fe90, 0) = -1 ENOENT (No such file or directory)
+16:05:04.081488 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=12288, ...}, 0) = 0
+16:05:04.081682 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=12288, ...}, 0) = 0
+16:05:04.082456 brk(0x2a546000)         = 0x2a546000
+16:05:04.087156 mmap(NULL, 1048576, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f2361700000
+16:05:04.091841 brk(0x2a567000)         = 0x2a567000
+16:05:04.094647 openat(AT_FDCWD</home/adrian/cothink-system>, "/etc/localtime", O_RDONLY|O_CLOEXEC) = 3</usr/share/zoneinfo/America/Los_Angeles>
+16:05:04.095263 fstat(3</usr/share/zoneinfo/America/Los_Angeles>, {st_mode=S_IFREG|0644, st_size=2852, ...}) = 0
+16:05:04.095512 fstat(3</usr/share/zoneinfo/America/Los_Angeles>, {st_mode=S_IFREG|0644, st_size=2852, ...}) = 0
+16:05:04.098200 read(3</usr/share/zoneinfo/America/Los_Angeles>, "TZif2\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0\0\6\0\0\0\0"..., 4096) = 2852
+16:05:04.099107 lseek(3</usr/share/zoneinfo/America/Los_Angeles>, -1810, SEEK_CUR) = 1042
+16:05:04.099839 read(3</usr/share/zoneinfo/America/Los_Angeles>, "TZif2\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0\0\6\0\0\0\0"..., 4096) = 1810
+16:05:04.100602 close(3</usr/share/zoneinfo/America/Los_Angeles>) = 0
+16:05:04.101182 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python313.zip", 0x7ffc75e1faa0, 0) = -1 ENOENT (No such file or directory)
+16:05:04.101365 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.102123 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python313.zip", 0x7ffc75e1fd90, 0) = -1 ENOENT (No such file or directory)
+16:05:04.102628 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.102890 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.103591 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.104057 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 3</usr/lib/python3.13>
+16:05:04.104536 fstat(3</usr/lib/python3.13>, {st_mode=S_IFDIR|0755, st_size=20480, ...}) = 0
+16:05:04.104954 getdents64(3</usr/lib/python3.13>, 0x2a547ea0 /* 194 entries */, 32768) = 6528
+16:05:04.105980 getdents64(3</usr/lib/python3.13>, 0x2a547ea0 /* 0 entries */, 32768) = 0
+16:05:04.106428 close(3</usr/lib/python3.13>) = 0
+16:05:04.107089 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/encodings/__init__.cpython-313-x86_64-linux-gnu.so", 0x7ffc75e1fd90, 0) = -1 ENOENT (No such file or directory)
+16:05:04.107817 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/encodings/__init__.abi3.so", 0x7ffc75e1fd90, 0) = -1 ENOENT (No such file or directory)
+16:05:04.108506 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/encodings/__init__.abi3-x86_64-linux-gnu.so", 0x7ffc75e1fd90, 0) = -1 ENOENT (No such file or directory)
+16:05:04.110060 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/encodings/__init__.so", 0x7ffc75e1fd90, 0) = -1 ENOENT (No such file or directory)
+16:05:04.110315 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/encodings/__init__.py", {st_mode=S_IFREG|0644, st_size=5884, ...}, 0) = 0
+16:05:04.110880 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/encodings/__init__.py", {st_mode=S_IFREG|0644, st_size=5884, ...}, 0) = 0
+16:05:04.111178 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/encodings/__pycache__/__init__.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/encodings/__pycache__/__init__.cpython-313.pyc>
+16:05:04.111476 fcntl(3</usr/lib/python3.13/encodings/__pycache__/__init__.cpython-313.pyc>, F_GETFD) = 0x1 (flags FD_CLOEXEC)
+16:05:04.112725 fstat(3</usr/lib/python3.13/encodings/__pycache__/__init__.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=6017, ...}) = 0
+16:05:04.112882 ioctl(3</usr/lib/python3.13/encodings/__pycache__/__init__.cpython-313.pyc>, TCGETS, 0x7ffc75e1fa30) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.113622 lseek(3</usr/lib/python3.13/encodings/__pycache__/__init__.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.114935 lseek(3</usr/lib/python3.13/encodings/__pycache__/__init__.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.115792 fstat(3</usr/lib/python3.13/encodings/__pycache__/__init__.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=6017, ...}) = 0
+16:05:04.116067 read(3</usr/lib/python3.13/encodings/__pycache__/__init__.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\374\26\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0"..., 6018) = 6017
+16:05:04.116175 read(3</usr/lib/python3.13/encodings/__pycache__/__init__.cpython-313.pyc>, "", 1) = 0
+16:05:04.116289 close(3</usr/lib/python3.13/encodings/__pycache__/__init__.cpython-313.pyc>) = 0
+16:05:04.118506 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/encodings", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.118921 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/encodings", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.119241 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/encodings", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.119722 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/encodings", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 3</usr/lib/python3.13/encodings>
+16:05:04.120057 fstat(3</usr/lib/python3.13/encodings>, {st_mode=S_IFDIR|0755, st_size=20480, ...}) = 0
+16:05:04.120306 getdents64(3</usr/lib/python3.13/encodings>, 0x2a553750 /* 125 entries */, 32768) = 4224
+16:05:04.120641 getdents64(3</usr/lib/python3.13/encodings>, 0x2a553750 /* 0 entries */, 32768) = 0
+16:05:04.120932 close(3</usr/lib/python3.13/encodings>) = 0
+16:05:04.121244 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/encodings/aliases.py", {st_mode=S_IFREG|0644, st_size=15713, ...}, 0) = 0
+16:05:04.121576 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/encodings/aliases.py", {st_mode=S_IFREG|0644, st_size=15713, ...}, 0) = 0
+16:05:04.121867 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/encodings/__pycache__/aliases.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/encodings/__pycache__/aliases.cpython-313.pyc>
+16:05:04.122238 fstat(3</usr/lib/python3.13/encodings/__pycache__/aliases.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=12385, ...}) = 0
+16:05:04.122539 ioctl(3</usr/lib/python3.13/encodings/__pycache__/aliases.cpython-313.pyc>, TCGETS, 0x7ffc75e1efd0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.122751 lseek(3</usr/lib/python3.13/encodings/__pycache__/aliases.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.122950 lseek(3</usr/lib/python3.13/encodings/__pycache__/aliases.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.123222 fstat(3</usr/lib/python3.13/encodings/__pycache__/aliases.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=12385, ...}) = 0
+16:05:04.123610 read(3</usr/lib/python3.13/encodings/__pycache__/aliases.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-ja=\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0"..., 12386) = 12385
+16:05:04.124377 read(3</usr/lib/python3.13/encodings/__pycache__/aliases.cpython-313.pyc>, "", 1) = 0
+16:05:04.124673 close(3</usr/lib/python3.13/encodings/__pycache__/aliases.cpython-313.pyc>) = 0
+16:05:04.125308 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/encodings", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.125517 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/encodings/utf_8.py", {st_mode=S_IFREG|0644, st_size=1005, ...}, 0) = 0
+16:05:04.125934 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/encodings/utf_8.py", {st_mode=S_IFREG|0644, st_size=1005, ...}, 0) = 0
+16:05:04.126164 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/encodings/__pycache__/utf_8.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/encodings/__pycache__/utf_8.cpython-313.pyc>
+16:05:04.126275 fstat(3</usr/lib/python3.13/encodings/__pycache__/utf_8.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=2284, ...}) = 0
+16:05:04.126511 ioctl(3</usr/lib/python3.13/encodings/__pycache__/utf_8.cpython-313.pyc>, TCGETS, 0x7ffc75e1f9e0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.126770 lseek(3</usr/lib/python3.13/encodings/__pycache__/utf_8.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.127092 lseek(3</usr/lib/python3.13/encodings/__pycache__/utf_8.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.127432 fstat(3</usr/lib/python3.13/encodings/__pycache__/utf_8.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=2284, ...}) = 0
+16:05:04.127785 read(3</usr/lib/python3.13/encodings/__pycache__/utf_8.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\355\3\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\5\0\0"..., 2285) = 2284
+16:05:04.128047 read(3</usr/lib/python3.13/encodings/__pycache__/utf_8.cpython-313.pyc>, "", 1) = 0
+16:05:04.128322 close(3</usr/lib/python3.13/encodings/__pycache__/utf_8.cpython-313.pyc>) = 0
+16:05:04.128940 rt_sigaction(SIGPIPE, {sa_handler=SIG_IGN, sa_mask=[], sa_flags=SA_RESTORER|SA_ONSTACK, sa_restorer=0x7f23660d7df0}, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.130222 rt_sigaction(SIGXFSZ, {sa_handler=SIG_IGN, sa_mask=[], sa_flags=SA_RESTORER|SA_ONSTACK, sa_restorer=0x7f23660d7df0}, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.132692 rt_sigaction(SIGHUP, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.132934 rt_sigaction(SIGINT, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.133219 rt_sigaction(SIGQUIT, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.133436 rt_sigaction(SIGILL, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.133631 rt_sigaction(SIGTRAP, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.133822 rt_sigprocmask(SIG_BLOCK, ~[], [], 8) = 0
+16:05:04.134026 rt_sigaction(SIGABRT, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.134233 rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+16:05:04.134441 rt_sigaction(SIGBUS, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.134650 rt_sigaction(SIGFPE, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.134859 rt_sigaction(SIGKILL, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.135152 rt_sigaction(SIGUSR1, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.135410 rt_sigaction(SIGSEGV, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.135667 rt_sigaction(SIGUSR2, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.135920 rt_sigaction(SIGPIPE, NULL, {sa_handler=SIG_IGN, sa_mask=[], sa_flags=SA_RESTORER|SA_ONSTACK, sa_restorer=0x7f23660d7df0}, 8) = 0
+16:05:04.136204 rt_sigaction(SIGALRM, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.136432 rt_sigaction(SIGTERM, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.136652 rt_sigaction(SIGSTKFLT, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.136884 rt_sigaction(SIGCHLD, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.137148 rt_sigaction(SIGCONT, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.137384 rt_sigaction(SIGSTOP, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.137599 rt_sigaction(SIGTSTP, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.137816 rt_sigaction(SIGTTIN, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.138026 rt_sigaction(SIGTTOU, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.138368 rt_sigaction(SIGURG, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.138616 rt_sigaction(SIGXCPU, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.138857 rt_sigaction(SIGXFSZ, NULL, {sa_handler=SIG_IGN, sa_mask=[], sa_flags=SA_RESTORER|SA_ONSTACK, sa_restorer=0x7f23660d7df0}, 8) = 0
+16:05:04.139116 rt_sigaction(SIGVTALRM, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.139357 rt_sigaction(SIGPROF, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.139587 rt_sigaction(SIGWINCH, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.139819 rt_sigaction(SIGIO, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.140065 rt_sigaction(SIGPWR, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.140329 rt_sigaction(SIGSYS, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.140584 rt_sigaction(SIGRT_2, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.140813 rt_sigaction(SIGRT_3, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.141025 rt_sigaction(SIGRT_4, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.141277 rt_sigaction(SIGRT_5, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.141506 rt_sigaction(SIGRT_6, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.141677 rt_sigaction(SIGRT_7, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.141851 rt_sigaction(SIGRT_8, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.142035 rt_sigaction(SIGRT_9, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.142208 rt_sigaction(SIGRT_10, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.142436 rt_sigaction(SIGRT_11, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.142669 rt_sigaction(SIGRT_12, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.142918 rt_sigaction(SIGRT_13, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.143147 rt_sigaction(SIGRT_14, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.143327 rt_sigaction(SIGRT_15, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.143503 rt_sigaction(SIGRT_16, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.143703 rt_sigaction(SIGRT_17, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.143907 rt_sigaction(SIGRT_18, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.144103 rt_sigaction(SIGRT_19, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.144311 rt_sigaction(SIGRT_20, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.144573 rt_sigaction(SIGRT_21, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.144802 rt_sigaction(SIGRT_22, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.144965 rt_sigaction(SIGRT_23, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.145138 rt_sigaction(SIGRT_24, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.145305 rt_sigaction(SIGRT_25, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.145454 rt_sigaction(SIGRT_26, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.145544 rt_sigaction(SIGRT_27, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.145638 rt_sigaction(SIGRT_28, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.145749 rt_sigaction(SIGRT_29, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.145817 rt_sigaction(SIGRT_30, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.145901 rt_sigaction(SIGRT_31, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.146986 rt_sigaction(SIGRT_32, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.147306 rt_sigaction(SIGINT, {sa_handler=0x6df360, sa_mask=[], sa_flags=SA_RESTORER|SA_ONSTACK, sa_restorer=0x7f23660d7df0}, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:04.147865 fstat(0<pipe:[29360]>, {st_mode=S_IFIFO|0600, st_size=0, ...}) = 0
+16:05:04.150179 fcntl(0<pipe:[29360]>, F_GETFD) = 0
+16:05:04.150850 fstat(0<pipe:[29360]>, {st_mode=S_IFIFO|0600, st_size=0, ...}) = 0
+16:05:04.150999 ioctl(0<pipe:[29360]>, TCGETS, 0x7ffc75e20000) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.151406 lseek(0<pipe:[29360]>, 0, SEEK_CUR) = -1 ESPIPE (Illegal seek)
+16:05:04.151688 ioctl(0<pipe:[29360]>, TCGETS, 0x7ffc75e202b0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.152154 fcntl(1<pipe:[30189]>, F_GETFD) = 0
+16:05:04.152799 fstat(1<pipe:[30189]>, {st_mode=S_IFIFO|0600, st_size=0, ...}) = 0
+16:05:04.156932 ioctl(1<pipe:[30189]>, TCGETS, 0x7ffc75e20000) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.159491 lseek(1<pipe:[30189]>, 0, SEEK_CUR) = -1 ESPIPE (Illegal seek)
+16:05:04.162001 ioctl(1<pipe:[30189]>, TCGETS, 0x7ffc75e202b0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.164661 fcntl(2<pipe:[30190]>, F_GETFD) = 0
+16:05:04.164883 fstat(2<pipe:[30190]>, {st_mode=S_IFIFO|0600, st_size=0, ...}) = 0
+16:05:04.165524 ioctl(2<pipe:[30190]>, TCGETS, 0x7ffc75e20000) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.165664 lseek(2<pipe:[30190]>, 0, SEEK_CUR) = -1 ESPIPE (Illegal seek)
+16:05:04.166764 ioctl(2<pipe:[30190]>, TCGETS, 0x7ffc75e202b0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.167653 brk(0x2a5a1000)         = 0x2a5a1000
+16:05:04.175069 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/bin/pyvenv.cfg", 0x7ffc75e1f8b0, 0) = -1 ENOENT (No such file or directory)
+16:05:04.175420 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/pyvenv.cfg", 0x7ffc75e1f900, 0) = -1 ENOENT (No such file or directory)
+16:05:04.175742 geteuid()               = 1000
+16:05:04.176121 getuid()                = 1000
+16:05:04.176387 getegid()               = 1000
+16:05:04.176685 getgid()                = 1000
+16:05:04.177066 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/.local/lib/python3.13/site-packages", 0x7ffc75e1fad0, 0) = -1 ENOENT (No such file or directory)
+16:05:04.177368 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/local/lib/python3.13/dist-packages", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.177672 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/local/lib/python3.13/dist-packages", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 3</usr/local/lib/python3.13/dist-packages>
+16:05:04.178000 fstat(3</usr/local/lib/python3.13/dist-packages>, {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+16:05:04.178472 getdents64(3</usr/local/lib/python3.13/dist-packages>, 0x2a590510 /* 2 entries */, 32768) = 48
+16:05:04.178714 getdents64(3</usr/local/lib/python3.13/dist-packages>, 0x2a590510 /* 0 entries */, 32768) = 0
+16:05:04.178948 close(3</usr/local/lib/python3.13/dist-packages>) = 0
+16:05:04.179665 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3/dist-packages", {st_mode=S_IFDIR|0755, st_size=12288, ...}, 0) = 0
+16:05:04.180948 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3/dist-packages", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 3</usr/lib/python3/dist-packages>
+16:05:04.181473 fstat(3</usr/lib/python3/dist-packages>, {st_mode=S_IFDIR|0755, st_size=12288, ...}) = 0
+16:05:04.181882 getdents64(3</usr/lib/python3/dist-packages>, 0x2a590510 /* 208 entries */, 32768) = 8688
+16:05:04.182487 getdents64(3</usr/lib/python3/dist-packages>, 0x2a590510 /* 0 entries */, 32768) = 0
+16:05:04.182680 close(3</usr/lib/python3/dist-packages>) = 0
+16:05:04.183717 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/dist-packages", 0x7ffc75e1fb20, 0) = -1 ENOENT (No such file or directory)
+16:05:04.184091 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.184245 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/sitecustomize.py", {st_mode=S_IFREG|0644, st_size=155, ...}, 0) = 0
+16:05:04.184531 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/sitecustomize.py", {st_mode=S_IFREG|0644, st_size=155, ...}, 0) = 0
+16:05:04.184842 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/sitecustomize.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/sitecustomize.cpython-313.pyc>
+16:05:04.185662 fstat(3</usr/lib/python3.13/__pycache__/sitecustomize.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=299, ...}) = 0
+16:05:04.186180 ioctl(3</usr/lib/python3.13/__pycache__/sitecustomize.cpython-313.pyc>, TCGETS, 0x7ffc75e1f420) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.186603 lseek(3</usr/lib/python3.13/__pycache__/sitecustomize.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.186975 lseek(3</usr/lib/python3.13/__pycache__/sitecustomize.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.187222 fstat(3</usr/lib/python3.13/__pycache__/sitecustomize.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=299, ...}) = 0
+16:05:04.187601 read(3</usr/lib/python3.13/__pycache__/sitecustomize.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\260[\372i\233\0\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\4\0\0"..., 300) = 299
+16:05:04.187887 read(3</usr/lib/python3.13/__pycache__/sitecustomize.cpython-313.pyc>, "", 1) = 0
+16:05:04.188218 close(3</usr/lib/python3.13/__pycache__/sitecustomize.cpython-313.pyc>) = 0
+16:05:04.188553 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.189311 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=12288, ...}, 0) = 0
+16:05:04.189742 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=12288, ...}, 0) = 0
+16:05:04.190007 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=12288, ...}, 0) = 0
+16:05:04.190253 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/lib-dynload", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 3</usr/lib/python3.13/lib-dynload>
+16:05:04.190532 fstat(3</usr/lib/python3.13/lib-dynload>, {st_mode=S_IFDIR|0755, st_size=12288, ...}) = 0
+16:05:04.190743 getdents64(3</usr/lib/python3.13/lib-dynload>, 0x2a590510 /* 49 entries */, 32768) = 3144
+16:05:04.190947 getdents64(3</usr/lib/python3.13/lib-dynload>, 0x2a590510 /* 0 entries */, 32768) = 0
+16:05:04.191230 close(3</usr/lib/python3.13/lib-dynload>) = 0
+16:05:04.191493 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/local/lib/python3.13/dist-packages", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.191809 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/local/lib/python3.13/dist-packages", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.192096 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/local/lib/python3.13/dist-packages", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.192390 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/local/lib/python3.13/dist-packages", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 3</usr/local/lib/python3.13/dist-packages>
+16:05:04.192586 fstat(3</usr/local/lib/python3.13/dist-packages>, {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+16:05:04.192960 getdents64(3</usr/local/lib/python3.13/dist-packages>, 0x2a590d20 /* 2 entries */, 32768) = 48
+16:05:04.193316 getdents64(3</usr/local/lib/python3.13/dist-packages>, 0x2a590d20 /* 0 entries */, 32768) = 0
+16:05:04.193657 close(3</usr/local/lib/python3.13/dist-packages>) = 0
+16:05:04.194196 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3/dist-packages", {st_mode=S_IFDIR|0755, st_size=12288, ...}, 0) = 0
+16:05:04.194539 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3/dist-packages", {st_mode=S_IFDIR|0755, st_size=12288, ...}, 0) = 0
+16:05:04.195418 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3/dist-packages", {st_mode=S_IFDIR|0755, st_size=12288, ...}, 0) = 0
+16:05:04.195698 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3/dist-packages", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 3</usr/lib/python3/dist-packages>
+16:05:04.196092 fstat(3</usr/lib/python3/dist-packages>, {st_mode=S_IFDIR|0755, st_size=12288, ...}) = 0
+16:05:04.196472 getdents64(3</usr/lib/python3/dist-packages>, 0x2a590d20 /* 208 entries */, 32768) = 8688
+16:05:04.197853 getdents64(3</usr/lib/python3/dist-packages>, 0x2a590d20 /* 0 entries */, 32768) = 0
+16:05:04.198227 close(3</usr/lib/python3/dist-packages>) = 0
+16:05:04.198970 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.199377 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=12288, ...}, 0) = 0
+16:05:04.199668 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/local/lib/python3.13/dist-packages", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.199871 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3/dist-packages", {st_mode=S_IFDIR|0755, st_size=12288, ...}, 0) = 0
+16:05:04.200213 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system/agent.py", {st_mode=S_IFREG|0755, st_size=2954, ...}, 0) = 0
+16:05:04.200410 openat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system/agent.py", O_RDONLY|O_CLOEXEC) = 3</home/adrian/cothink-system/agent.py>
+16:05:04.200537 fstat(3</home/adrian/cothink-system/agent.py>, {st_mode=S_IFREG|0755, st_size=2954, ...}) = 0
+16:05:04.200809 ioctl(3</home/adrian/cothink-system/agent.py>, TCGETS, 0x7ffc75e20060) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.200971 lseek(3</home/adrian/cothink-system/agent.py>, 0, SEEK_CUR) = 0
+16:05:04.201443 lseek(3</home/adrian/cothink-system/agent.py>, 0, SEEK_CUR) = 0
+16:05:04.201647 lseek(3</home/adrian/cothink-system/agent.py>, 0, SEEK_END) = 2954
+16:05:04.201916 lseek(3</home/adrian/cothink-system/agent.py>, 0, SEEK_CUR) = 2954
+16:05:04.202030 lseek(3</home/adrian/cothink-system/agent.py>, 0, SEEK_SET) = 0
+16:05:04.202152 brk(0x2a5c5000)         = 0x2a5c5000
+16:05:04.202308 read(3</home/adrian/cothink-system/agent.py>, "#!/usr/bin/env python3\nimport sy"..., 65536) = 2954
+16:05:04.202456 read(3</home/adrian/cothink-system/agent.py>, "", 61440) = 0
+16:05:04.202687 brk(0x2a5b6000)         = 0x2a5b6000
+16:05:04.202931 lseek(3</home/adrian/cothink-system/agent.py>, 0, SEEK_SET) = 0
+16:05:04.203022 close(3</home/adrian/cothink-system/agent.py>) = 0
+16:05:04.204707 brk(0x2a5b4000)         = 0x2a5b4000
+16:05:04.205115 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system/agent.py", {st_mode=S_IFREG|0755, st_size=2954, ...}, 0) = 0
+16:05:04.206716 readlink("agent.py", 0x7ffc75e0e720, 4096) = -1 EINVAL (Invalid argument)
+16:05:04.207589 getcwd("/home/adrian/cothink-system", 1024) = 28
+16:05:04.208398 readlink("/home/adrian/cothink-system/agent.py", 0x7ffc75e0f300, 1023) = -1 EINVAL (Invalid argument)
+16:05:04.209399 openat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system/agent.py", O_RDONLY) = 3</home/adrian/cothink-system/agent.py>
+16:05:04.209638 ioctl(3</home/adrian/cothink-system/agent.py>, FIOCLEX) = 0
+16:05:04.209910 fstat(3</home/adrian/cothink-system/agent.py>, {st_mode=S_IFREG|0755, st_size=2954, ...}) = 0
+16:05:04.210179 ioctl(3</home/adrian/cothink-system/agent.py>, TCGETS, 0x7ffc75e206e0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.210413 lseek(3</home/adrian/cothink-system/agent.py>, 0, SEEK_CUR) = 0
+16:05:04.210683 fstat(3</home/adrian/cothink-system/agent.py>, {st_mode=S_IFREG|0755, st_size=2954, ...}) = 0
+16:05:04.210958 read(3</home/adrian/cothink-system/agent.py>, "#!/usr/bin/env python3\nimport sy"..., 4096) = 2954
+16:05:04.211300 lseek(3</home/adrian/cothink-system/agent.py>, 0, SEEK_SET) = 0
+16:05:04.211612 read(3</home/adrian/cothink-system/agent.py>, "#!/usr/bin/env python3\nimport sy"..., 4096) = 2954
+16:05:04.212745 brk(0x2a5d6000)         = 0x2a5d6000
+16:05:04.215252 read(3</home/adrian/cothink-system/agent.py>, "", 4096) = 0
+16:05:04.215869 close(3</home/adrian/cothink-system/agent.py>) = 0
+16:05:04.218389 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.220432 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.220776 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.221054 openat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 3</home/adrian/cothink-system>
+16:05:04.221349 fstat(3</home/adrian/cothink-system>, {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+16:05:04.221587 brk(0x2a5f7000)         = 0x2a5f7000
+16:05:04.221805 getdents64(3</home/adrian/cothink-system>, 0x2a5ce890 /* 70 entries */, 32768) = 2664
+16:05:04.222062 getdents64(3</home/adrian/cothink-system>, 0x2a5ce890 /* 0 entries */, 32768) = 0
+16:05:04.222381 brk(0x2a5ef000)         = 0x2a5ef000
+16:05:04.222646 close(3</home/adrian/cothink-system>) = 0
+16:05:04.222940 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.223263 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/json/__init__.cpython-313-x86_64-linux-gnu.so", 0x7ffc75e1ff50, 0) = -1 ENOENT (No such file or directory)
+16:05:04.223543 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/json/__init__.abi3.so", 0x7ffc75e1ff50, 0) = -1 ENOENT (No such file or directory)
+16:05:04.223759 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/json/__init__.abi3-x86_64-linux-gnu.so", 0x7ffc75e1ff50, 0) = -1 ENOENT (No such file or directory)
+16:05:04.223939 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/json/__init__.so", 0x7ffc75e1ff50, 0) = -1 ENOENT (No such file or directory)
+16:05:04.224194 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/json/__init__.py", {st_mode=S_IFREG|0644, st_size=14020, ...}, 0) = 0
+16:05:04.224553 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/json/__init__.py", {st_mode=S_IFREG|0644, st_size=14020, ...}, 0) = 0
+16:05:04.224692 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/json/__pycache__/__init__.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/json/__pycache__/__init__.cpython-313.pyc>
+16:05:04.224813 fstat(3</usr/lib/python3.13/json/__pycache__/__init__.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=13510, ...}) = 0
+16:05:04.225065 ioctl(3</usr/lib/python3.13/json/__pycache__/__init__.cpython-313.pyc>, TCGETS, 0x7ffc75e1fc40) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.225452 lseek(3</usr/lib/python3.13/json/__pycache__/__init__.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.225732 lseek(3</usr/lib/python3.13/json/__pycache__/__init__.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.226046 fstat(3</usr/lib/python3.13/json/__pycache__/__init__.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=13510, ...}) = 0
+16:05:04.226370 read(3</usr/lib/python3.13/json/__pycache__/__init__.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\3046\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\n\0\0"..., 13511) = 13510
+16:05:04.226663 read(3</usr/lib/python3.13/json/__pycache__/__init__.cpython-313.pyc>, "", 1) = 0
+16:05:04.226851 close(3</usr/lib/python3.13/json/__pycache__/__init__.cpython-313.pyc>) = 0
+16:05:04.227319 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/json", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.227571 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/json", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.227808 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/json", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.228068 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/json", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 3</usr/lib/python3.13/json>
+16:05:04.228321 fstat(3</usr/lib/python3.13/json>, {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+16:05:04.228501 getdents64(3</usr/lib/python3.13/json>, 0x2a5ce890 /* 8 entries */, 32768) = 240
+16:05:04.228985 getdents64(3</usr/lib/python3.13/json>, 0x2a5ce890 /* 0 entries */, 32768) = 0
+16:05:04.229363 close(3</usr/lib/python3.13/json>) = 0
+16:05:04.229581 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/json/decoder.py", {st_mode=S_IFREG|0644, st_size=12872, ...}, 0) = 0
+16:05:04.230077 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/json/decoder.py", {st_mode=S_IFREG|0644, st_size=12872, ...}, 0) = 0
+16:05:04.232205 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/json/__pycache__/decoder.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/json/__pycache__/decoder.cpython-313.pyc>
+16:05:04.232762 fstat(3</usr/lib/python3.13/json/__pycache__/decoder.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=13822, ...}) = 0
+16:05:04.233445 ioctl(3</usr/lib/python3.13/json/__pycache__/decoder.cpython-313.pyc>, TCGETS, 0x7ffc75e1f5b0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.233780 lseek(3</usr/lib/python3.13/json/__pycache__/decoder.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.234036 lseek(3</usr/lib/python3.13/json/__pycache__/decoder.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.234358 fstat(3</usr/lib/python3.13/json/__pycache__/decoder.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=13822, ...}) = 0
+16:05:04.235191 read(3</usr/lib/python3.13/json/__pycache__/decoder.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-jH2\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\t\0\0"..., 13823) = 13822
+16:05:04.236319 read(3</usr/lib/python3.13/json/__pycache__/decoder.cpython-313.pyc>, "", 1) = 0
+16:05:04.236904 close(3</usr/lib/python3.13/json/__pycache__/decoder.cpython-313.pyc>) = 0
+16:05:04.237813 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.238190 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.238485 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/re/__init__.cpython-313-x86_64-linux-gnu.so", 0x7ffc75e1f230, 0) = -1 ENOENT (No such file or directory)
+16:05:04.238747 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/re/__init__.abi3.so", 0x7ffc75e1f230, 0) = -1 ENOENT (No such file or directory)
+16:05:04.238972 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/re/__init__.abi3-x86_64-linux-gnu.so", 0x7ffc75e1f230, 0) = -1 ENOENT (No such file or directory)
+16:05:04.239355 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/re/__init__.so", 0x7ffc75e1f230, 0) = -1 ENOENT (No such file or directory)
+16:05:04.239588 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/re/__init__.py", {st_mode=S_IFREG|0644, st_size=17876, ...}, 0) = 0
+16:05:04.239778 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/re/__init__.py", {st_mode=S_IFREG|0644, st_size=17876, ...}, 0) = 0
+16:05:04.240026 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/re/__pycache__/__init__.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/re/__pycache__/__init__.cpython-313.pyc>
+16:05:04.240240 fstat(3</usr/lib/python3.13/re/__pycache__/__init__.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=19368, ...}) = 0
+16:05:04.240409 ioctl(3</usr/lib/python3.13/re/__pycache__/__init__.cpython-313.pyc>, TCGETS, 0x7ffc75e1ef20) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.240536 lseek(3</usr/lib/python3.13/re/__pycache__/__init__.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.240710 lseek(3</usr/lib/python3.13/re/__pycache__/__init__.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.241007 fstat(3</usr/lib/python3.13/re/__pycache__/__init__.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=19368, ...}) = 0
+16:05:04.241351 read(3</usr/lib/python3.13/re/__pycache__/__init__.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\324E\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\10\0\0"..., 19369) = 19368
+16:05:04.241640 read(3</usr/lib/python3.13/re/__pycache__/__init__.cpython-313.pyc>, "", 1) = 0
+16:05:04.241849 close(3</usr/lib/python3.13/re/__pycache__/__init__.cpython-313.pyc>) = 0
+16:05:04.242281 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.242634 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.242861 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/enum.py", {st_mode=S_IFREG|0644, st_size=85578, ...}, 0) = 0
+16:05:04.243090 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/enum.py", {st_mode=S_IFREG|0644, st_size=85578, ...}, 0) = 0
+16:05:04.243215 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/enum.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/enum.cpython-313.pyc>
+16:05:04.243331 fstat(3</usr/lib/python3.13/__pycache__/enum.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=85851, ...}) = 0
+16:05:04.243528 ioctl(3</usr/lib/python3.13/__pycache__/enum.cpython-313.pyc>, TCGETS, 0x7ffc75e1e890) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.243860 lseek(3</usr/lib/python3.13/__pycache__/enum.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.244177 lseek(3</usr/lib/python3.13/__pycache__/enum.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.244398 fstat(3</usr/lib/python3.13/__pycache__/enum.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=85851, ...}) = 0
+16:05:04.244816 read(3</usr/lib/python3.13/__pycache__/enum.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-jJN\1\0\343\0\0\0\0\0\0\0\0\0\0\0\0\t\0\0"..., 85852) = 85851
+16:05:04.245205 read(3</usr/lib/python3.13/__pycache__/enum.cpython-313.pyc>, "", 1) = 0
+16:05:04.245283 close(3</usr/lib/python3.13/__pycache__/enum.cpython-313.pyc>) = 0
+16:05:04.248043 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.249651 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.251784 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/functools.py", {st_mode=S_IFREG|0644, st_size=39123, ...}, 0) = 0
+16:05:04.252480 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/functools.py", {st_mode=S_IFREG|0644, st_size=39123, ...}, 0) = 0
+16:05:04.252727 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/functools.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/functools.cpython-313.pyc>
+16:05:04.253056 fstat(3</usr/lib/python3.13/__pycache__/functools.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=42271, ...}) = 0
+16:05:04.253289 ioctl(3</usr/lib/python3.13/__pycache__/functools.cpython-313.pyc>, TCGETS, 0x7ffc75e1e200) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.253535 lseek(3</usr/lib/python3.13/__pycache__/functools.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.253616 lseek(3</usr/lib/python3.13/__pycache__/functools.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.253997 fstat(3</usr/lib/python3.13/__pycache__/functools.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=42271, ...}) = 0
+16:05:04.254450 read(3</usr/lib/python3.13/__pycache__/functools.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\323\230\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\7\0\0"..., 42272) = 42271
+16:05:04.254735 read(3</usr/lib/python3.13/__pycache__/functools.cpython-313.pyc>, "", 1) = 0
+16:05:04.255043 close(3</usr/lib/python3.13/__pycache__/functools.cpython-313.pyc>) = 0
+16:05:04.255956 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.256183 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.256367 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/collections/__init__.cpython-313-x86_64-linux-gnu.so", 0x7ffc75e1de80, 0) = -1 ENOENT (No such file or directory)
+16:05:04.256619 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/collections/__init__.abi3.so", 0x7ffc75e1de80, 0) = -1 ENOENT (No such file or directory)
+16:05:04.256859 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/collections/__init__.abi3-x86_64-linux-gnu.so", 0x7ffc75e1de80, 0) = -1 ENOENT (No such file or directory)
+16:05:04.257131 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/collections/__init__.so", 0x7ffc75e1de80, 0) = -1 ENOENT (No such file or directory)
+16:05:04.257268 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/collections/__init__.py", {st_mode=S_IFREG|0644, st_size=52500, ...}, 0) = 0
+16:05:04.257641 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/collections/__init__.py", {st_mode=S_IFREG|0644, st_size=52500, ...}, 0) = 0
+16:05:04.258028 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/collections/__pycache__/__init__.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/collections/__pycache__/__init__.cpython-313.pyc>
+16:05:04.258191 fstat(3</usr/lib/python3.13/collections/__pycache__/__init__.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=73200, ...}) = 0
+16:05:04.258293 ioctl(3</usr/lib/python3.13/collections/__pycache__/__init__.cpython-313.pyc>, TCGETS, 0x7ffc75e1db70) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.258426 lseek(3</usr/lib/python3.13/collections/__pycache__/__init__.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.258537 lseek(3</usr/lib/python3.13/collections/__pycache__/__init__.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.258619 fstat(3</usr/lib/python3.13/collections/__pycache__/__init__.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=73200, ...}) = 0
+16:05:04.258792 read(3</usr/lib/python3.13/collections/__pycache__/__init__.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\24\315\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\5\0\0"..., 73201) = 73200
+16:05:04.258945 read(3</usr/lib/python3.13/collections/__pycache__/__init__.cpython-313.pyc>, "", 1) = 0
+16:05:04.259062 close(3</usr/lib/python3.13/collections/__pycache__/__init__.cpython-313.pyc>) = 0
+16:05:04.260572 mmap(NULL, 1048576, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f2361600000
+16:05:04.260911 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.261151 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.261456 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/keyword.py", {st_mode=S_IFREG|0644, st_size=1073, ...}, 0) = 0
+16:05:04.263399 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/keyword.py", {st_mode=S_IFREG|0644, st_size=1073, ...}, 0) = 0
+16:05:04.265011 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/keyword.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/keyword.cpython-313.pyc>
+16:05:04.265981 fstat(3</usr/lib/python3.13/__pycache__/keyword.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=1041, ...}) = 0
+16:05:04.266257 ioctl(3</usr/lib/python3.13/__pycache__/keyword.cpython-313.pyc>, TCGETS, 0x7ffc75e1d4e0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.266796 lseek(3</usr/lib/python3.13/__pycache__/keyword.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.267134 lseek(3</usr/lib/python3.13/__pycache__/keyword.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.267361 fstat(3</usr/lib/python3.13/__pycache__/keyword.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=1041, ...}) = 0
+16:05:04.267664 read(3</usr/lib/python3.13/__pycache__/keyword.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j1\4\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\3\0\0"..., 1042) = 1041
+16:05:04.267795 read(3</usr/lib/python3.13/__pycache__/keyword.cpython-313.pyc>, "", 1) = 0
+16:05:04.268014 close(3</usr/lib/python3.13/__pycache__/keyword.cpython-313.pyc>) = 0
+16:05:04.268630 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.269109 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.269529 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/operator.py", {st_mode=S_IFREG|0644, st_size=10980, ...}, 0) = 0
+16:05:04.269882 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/operator.py", {st_mode=S_IFREG|0644, st_size=10980, ...}, 0) = 0
+16:05:04.270243 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/operator.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/operator.cpython-313.pyc>
+16:05:04.270654 fstat(3</usr/lib/python3.13/__pycache__/operator.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=17365, ...}) = 0
+16:05:04.271024 ioctl(3</usr/lib/python3.13/__pycache__/operator.cpython-313.pyc>, TCGETS, 0x7ffc75e1d4e0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.271328 lseek(3</usr/lib/python3.13/__pycache__/operator.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.271589 lseek(3</usr/lib/python3.13/__pycache__/operator.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.275123 fstat(3</usr/lib/python3.13/__pycache__/operator.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=17365, ...}) = 0
+16:05:04.276403 read(3</usr/lib/python3.13/__pycache__/operator.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\344*\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\4\0\0"..., 17366) = 17365
+16:05:04.277015 read(3</usr/lib/python3.13/__pycache__/operator.cpython-313.pyc>, "", 1) = 0
+16:05:04.277585 close(3</usr/lib/python3.13/__pycache__/operator.cpython-313.pyc>) = 0
+16:05:04.279133 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.279789 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.280340 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/reprlib.py", {st_mode=S_IFREG|0644, st_size=7192, ...}, 0) = 0
+16:05:04.282584 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/reprlib.py", {st_mode=S_IFREG|0644, st_size=7192, ...}, 0) = 0
+16:05:04.282879 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/reprlib.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/reprlib.cpython-313.pyc>
+16:05:04.283216 fstat(3</usr/lib/python3.13/__pycache__/reprlib.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=10423, ...}) = 0
+16:05:04.283436 ioctl(3</usr/lib/python3.13/__pycache__/reprlib.cpython-313.pyc>, TCGETS, 0x7ffc75e1d4e0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.283693 lseek(3</usr/lib/python3.13/__pycache__/reprlib.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.283918 lseek(3</usr/lib/python3.13/__pycache__/reprlib.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.284136 fstat(3</usr/lib/python3.13/__pycache__/reprlib.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=10423, ...}) = 0
+16:05:04.284227 read(3</usr/lib/python3.13/__pycache__/reprlib.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\30\34\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\4\0\0"..., 10424) = 10423
+16:05:04.284300 read(3</usr/lib/python3.13/__pycache__/reprlib.cpython-313.pyc>, "", 1) = 0
+16:05:04.284751 close(3</usr/lib/python3.13/__pycache__/reprlib.cpython-313.pyc>) = 0
+16:05:04.290546 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.291766 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.292040 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/types.py", {st_mode=S_IFREG|0644, st_size=11207, ...}, 0) = 0
+16:05:04.292487 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/types.py", {st_mode=S_IFREG|0644, st_size=11207, ...}, 0) = 0
+16:05:04.292863 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/types.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/types.cpython-313.pyc>
+16:05:04.293389 fstat(3</usr/lib/python3.13/__pycache__/types.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=15545, ...}) = 0
+16:05:04.293783 ioctl(3</usr/lib/python3.13/__pycache__/types.cpython-313.pyc>, TCGETS, 0x7ffc75e1e200) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.294197 lseek(3</usr/lib/python3.13/__pycache__/types.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.294497 lseek(3</usr/lib/python3.13/__pycache__/types.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.294773 fstat(3</usr/lib/python3.13/__pycache__/types.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=15545, ...}) = 0
+16:05:04.294994 brk(0x2a610000)         = 0x2a610000
+16:05:04.295326 read(3</usr/lib/python3.13/__pycache__/types.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\307+\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0"..., 15546) = 15545
+16:05:04.295514 read(3</usr/lib/python3.13/__pycache__/types.cpython-313.pyc>, "", 1) = 0
+16:05:04.295940 close(3</usr/lib/python3.13/__pycache__/types.cpython-313.pyc>) = 0
+16:05:04.297619 brk(0x2a60c000)         = 0x2a60c000
+16:05:04.302681 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/re", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.304576 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/re", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.304962 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/re", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.305271 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/re", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 3</usr/lib/python3.13/re>
+16:05:04.305499 fstat(3</usr/lib/python3.13/re>, {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+16:05:04.305692 getdents64(3</usr/lib/python3.13/re>, 0x2a5f5970 /* 8 entries */, 32768) = 248
+16:05:04.305901 getdents64(3</usr/lib/python3.13/re>, 0x2a5f5970 /* 0 entries */, 32768) = 0
+16:05:04.306106 close(3</usr/lib/python3.13/re>) = 0
+16:05:04.306414 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/re/_compiler.py", {st_mode=S_IFREG|0644, st_size=26290, ...}, 0) = 0
+16:05:04.306706 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/re/_compiler.py", {st_mode=S_IFREG|0644, st_size=26290, ...}, 0) = 0
+16:05:04.306864 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/re/__pycache__/_compiler.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/re/__pycache__/_compiler.cpython-313.pyc>
+16:05:04.307034 fstat(3</usr/lib/python3.13/re/__pycache__/_compiler.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=26866, ...}) = 0
+16:05:04.307735 ioctl(3</usr/lib/python3.13/re/__pycache__/_compiler.cpython-313.pyc>, TCGETS, 0x7ffc75e1e470) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.308025 lseek(3</usr/lib/python3.13/re/__pycache__/_compiler.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.308312 lseek(3</usr/lib/python3.13/re/__pycache__/_compiler.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.308498 fstat(3</usr/lib/python3.13/re/__pycache__/_compiler.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=26866, ...}) = 0
+16:05:04.308809 read(3</usr/lib/python3.13/re/__pycache__/_compiler.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\262f\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\10\0\0"..., 26867) = 26866
+16:05:04.309136 read(3</usr/lib/python3.13/re/__pycache__/_compiler.cpython-313.pyc>, "", 1) = 0
+16:05:04.309367 close(3</usr/lib/python3.13/re/__pycache__/_compiler.cpython-313.pyc>) = 0
+16:05:04.310620 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/re", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.311060 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/re/_parser.py", {st_mode=S_IFREG|0644, st_size=41237, ...}, 0) = 0
+16:05:04.311291 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/re/_parser.py", {st_mode=S_IFREG|0644, st_size=41237, ...}, 0) = 0
+16:05:04.311600 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/re/__pycache__/_parser.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/re/__pycache__/_parser.cpython-313.pyc>
+16:05:04.312028 fstat(3</usr/lib/python3.13/re/__pycache__/_parser.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=43564, ...}) = 0
+16:05:04.312341 ioctl(3</usr/lib/python3.13/re/__pycache__/_parser.cpython-313.pyc>, TCGETS, 0x7ffc75e1d9c0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.314646 lseek(3</usr/lib/python3.13/re/__pycache__/_parser.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.315402 lseek(3</usr/lib/python3.13/re/__pycache__/_parser.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.315766 fstat(3</usr/lib/python3.13/re/__pycache__/_parser.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=43564, ...}) = 0
+16:05:04.316151 brk(0x2a62d000)         = 0x2a62d000
+16:05:04.316622 read(3</usr/lib/python3.13/re/__pycache__/_parser.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\25\241\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\v\0\0"..., 43565) = 43564
+16:05:04.317117 read(3</usr/lib/python3.13/re/__pycache__/_parser.cpython-313.pyc>, "", 1) = 0
+16:05:04.317419 close(3</usr/lib/python3.13/re/__pycache__/_parser.cpython-313.pyc>) = 0
+16:05:04.319226 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/re", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.319465 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/re/_constants.py", {st_mode=S_IFREG|0644, st_size=5939, ...}, 0) = 0
+16:05:04.320446 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/re/_constants.py", {st_mode=S_IFREG|0644, st_size=5939, ...}, 0) = 0
+16:05:04.320957 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/re/__pycache__/_constants.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/re/__pycache__/_constants.cpython-313.pyc>
+16:05:04.321549 fstat(3</usr/lib/python3.13/re/__pycache__/_constants.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=5379, ...}) = 0
+16:05:04.322007 ioctl(3</usr/lib/python3.13/re/__pycache__/_constants.cpython-313.pyc>, TCGETS, 0x7ffc75e1d330) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.322411 lseek(3</usr/lib/python3.13/re/__pycache__/_constants.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.322713 lseek(3</usr/lib/python3.13/re/__pycache__/_constants.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.323186 fstat(3</usr/lib/python3.13/re/__pycache__/_constants.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=5379, ...}) = 0
+16:05:04.323336 read(3</usr/lib/python3.13/re/__pycache__/_constants.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j3\27\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\24\0\0"..., 5380) = 5379
+16:05:04.323502 read(3</usr/lib/python3.13/re/__pycache__/_constants.cpython-313.pyc>, "", 1) = 0
+16:05:04.323684 close(3</usr/lib/python3.13/re/__pycache__/_constants.cpython-313.pyc>) = 0
+16:05:04.325854 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/re", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.326081 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/re/_casefix.py", {st_mode=S_IFREG|0644, st_size=5444, ...}, 0) = 0
+16:05:04.326390 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/re/_casefix.py", {st_mode=S_IFREG|0644, st_size=5444, ...}, 0) = 0
+16:05:04.326768 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/re/__pycache__/_casefix.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/re/__pycache__/_casefix.cpython-313.pyc>
+16:05:04.327009 fstat(3</usr/lib/python3.13/re/__pycache__/_casefix.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=1816, ...}) = 0
+16:05:04.327281 ioctl(3</usr/lib/python3.13/re/__pycache__/_casefix.cpython-313.pyc>, TCGETS, 0x7ffc75e1dde0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.327878 lseek(3</usr/lib/python3.13/re/__pycache__/_casefix.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.328175 lseek(3</usr/lib/python3.13/re/__pycache__/_casefix.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.328557 fstat(3</usr/lib/python3.13/re/__pycache__/_casefix.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=1816, ...}) = 0
+16:05:04.328787 read(3</usr/lib/python3.13/re/__pycache__/_casefix.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-jD\25\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\4\0\0"..., 1817) = 1816
+16:05:04.329034 read(3</usr/lib/python3.13/re/__pycache__/_casefix.cpython-313.pyc>, "", 1) = 0
+16:05:04.329358 close(3</usr/lib/python3.13/re/__pycache__/_casefix.cpython-313.pyc>) = 0
+16:05:04.331666 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.331999 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.332254 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/copyreg.py", {st_mode=S_IFREG|0644, st_size=7614, ...}, 0) = 0
+16:05:04.332631 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/copyreg.py", {st_mode=S_IFREG|0644, st_size=7614, ...}, 0) = 0
+16:05:04.333043 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/copyreg.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/copyreg.cpython-313.pyc>
+16:05:04.333236 fstat(3</usr/lib/python3.13/__pycache__/copyreg.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=7536, ...}) = 0
+16:05:04.333458 ioctl(3</usr/lib/python3.13/__pycache__/copyreg.cpython-313.pyc>, TCGETS, 0x7ffc75e1e890) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.333681 lseek(3</usr/lib/python3.13/__pycache__/copyreg.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.333983 lseek(3</usr/lib/python3.13/__pycache__/copyreg.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.334164 fstat(3</usr/lib/python3.13/__pycache__/copyreg.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=7536, ...}) = 0
+16:05:04.334304 read(3</usr/lib/python3.13/__pycache__/copyreg.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\276\35\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0"..., 7537) = 7536
+16:05:04.335524 read(3</usr/lib/python3.13/__pycache__/copyreg.cpython-313.pyc>, "", 1) = 0
+16:05:04.337643 close(3</usr/lib/python3.13/__pycache__/copyreg.cpython-313.pyc>) = 0
+16:05:04.338201 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/json", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.338537 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/json/scanner.py", {st_mode=S_IFREG|0644, st_size=2434, ...}, 0) = 0
+16:05:04.338930 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/json/scanner.py", {st_mode=S_IFREG|0644, st_size=2434, ...}, 0) = 0
+16:05:04.339176 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/json/__pycache__/scanner.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/json/__pycache__/scanner.cpython-313.pyc>
+16:05:04.340136 fstat(3</usr/lib/python3.13/json/__pycache__/scanner.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=3363, ...}) = 0
+16:05:04.340465 ioctl(3</usr/lib/python3.13/json/__pycache__/scanner.cpython-313.pyc>, TCGETS, 0x7ffc75e1eb00) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.340742 lseek(3</usr/lib/python3.13/json/__pycache__/scanner.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.341114 lseek(3</usr/lib/python3.13/json/__pycache__/scanner.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.341328 fstat(3</usr/lib/python3.13/json/__pycache__/scanner.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=3363, ...}) = 0
+16:05:04.341640 read(3</usr/lib/python3.13/json/__pycache__/scanner.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\202\t\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\5\0\0"..., 3364) = 3363
+16:05:04.341837 read(3</usr/lib/python3.13/json/__pycache__/scanner.cpython-313.pyc>, "", 1) = 0
+16:05:04.341995 close(3</usr/lib/python3.13/json/__pycache__/scanner.cpython-313.pyc>) = 0
+16:05:04.343859 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/json", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.344214 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/json/encoder.py", {st_mode=S_IFREG|0644, st_size=16148, ...}, 0) = 0
+16:05:04.344465 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/json/encoder.py", {st_mode=S_IFREG|0644, st_size=16148, ...}, 0) = 0
+16:05:04.344785 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/json/__pycache__/encoder.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/json/__pycache__/encoder.cpython-313.pyc>
+16:05:04.345048 fstat(3</usr/lib/python3.13/json/__pycache__/encoder.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=15164, ...}) = 0
+16:05:04.345342 ioctl(3</usr/lib/python3.13/json/__pycache__/encoder.cpython-313.pyc>, TCGETS, 0x7ffc75e1f5b0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.345617 lseek(3</usr/lib/python3.13/json/__pycache__/encoder.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.346223 lseek(3</usr/lib/python3.13/json/__pycache__/encoder.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.347207 fstat(3</usr/lib/python3.13/json/__pycache__/encoder.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=15164, ...}) = 0
+16:05:04.348406 read(3</usr/lib/python3.13/json/__pycache__/encoder.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\24?\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\n\0\0"..., 15165) = 15164
+16:05:04.348549 read(3</usr/lib/python3.13/json/__pycache__/encoder.cpython-313.pyc>, "", 1) = 0
+16:05:04.348624 close(3</usr/lib/python3.13/json/__pycache__/encoder.cpython-313.pyc>) = 0
+16:05:04.350377 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.350632 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.350803 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/urllib/__init__.cpython-313-x86_64-linux-gnu.so", 0x7ffc75e1fb30, 0) = -1 ENOENT (No such file or directory)
+16:05:04.350982 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/urllib/__init__.abi3.so", 0x7ffc75e1fb30, 0) = -1 ENOENT (No such file or directory)
+16:05:04.351323 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/urllib/__init__.abi3-x86_64-linux-gnu.so", 0x7ffc75e1fb30, 0) = -1 ENOENT (No such file or directory)
+16:05:04.351725 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/urllib/__init__.so", 0x7ffc75e1fb30, 0) = -1 ENOENT (No such file or directory)
+16:05:04.351994 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/urllib/__init__.py", {st_mode=S_IFREG|0644, st_size=0, ...}, 0) = 0
+16:05:04.352464 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/urllib/__init__.py", {st_mode=S_IFREG|0644, st_size=0, ...}, 0) = 0
+16:05:04.352892 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/urllib/__pycache__/__init__.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/urllib/__pycache__/__init__.cpython-313.pyc>
+16:05:04.353222 fstat(3</usr/lib/python3.13/urllib/__pycache__/__init__.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=135, ...}) = 0
+16:05:04.353376 ioctl(3</usr/lib/python3.13/urllib/__pycache__/__init__.cpython-313.pyc>, TCGETS, 0x7ffc75e1f820) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.353768 lseek(3</usr/lib/python3.13/urllib/__pycache__/__init__.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.354134 lseek(3</usr/lib/python3.13/urllib/__pycache__/__init__.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.354464 fstat(3</usr/lib/python3.13/urllib/__pycache__/__init__.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=135, ...}) = 0
+16:05:04.354733 read(3</usr/lib/python3.13/urllib/__pycache__/__init__.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\0\0\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\1\0\0"..., 136) = 135
+16:05:04.355015 read(3</usr/lib/python3.13/urllib/__pycache__/__init__.cpython-313.pyc>, "", 1) = 0
+16:05:04.355346 close(3</usr/lib/python3.13/urllib/__pycache__/__init__.cpython-313.pyc>) = 0
+16:05:04.355700 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/urllib", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.355964 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/urllib", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.357164 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/urllib", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.358450 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/urllib", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 3</usr/lib/python3.13/urllib>
+16:05:04.359272 fstat(3</usr/lib/python3.13/urllib>, {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+16:05:04.359517 getdents64(3</usr/lib/python3.13/urllib>, 0x2a613260 /* 9 entries */, 32768) = 280
+16:05:04.360025 getdents64(3</usr/lib/python3.13/urllib>, 0x2a613260 /* 0 entries */, 32768) = 0
+16:05:04.360335 close(3</usr/lib/python3.13/urllib>) = 0
+16:05:04.360593 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/urllib/request.py", {st_mode=S_IFREG|0644, st_size=102469, ...}, 0) = 0
+16:05:04.360884 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/urllib/request.py", {st_mode=S_IFREG|0644, st_size=102469, ...}, 0) = 0
+16:05:04.361155 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/urllib/__pycache__/request.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/urllib/__pycache__/request.cpython-313.pyc>
+16:05:04.361430 fstat(3</usr/lib/python3.13/urllib/__pycache__/request.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=116237, ...}) = 0
+16:05:04.361705 ioctl(3</usr/lib/python3.13/urllib/__pycache__/request.cpython-313.pyc>, TCGETS, 0x7ffc75e1fc40) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.361957 lseek(3</usr/lib/python3.13/urllib/__pycache__/request.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.362260 lseek(3</usr/lib/python3.13/urllib/__pycache__/request.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.363271 fstat(3</usr/lib/python3.13/urllib/__pycache__/request.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=116237, ...}) = 0
+16:05:04.364835 brk(0x2a651000)         = 0x2a651000
+16:05:04.365064 read(3</usr/lib/python3.13/urllib/__pycache__/request.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-jE\220\1\0\343\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0"..., 116238) = 116237
+16:05:04.365713 read(3</usr/lib/python3.13/urllib/__pycache__/request.cpython-313.pyc>, "", 1) = 0
+16:05:04.366262 close(3</usr/lib/python3.13/urllib/__pycache__/request.cpython-313.pyc>) = 0
+16:05:04.368021 mmap(NULL, 208896, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f2365efe000
+16:05:04.369612 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.370891 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.371284 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/base64.py", {st_mode=S_IFREG|0755, st_size=21629, ...}, 0) = 0
+16:05:04.371649 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/base64.py", {st_mode=S_IFREG|0755, st_size=21629, ...}, 0) = 0
+16:05:04.372016 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/base64.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/base64.cpython-313.pyc>
+16:05:04.372322 fstat(3</usr/lib/python3.13/__pycache__/base64.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=25817, ...}) = 0
+16:05:04.372645 ioctl(3</usr/lib/python3.13/__pycache__/base64.cpython-313.pyc>, TCGETS, 0x7ffc75e1f5b0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.372930 lseek(3</usr/lib/python3.13/__pycache__/base64.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.373164 lseek(3</usr/lib/python3.13/__pycache__/base64.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.373479 fstat(3</usr/lib/python3.13/__pycache__/base64.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=25817, ...}) = 0
+16:05:04.373769 read(3</usr/lib/python3.13/__pycache__/base64.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j}T\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\10\0\0"..., 25818) = 25817
+16:05:04.374025 read(3</usr/lib/python3.13/__pycache__/base64.cpython-313.pyc>, "", 1) = 0
+16:05:04.374276 close(3</usr/lib/python3.13/__pycache__/base64.cpython-313.pyc>) = 0
+16:05:04.375155 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.375396 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.375648 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/struct.py", {st_mode=S_IFREG|0644, st_size=257, ...}, 0) = 0
+16:05:04.375878 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/struct.py", {st_mode=S_IFREG|0644, st_size=257, ...}, 0) = 0
+16:05:04.376138 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/struct.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/struct.cpython-313.pyc>
+16:05:04.376341 fstat(3</usr/lib/python3.13/__pycache__/struct.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=325, ...}) = 0
+16:05:04.376580 ioctl(3</usr/lib/python3.13/__pycache__/struct.cpython-313.pyc>, TCGETS, 0x7ffc75e1ef20) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.376746 lseek(3</usr/lib/python3.13/__pycache__/struct.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.376869 lseek(3</usr/lib/python3.13/__pycache__/struct.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.376969 fstat(3</usr/lib/python3.13/__pycache__/struct.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=325, ...}) = 0
+16:05:04.377152 read(3</usr/lib/python3.13/__pycache__/struct.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\1\1\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\2\0\0"..., 326) = 325
+16:05:04.377351 read(3</usr/lib/python3.13/__pycache__/struct.cpython-313.pyc>, "", 1) = 0
+16:05:04.377584 close(3</usr/lib/python3.13/__pycache__/struct.cpython-313.pyc>) = 0
+16:05:04.379806 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.380416 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.382502 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/bisect.py", {st_mode=S_IFREG|0644, st_size=3423, ...}, 0) = 0
+16:05:04.383563 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/bisect.py", {st_mode=S_IFREG|0644, st_size=3423, ...}, 0) = 0
+16:05:04.385255 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/bisect.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/bisect.cpython-313.pyc>
+16:05:04.385671 fstat(3</usr/lib/python3.13/__pycache__/bisect.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=3497, ...}) = 0
+16:05:04.386098 ioctl(3</usr/lib/python3.13/__pycache__/bisect.cpython-313.pyc>, TCGETS, 0x7ffc75e1f5b0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.386763 lseek(3</usr/lib/python3.13/__pycache__/bisect.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.387304 lseek(3</usr/lib/python3.13/__pycache__/bisect.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.387978 fstat(3</usr/lib/python3.13/__pycache__/bisect.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=3497, ...}) = 0
+16:05:04.388372 read(3</usr/lib/python3.13/__pycache__/bisect.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j_\r\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\4\0\0"..., 3498) = 3497
+16:05:04.388660 read(3</usr/lib/python3.13/__pycache__/bisect.cpython-313.pyc>, "", 1) = 0
+16:05:04.388992 close(3</usr/lib/python3.13/__pycache__/bisect.cpython-313.pyc>) = 0
+16:05:04.389590 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.389917 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.390188 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/__init__.cpython-313-x86_64-linux-gnu.so", 0x7ffc75e1f8c0, 0) = -1 ENOENT (No such file or directory)
+16:05:04.390454 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/__init__.abi3.so", 0x7ffc75e1f8c0, 0) = -1 ENOENT (No such file or directory)
+16:05:04.390849 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/__init__.abi3-x86_64-linux-gnu.so", 0x7ffc75e1f8c0, 0) = -1 ENOENT (No such file or directory)
+16:05:04.391100 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/__init__.so", 0x7ffc75e1f8c0, 0) = -1 ENOENT (No such file or directory)
+16:05:04.391301 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/__init__.py", {st_mode=S_IFREG|0644, st_size=1764, ...}, 0) = 0
+16:05:04.391652 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/__init__.py", {st_mode=S_IFREG|0644, st_size=1764, ...}, 0) = 0
+16:05:04.392101 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/__pycache__/__init__.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/email/__pycache__/__init__.cpython-313.pyc>
+16:05:04.392447 fstat(3</usr/lib/python3.13/email/__pycache__/__init__.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=1887, ...}) = 0
+16:05:04.392776 ioctl(3</usr/lib/python3.13/email/__pycache__/__init__.cpython-313.pyc>, TCGETS, 0x7ffc75e1f5b0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.393102 lseek(3</usr/lib/python3.13/email/__pycache__/__init__.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.393347 lseek(3</usr/lib/python3.13/email/__pycache__/__init__.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.393651 fstat(3</usr/lib/python3.13/email/__pycache__/__init__.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=1887, ...}) = 0
+16:05:04.393915 read(3</usr/lib/python3.13/email/__pycache__/__init__.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\344\6\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\2\0\0"..., 1888) = 1887
+16:05:04.394128 read(3</usr/lib/python3.13/email/__pycache__/__init__.cpython-313.pyc>, "", 1) = 0
+16:05:04.394277 close(3</usr/lib/python3.13/email/__pycache__/__init__.cpython-313.pyc>) = 0
+16:05:04.394617 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.394980 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.395305 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/hashlib.py", {st_mode=S_IFREG|0644, st_size=9446, ...}, 0) = 0
+16:05:04.395613 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/hashlib.py", {st_mode=S_IFREG|0644, st_size=9446, ...}, 0) = 0
+16:05:04.396251 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/hashlib.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/hashlib.cpython-313.pyc>
+16:05:04.396747 fstat(3</usr/lib/python3.13/__pycache__/hashlib.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=8276, ...}) = 0
+16:05:04.397421 ioctl(3</usr/lib/python3.13/__pycache__/hashlib.cpython-313.pyc>, TCGETS, 0x7ffc75e1f5b0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.397717 lseek(3</usr/lib/python3.13/__pycache__/hashlib.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.397817 lseek(3</usr/lib/python3.13/__pycache__/hashlib.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.397995 fstat(3</usr/lib/python3.13/__pycache__/hashlib.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=8276, ...}) = 0
+16:05:04.399891 read(3</usr/lib/python3.13/__pycache__/hashlib.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\346$\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0"..., 8277) = 8276
+16:05:04.400088 read(3</usr/lib/python3.13/__pycache__/hashlib.cpython-313.pyc>, "", 1) = 0
+16:05:04.400262 close(3</usr/lib/python3.13/__pycache__/hashlib.cpython-313.pyc>) = 0
+16:05:04.400709 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.400964 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.401208 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=12288, ...}, 0) = 0
+16:05:04.401436 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/lib-dynload/_hashlib.cpython-313-x86_64-linux-gnu.so", {st_mode=S_IFREG|0644, st_size=68272, ...}, 0) = 0
+16:05:04.401659 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/lib-dynload/_hashlib.cpython-313-x86_64-linux-gnu.so", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/lib-dynload/_hashlib.cpython-313-x86_64-linux-gnu.so>
+16:05:04.401922 read(3</usr/lib/python3.13/lib-dynload/_hashlib.cpython-313-x86_64-linux-gnu.so>, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+16:05:04.402106 fstat(3</usr/lib/python3.13/lib-dynload/_hashlib.cpython-313-x86_64-linux-gnu.so>, {st_mode=S_IFREG|0644, st_size=68272, ...}) = 0
+16:05:04.402245 mmap(NULL, 66256, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3</usr/lib/python3.13/lib-dynload/_hashlib.cpython-313-x86_64-linux-gnu.so>, 0) = 0x7f2365eed000
+16:05:04.402460 mmap(0x7f2365ef1000, 24576, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/python3.13/lib-dynload/_hashlib.cpython-313-x86_64-linux-gnu.so>, 0x4000) = 0x7f2365ef1000
+16:05:04.402555 mmap(0x7f2365ef7000, 16384, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/python3.13/lib-dynload/_hashlib.cpython-313-x86_64-linux-gnu.so>, 0xa000) = 0x7f2365ef7000
+16:05:04.402708 mmap(0x7f2365efb000, 12288, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/python3.13/lib-dynload/_hashlib.cpython-313-x86_64-linux-gnu.so>, 0xe000) = 0x7f2365efb000
+16:05:04.402811 close(3</usr/lib/python3.13/lib-dynload/_hashlib.cpython-313-x86_64-linux-gnu.so>) = 0
+16:05:04.402892 openat(AT_FDCWD</home/adrian/cothink-system>, "/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3</etc/ld.so.cache>
+16:05:04.402993 fstat(3</etc/ld.so.cache>, {st_mode=S_IFREG|0644, st_size=109359, ...}) = 0
+16:05:04.403621 mmap(NULL, 109359, PROT_READ, MAP_PRIVATE, 3</etc/ld.so.cache>, 0) = 0x7f2365ed2000
+16:05:04.403788 close(3</etc/ld.so.cache>) = 0
+16:05:04.403877 openat(AT_FDCWD</home/adrian/cothink-system>, "/lib/x86_64-linux-gnu/libcrypto.so.3", O_RDONLY|O_CLOEXEC) = 3</usr/lib/x86_64-linux-gnu/libcrypto.so.3>
+16:05:04.403952 read(3</usr/lib/x86_64-linux-gnu/libcrypto.so.3>, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+16:05:04.404039 fstat(3</usr/lib/x86_64-linux-gnu/libcrypto.so.3>, {st_mode=S_IFREG|0644, st_size=6517312, ...}) = 0
+16:05:04.404121 mmap(NULL, 6528072, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libcrypto.so.3>, 0) = 0x7f2360e00000
+16:05:04.404578 mmap(0x7f2360ef7000, 3682304, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libcrypto.so.3>, 0xf7000) = 0x7f2360ef7000
+16:05:04.404812 mmap(0x7f236127a000, 1273856, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libcrypto.so.3>, 0x47a000) = 0x7f236127a000
+16:05:04.405100 mmap(0x7f23613b1000, 548864, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libcrypto.so.3>, 0x5b1000) = 0x7f23613b1000
+16:05:04.405292 mmap(0x7f2361437000, 11336, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x7f2361437000
+16:05:04.405546 close(3</usr/lib/x86_64-linux-gnu/libcrypto.so.3>) = 0
+16:05:04.405841 openat(AT_FDCWD</home/adrian/cothink-system>, "/lib/x86_64-linux-gnu/libzstd.so.1", O_RDONLY|O_CLOEXEC) = 3</usr/lib/x86_64-linux-gnu/libzstd.so.1.5.7>
+16:05:04.406044 read(3</usr/lib/x86_64-linux-gnu/libzstd.so.1.5.7>, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+16:05:04.406277 fstat(3</usr/lib/x86_64-linux-gnu/libzstd.so.1.5.7>, {st_mode=S_IFREG|0644, st_size=825336, ...}) = 0
+16:05:04.406554 mmap(NULL, 823352, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libzstd.so.1.5.7>, 0) = 0x7f2361536000
+16:05:04.406797 mmap(0x7f236153b000, 716800, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libzstd.so.1.5.7>, 0x5000) = 0x7f236153b000
+16:05:04.407000 mmap(0x7f23615ea000, 81920, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libzstd.so.1.5.7>, 0xb4000) = 0x7f23615ea000
+16:05:04.407254 mmap(0x7f23615fe000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libzstd.so.1.5.7>, 0xc8000) = 0x7f23615fe000
+16:05:04.407483 close(3</usr/lib/x86_64-linux-gnu/libzstd.so.1.5.7>) = 0
+16:05:04.407684 mprotect(0x7f23615fe000, 4096, PROT_READ) = 0
+16:05:04.410760 mprotect(0x7f23613b1000, 536576, PROT_READ) = 0
+16:05:04.413221 mprotect(0x7f2365efb000, 4096, PROT_READ) = 0
+16:05:04.417448 munmap(0x7f2365ed2000, 109359) = 0
+16:05:04.417786 futex(0x7f2361437358, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+16:05:04.417899 futex(0x7f2361437314, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+16:05:04.418303 futex(0x7f2361436ac8, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+16:05:04.418584 futex(0x7f2361436e2c, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+16:05:04.419333 futex(0x7f2361437308, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+16:05:04.419883 futex(0x7f2361437300, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+16:05:04.420486 futex(0x7f2361437420, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+16:05:04.421204 futex(0x7f23614372e8, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+16:05:04.421478 futex(0x7f23614372e0, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+16:05:04.422643 futex(0x7f2361436d64, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+16:05:04.422836 futex(0x7f2361437360, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+16:05:04.423105 futex(0x7f2361436d58, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+16:05:04.424177 futex(0x7f23614372f8, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+16:05:04.425442 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/ssl/openssl.cnf", O_RDONLY) = 3</etc/ssl/openssl.cnf>
+16:05:04.425792 fstat(3</etc/ssl/openssl.cnf>, {st_mode=S_IFREG|0644, st_size=12411, ...}) = 0
+16:05:04.425986 read(3</etc/ssl/openssl.cnf>, "#\n# OpenSSL example configuratio"..., 4096) = 4096
+16:05:04.426362 read(3</etc/ssl/openssl.cnf>, "d attributes must be the same, a"..., 4096) = 4096
+16:05:04.426746 read(3</etc/ssl/openssl.cnf>, "coding of an extension: beware e"..., 4096) = 4096
+16:05:04.427215 read(3</etc/ssl/openssl.cnf>, "cert = $insta::certout # insta.c"..., 4096) = 123
+16:05:04.427770 read(3</etc/ssl/openssl.cnf>, "", 4096) = 0
+16:05:04.428328 close(3</etc/ssl/openssl.cnf>) = 0
+16:05:04.429248 futex(0x7f2361436b08, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+16:05:04.429729 futex(0x7f2361436b64, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+16:05:04.431213 futex(0x7f23614372b4, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+16:05:04.431547 futex(0x7f2361436ae8, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+16:05:04.433345 futex(0x7f23614372d8, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+16:05:04.434928 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.435211 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.435526 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/http/__init__.cpython-313-x86_64-linux-gnu.so", 0x7ffc75e1f4a0, 0) = -1 ENOENT (No such file or directory)
+16:05:04.435751 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/http/__init__.abi3.so", 0x7ffc75e1f4a0, 0) = -1 ENOENT (No such file or directory)
+16:05:04.435956 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/http/__init__.abi3-x86_64-linux-gnu.so", 0x7ffc75e1f4a0, 0) = -1 ENOENT (No such file or directory)
+16:05:04.436045 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/http/__init__.so", 0x7ffc75e1f4a0, 0) = -1 ENOENT (No such file or directory)
+16:05:04.436269 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/http/__init__.py", {st_mode=S_IFREG|0644, st_size=8446, ...}, 0) = 0
+16:05:04.436470 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/http/__init__.py", {st_mode=S_IFREG|0644, st_size=8446, ...}, 0) = 0
+16:05:04.436686 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/http/__pycache__/__init__.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/http/__pycache__/__init__.cpython-313.pyc>
+16:05:04.436805 fstat(3</usr/lib/python3.13/http/__pycache__/__init__.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=9619, ...}) = 0
+16:05:04.437060 ioctl(3</usr/lib/python3.13/http/__pycache__/__init__.cpython-313.pyc>, TCGETS, 0x7ffc75e1f190) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.437176 lseek(3</usr/lib/python3.13/http/__pycache__/__init__.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.437243 lseek(3</usr/lib/python3.13/http/__pycache__/__init__.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.437401 fstat(3</usr/lib/python3.13/http/__pycache__/__init__.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=9619, ...}) = 0
+16:05:04.437603 read(3</usr/lib/python3.13/http/__pycache__/__init__.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\376 \0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\5\0\0"..., 9620) = 9619
+16:05:04.437714 read(3</usr/lib/python3.13/http/__pycache__/__init__.cpython-313.pyc>, "", 1) = 0
+16:05:04.437788 close(3</usr/lib/python3.13/http/__pycache__/__init__.cpython-313.pyc>) = 0
+16:05:04.440667 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/http", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.441114 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/http", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.441415 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/http", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.441690 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/http", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 3</usr/lib/python3.13/http>
+16:05:04.441985 fstat(3</usr/lib/python3.13/http>, {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+16:05:04.443103 getdents64(3</usr/lib/python3.13/http>, 0x2a643650 /* 8 entries */, 32768) = 240
+16:05:04.443536 getdents64(3</usr/lib/python3.13/http>, 0x2a643650 /* 0 entries */, 32768) = 0
+16:05:04.443800 close(3</usr/lib/python3.13/http>) = 0
+16:05:04.444131 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/http/client.py", {st_mode=S_IFREG|0644, st_size=58613, ...}, 0) = 0
+16:05:04.444445 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/http/client.py", {st_mode=S_IFREG|0644, st_size=58613, ...}, 0) = 0
+16:05:04.444950 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/http/__pycache__/client.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/http/__pycache__/client.cpython-313.pyc>
+16:05:04.447428 fstat(3</usr/lib/python3.13/http/__pycache__/client.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=59335, ...}) = 0
+16:05:04.449406 ioctl(3</usr/lib/python3.13/http/__pycache__/client.cpython-313.pyc>, TCGETS, 0x7ffc75e1f5b0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.449620 lseek(3</usr/lib/python3.13/http/__pycache__/client.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.449746 lseek(3</usr/lib/python3.13/http/__pycache__/client.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.449942 fstat(3</usr/lib/python3.13/http/__pycache__/client.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=59335, ...}) = 0
+16:05:04.450265 brk(0x2a673000)         = 0x2a673000
+16:05:04.450763 read(3</usr/lib/python3.13/http/__pycache__/client.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\365\344\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0"..., 59336) = 59335
+16:05:04.453465 read(3</usr/lib/python3.13/http/__pycache__/client.cpython-313.pyc>, "", 1) = 0
+16:05:04.454876 close(3</usr/lib/python3.13/http/__pycache__/client.cpython-313.pyc>) = 0
+16:05:04.455839 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.456188 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.456469 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.456734 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 3</usr/lib/python3.13/email>
+16:05:04.457055 fstat(3</usr/lib/python3.13/email>, {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+16:05:04.457306 getdents64(3</usr/lib/python3.13/email>, 0x2a644660 /* 25 entries */, 32768) = 864
+16:05:04.457453 getdents64(3</usr/lib/python3.13/email>, 0x2a644660 /* 0 entries */, 32768) = 0
+16:05:04.457549 close(3</usr/lib/python3.13/email>) = 0
+16:05:04.457665 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/parser.py", {st_mode=S_IFREG|0644, st_size=4975, ...}, 0) = 0
+16:05:04.459111 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/parser.py", {st_mode=S_IFREG|0644, st_size=4975, ...}, 0) = 0
+16:05:04.459312 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/__pycache__/parser.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/email/__pycache__/parser.cpython-313.pyc>
+16:05:04.459430 fstat(3</usr/lib/python3.13/email/__pycache__/parser.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=6514, ...}) = 0
+16:05:04.460506 ioctl(3</usr/lib/python3.13/email/__pycache__/parser.cpython-313.pyc>, TCGETS, 0x7ffc75e1ef20) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.460737 lseek(3</usr/lib/python3.13/email/__pycache__/parser.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.460993 lseek(3</usr/lib/python3.13/email/__pycache__/parser.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.461477 fstat(3</usr/lib/python3.13/email/__pycache__/parser.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=6514, ...}) = 0
+16:05:04.461670 read(3</usr/lib/python3.13/email/__pycache__/parser.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-jo\23\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\5\0\0"..., 6515) = 6514
+16:05:04.461873 read(3</usr/lib/python3.13/email/__pycache__/parser.cpython-313.pyc>, "", 1) = 0
+16:05:04.462086 close(3</usr/lib/python3.13/email/__pycache__/parser.cpython-313.pyc>) = 0
+16:05:04.462800 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.463403 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/feedparser.py", {st_mode=S_IFREG|0644, st_size=22898, ...}, 0) = 0
+16:05:04.463696 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/feedparser.py", {st_mode=S_IFREG|0644, st_size=22898, ...}, 0) = 0
+16:05:04.464206 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/__pycache__/feedparser.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/email/__pycache__/feedparser.cpython-313.pyc>
+16:05:04.465251 fstat(3</usr/lib/python3.13/email/__pycache__/feedparser.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=20567, ...}) = 0
+16:05:04.465486 ioctl(3</usr/lib/python3.13/email/__pycache__/feedparser.cpython-313.pyc>, TCGETS, 0x7ffc75e1e890) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.465655 lseek(3</usr/lib/python3.13/email/__pycache__/feedparser.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.465862 lseek(3</usr/lib/python3.13/email/__pycache__/feedparser.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.466153 fstat(3</usr/lib/python3.13/email/__pycache__/feedparser.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=20567, ...}) = 0
+16:05:04.466395 read(3</usr/lib/python3.13/email/__pycache__/feedparser.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-jrY\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\5\0\0"..., 20568) = 20567
+16:05:04.466668 read(3</usr/lib/python3.13/email/__pycache__/feedparser.cpython-313.pyc>, "", 1) = 0
+16:05:04.466858 close(3</usr/lib/python3.13/email/__pycache__/feedparser.cpython-313.pyc>) = 0
+16:05:04.467640 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.467996 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/errors.py", {st_mode=S_IFREG|0644, st_size=3814, ...}, 0) = 0
+16:05:04.469272 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/errors.py", {st_mode=S_IFREG|0644, st_size=3814, ...}, 0) = 0
+16:05:04.469788 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/__pycache__/errors.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/email/__pycache__/errors.cpython-313.pyc>
+16:05:04.470093 fstat(3</usr/lib/python3.13/email/__pycache__/errors.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=7580, ...}) = 0
+16:05:04.470361 ioctl(3</usr/lib/python3.13/email/__pycache__/errors.cpython-313.pyc>, TCGETS, 0x7ffc75e1dde0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.470674 lseek(3</usr/lib/python3.13/email/__pycache__/errors.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.470915 lseek(3</usr/lib/python3.13/email/__pycache__/errors.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.471260 fstat(3</usr/lib/python3.13/email/__pycache__/errors.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=7580, ...}) = 0
+16:05:04.471684 read(3</usr/lib/python3.13/email/__pycache__/errors.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\346\16\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0"..., 7581) = 7580
+16:05:04.471896 read(3</usr/lib/python3.13/email/__pycache__/errors.cpython-313.pyc>, "", 1) = 0
+16:05:04.472093 close(3</usr/lib/python3.13/email/__pycache__/errors.cpython-313.pyc>) = 0
+16:05:04.473433 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.473783 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/_policybase.py", {st_mode=S_IFREG|0644, st_size=15535, ...}, 0) = 0
+16:05:04.474202 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/_policybase.py", {st_mode=S_IFREG|0644, st_size=15535, ...}, 0) = 0
+16:05:04.474453 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/__pycache__/_policybase.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/email/__pycache__/_policybase.cpython-313.pyc>
+16:05:04.474753 fstat(3</usr/lib/python3.13/email/__pycache__/_policybase.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=17970, ...}) = 0
+16:05:04.475103 ioctl(3</usr/lib/python3.13/email/__pycache__/_policybase.cpython-313.pyc>, TCGETS, 0x7ffc75e1e200) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.475458 lseek(3</usr/lib/python3.13/email/__pycache__/_policybase.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.475823 lseek(3</usr/lib/python3.13/email/__pycache__/_policybase.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.476115 fstat(3</usr/lib/python3.13/email/__pycache__/_policybase.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=17970, ...}) = 0
+16:05:04.476517 read(3</usr/lib/python3.13/email/__pycache__/_policybase.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\257<\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\7\0\0"..., 17971) = 17970
+16:05:04.476789 read(3</usr/lib/python3.13/email/__pycache__/_policybase.cpython-313.pyc>, "", 1) = 0
+16:05:04.477014 close(3</usr/lib/python3.13/email/__pycache__/_policybase.cpython-313.pyc>) = 0
+16:05:04.477498 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.477810 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/header.py", {st_mode=S_IFREG|0644, st_size=24092, ...}, 0) = 0
+16:05:04.478155 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/header.py", {st_mode=S_IFREG|0644, st_size=24092, ...}, 0) = 0
+16:05:04.478409 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/__pycache__/header.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/email/__pycache__/header.cpython-313.pyc>
+16:05:04.478741 fstat(3</usr/lib/python3.13/email/__pycache__/header.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=24608, ...}) = 0
+16:05:04.478982 ioctl(3</usr/lib/python3.13/email/__pycache__/header.cpython-313.pyc>, TCGETS, 0x7ffc75e1d750) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.481188 lseek(3</usr/lib/python3.13/email/__pycache__/header.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.483914 lseek(3</usr/lib/python3.13/email/__pycache__/header.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.484720 fstat(3</usr/lib/python3.13/email/__pycache__/header.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=24608, ...}) = 0
+16:05:04.485686 read(3</usr/lib/python3.13/email/__pycache__/header.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\34^\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\5\0\0"..., 24609) = 24608
+16:05:04.486082 read(3</usr/lib/python3.13/email/__pycache__/header.cpython-313.pyc>, "", 1) = 0
+16:05:04.486367 close(3</usr/lib/python3.13/email/__pycache__/header.cpython-313.pyc>) = 0
+16:05:04.487144 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.487508 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/quoprimime.py", {st_mode=S_IFREG|0644, st_size=9864, ...}, 0) = 0
+16:05:04.487994 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/quoprimime.py", {st_mode=S_IFREG|0644, st_size=9864, ...}, 0) = 0
+16:05:04.488621 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/__pycache__/quoprimime.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/email/__pycache__/quoprimime.cpython-313.pyc>
+16:05:04.488978 fstat(3</usr/lib/python3.13/email/__pycache__/quoprimime.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=9909, ...}) = 0
+16:05:04.489365 ioctl(3</usr/lib/python3.13/email/__pycache__/quoprimime.cpython-313.pyc>, TCGETS, 0x7ffc75e1d0c0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.489699 lseek(3</usr/lib/python3.13/email/__pycache__/quoprimime.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.490110 lseek(3</usr/lib/python3.13/email/__pycache__/quoprimime.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.490599 fstat(3</usr/lib/python3.13/email/__pycache__/quoprimime.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=9909, ...}) = 0
+16:05:04.490948 read(3</usr/lib/python3.13/email/__pycache__/quoprimime.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\210&\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\5\0\0"..., 9910) = 9909
+16:05:04.491364 read(3</usr/lib/python3.13/email/__pycache__/quoprimime.cpython-313.pyc>, "", 1) = 0
+16:05:04.491664 close(3</usr/lib/python3.13/email/__pycache__/quoprimime.cpython-313.pyc>) = 0
+16:05:04.492243 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.492546 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.492738 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/string.py", {st_mode=S_IFREG|0644, st_size=11786, ...}, 0) = 0
+16:05:04.493095 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/string.py", {st_mode=S_IFREG|0644, st_size=11786, ...}, 0) = 0
+16:05:04.493345 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/string.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/string.cpython-313.pyc>
+16:05:04.493596 fstat(3</usr/lib/python3.13/__pycache__/string.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=11651, ...}) = 0
+16:05:04.493900 ioctl(3</usr/lib/python3.13/__pycache__/string.cpython-313.pyc>, TCGETS, 0x7ffc75e1ca30) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.494120 lseek(3</usr/lib/python3.13/__pycache__/string.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.494303 lseek(3</usr/lib/python3.13/__pycache__/string.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.494534 fstat(3</usr/lib/python3.13/__pycache__/string.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=11651, ...}) = 0
+16:05:04.494795 read(3</usr/lib/python3.13/__pycache__/string.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\n.\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\4\0\0"..., 11652) = 11651
+16:05:04.494965 read(3</usr/lib/python3.13/__pycache__/string.cpython-313.pyc>, "", 1) = 0
+16:05:04.495243 close(3</usr/lib/python3.13/__pycache__/string.cpython-313.pyc>) = 0
+16:05:04.498104 mmap(NULL, 1048576, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f2360d00000
+16:05:04.499881 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.500254 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/base64mime.py", {st_mode=S_IFREG|0644, st_size=3551, ...}, 0) = 0
+16:05:04.500759 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/base64mime.py", {st_mode=S_IFREG|0644, st_size=3551, ...}, 0) = 0
+16:05:04.501064 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/__pycache__/base64mime.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/email/__pycache__/base64mime.cpython-313.pyc>
+16:05:04.501438 fstat(3</usr/lib/python3.13/email/__pycache__/base64mime.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=3974, ...}) = 0
+16:05:04.502237 ioctl(3</usr/lib/python3.13/email/__pycache__/base64mime.cpython-313.pyc>, TCGETS, 0x7ffc75e1d0c0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.502497 lseek(3</usr/lib/python3.13/email/__pycache__/base64mime.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.504224 lseek(3</usr/lib/python3.13/email/__pycache__/base64mime.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.504490 fstat(3</usr/lib/python3.13/email/__pycache__/base64mime.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=3974, ...}) = 0
+16:05:04.504920 read(3</usr/lib/python3.13/email/__pycache__/base64mime.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\337\r\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\2\0\0"..., 3975) = 3974
+16:05:04.505223 read(3</usr/lib/python3.13/email/__pycache__/base64mime.cpython-313.pyc>, "", 1) = 0
+16:05:04.505537 close(3</usr/lib/python3.13/email/__pycache__/base64mime.cpython-313.pyc>) = 0
+16:05:04.506090 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.506300 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/charset.py", {st_mode=S_IFREG|0644, st_size=17063, ...}, 0) = 0
+16:05:04.506573 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/charset.py", {st_mode=S_IFREG|0644, st_size=17063, ...}, 0) = 0
+16:05:04.506803 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/__pycache__/charset.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/email/__pycache__/charset.cpython-313.pyc>
+16:05:04.507172 fstat(3</usr/lib/python3.13/email/__pycache__/charset.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=14899, ...}) = 0
+16:05:04.507416 ioctl(3</usr/lib/python3.13/email/__pycache__/charset.cpython-313.pyc>, TCGETS, 0x7ffc75e1cca0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.507752 lseek(3</usr/lib/python3.13/email/__pycache__/charset.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.508140 lseek(3</usr/lib/python3.13/email/__pycache__/charset.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.508489 fstat(3</usr/lib/python3.13/email/__pycache__/charset.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=14899, ...}) = 0
+16:05:04.508771 read(3</usr/lib/python3.13/email/__pycache__/charset.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\247B\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\t\0\0"..., 14900) = 14899
+16:05:04.509026 read(3</usr/lib/python3.13/email/__pycache__/charset.cpython-313.pyc>, "", 1) = 0
+16:05:04.509287 close(3</usr/lib/python3.13/email/__pycache__/charset.cpython-313.pyc>) = 0
+16:05:04.509999 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.510297 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/encoders.py", {st_mode=S_IFREG|0644, st_size=1778, ...}, 0) = 0
+16:05:04.511045 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/encoders.py", {st_mode=S_IFREG|0644, st_size=1778, ...}, 0) = 0
+16:05:04.511560 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/__pycache__/encoders.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/email/__pycache__/encoders.cpython-313.pyc>
+16:05:04.512117 fstat(3</usr/lib/python3.13/email/__pycache__/encoders.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=2053, ...}) = 0
+16:05:04.513913 ioctl(3</usr/lib/python3.13/email/__pycache__/encoders.cpython-313.pyc>, TCGETS, 0x7ffc75e1c610) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.514374 lseek(3</usr/lib/python3.13/email/__pycache__/encoders.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.515018 lseek(3</usr/lib/python3.13/email/__pycache__/encoders.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.515313 fstat(3</usr/lib/python3.13/email/__pycache__/encoders.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=2053, ...}) = 0
+16:05:04.515461 read(3</usr/lib/python3.13/email/__pycache__/encoders.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\362\6\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\2\0\0"..., 2054) = 2053
+16:05:04.515982 read(3</usr/lib/python3.13/email/__pycache__/encoders.cpython-313.pyc>, "", 1) = 0
+16:05:04.516420 close(3</usr/lib/python3.13/email/__pycache__/encoders.cpython-313.pyc>) = 0
+16:05:04.516882 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.517298 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.517663 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/quopri.py", {st_mode=S_IFREG|0755, st_size=7183, ...}, 0) = 0
+16:05:04.518020 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/quopri.py", {st_mode=S_IFREG|0755, st_size=7183, ...}, 0) = 0
+16:05:04.518216 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/quopri.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/quopri.cpython-313.pyc>
+16:05:04.518425 fstat(3</usr/lib/python3.13/__pycache__/quopri.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=9560, ...}) = 0
+16:05:04.518758 ioctl(3</usr/lib/python3.13/__pycache__/quopri.cpython-313.pyc>, TCGETS, 0x7ffc75e1bf80) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.518987 lseek(3</usr/lib/python3.13/__pycache__/quopri.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.519236 lseek(3</usr/lib/python3.13/__pycache__/quopri.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.519536 fstat(3</usr/lib/python3.13/__pycache__/quopri.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=9560, ...}) = 0
+16:05:04.519780 read(3</usr/lib/python3.13/__pycache__/quopri.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\17\34\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\4\0\0"..., 9561) = 9560
+16:05:04.520099 read(3</usr/lib/python3.13/__pycache__/quopri.cpython-313.pyc>, "", 1) = 0
+16:05:04.520253 close(3</usr/lib/python3.13/__pycache__/quopri.cpython-313.pyc>) = 0
+16:05:04.521737 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.522220 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/utils.py", {st_mode=S_IFREG|0644, st_size=16615, ...}, 0) = 0
+16:05:04.522622 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/utils.py", {st_mode=S_IFREG|0644, st_size=16615, ...}, 0) = 0
+16:05:04.522927 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/__pycache__/utils.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/email/__pycache__/utils.cpython-313.pyc>
+16:05:04.523337 fstat(3</usr/lib/python3.13/email/__pycache__/utils.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=16781, ...}) = 0
+16:05:04.523612 ioctl(3</usr/lib/python3.13/email/__pycache__/utils.cpython-313.pyc>, TCGETS, 0x7ffc75e1db70) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.524243 lseek(3</usr/lib/python3.13/email/__pycache__/utils.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.525155 lseek(3</usr/lib/python3.13/email/__pycache__/utils.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.526047 fstat(3</usr/lib/python3.13/email/__pycache__/utils.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=16781, ...}) = 0
+16:05:04.526330 read(3</usr/lib/python3.13/email/__pycache__/utils.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\347@\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\4\0\0"..., 16782) = 16781
+16:05:04.526828 read(3</usr/lib/python3.13/email/__pycache__/utils.cpython-313.pyc>, "", 1) = 0
+16:05:04.528120 close(3</usr/lib/python3.13/email/__pycache__/utils.cpython-313.pyc>) = 0
+16:05:04.530898 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.531191 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.531659 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/datetime.py", {st_mode=S_IFREG|0644, st_size=268, ...}, 0) = 0
+16:05:04.532080 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/datetime.py", {st_mode=S_IFREG|0644, st_size=268, ...}, 0) = 0
+16:05:04.532993 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/datetime.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/datetime.cpython-313.pyc>
+16:05:04.533460 fstat(3</usr/lib/python3.13/__pycache__/datetime.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=411, ...}) = 0
+16:05:04.534147 ioctl(3</usr/lib/python3.13/__pycache__/datetime.cpython-313.pyc>, TCGETS, 0x7ffc75e1d4e0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.534492 lseek(3</usr/lib/python3.13/__pycache__/datetime.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.536251 lseek(3</usr/lib/python3.13/__pycache__/datetime.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.536627 fstat(3</usr/lib/python3.13/__pycache__/datetime.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=411, ...}) = 0
+16:05:04.536892 read(3</usr/lib/python3.13/__pycache__/datetime.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\f\1\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\4\0\0"..., 412) = 411
+16:05:04.537176 read(3</usr/lib/python3.13/__pycache__/datetime.cpython-313.pyc>, "", 1) = 0
+16:05:04.537412 close(3</usr/lib/python3.13/__pycache__/datetime.cpython-313.pyc>) = 0
+16:05:04.541623 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/urllib", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.542866 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/urllib/parse.py", {st_mode=S_IFREG|0644, st_size=45676, ...}, 0) = 0
+16:05:04.546038 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/urllib/parse.py", {st_mode=S_IFREG|0644, st_size=45676, ...}, 0) = 0
+16:05:04.548271 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/urllib/__pycache__/parse.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/urllib/__pycache__/parse.cpython-313.pyc>
+16:05:04.548705 fstat(3</usr/lib/python3.13/urllib/__pycache__/parse.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=50865, ...}) = 0
+16:05:04.549001 ioctl(3</usr/lib/python3.13/urllib/__pycache__/parse.cpython-313.pyc>, TCGETS, 0x7ffc75e1d4e0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.549275 lseek(3</usr/lib/python3.13/urllib/__pycache__/parse.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.549827 lseek(3</usr/lib/python3.13/urllib/__pycache__/parse.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.551277 fstat(3</usr/lib/python3.13/urllib/__pycache__/parse.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=50865, ...}) = 0
+16:05:04.551952 brk(0x2a698000)         = 0x2a698000
+16:05:04.552329 read(3</usr/lib/python3.13/urllib/__pycache__/parse.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-jl\262\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0"..., 50866) = 50865
+16:05:04.552624 read(3</usr/lib/python3.13/urllib/__pycache__/parse.cpython-313.pyc>, "", 1) = 0
+16:05:04.553002 close(3</usr/lib/python3.13/urllib/__pycache__/parse.cpython-313.pyc>) = 0
+16:05:04.554225 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.554626 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.563508 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/warnings.py", {st_mode=S_IFREG|0644, st_size=26948, ...}, 0) = 0
+16:05:04.570201 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/warnings.py", {st_mode=S_IFREG|0644, st_size=26948, ...}, 0) = 0
+16:05:04.571070 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/warnings.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/warnings.cpython-313.pyc>
+16:05:04.571314 fstat(3</usr/lib/python3.13/__pycache__/warnings.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=29538, ...}) = 0
+16:05:04.571451 ioctl(3</usr/lib/python3.13/__pycache__/warnings.cpython-313.pyc>, TCGETS, 0x7ffc75e1ce50) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.571604 lseek(3</usr/lib/python3.13/__pycache__/warnings.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.571714 lseek(3</usr/lib/python3.13/__pycache__/warnings.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.571792 fstat(3</usr/lib/python3.13/__pycache__/warnings.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=29538, ...}) = 0
+16:05:04.571905 read(3</usr/lib/python3.13/__pycache__/warnings.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-jDi\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\7\0\0"..., 29539) = 29538
+16:05:04.572025 read(3</usr/lib/python3.13/__pycache__/warnings.cpython-313.pyc>, "", 1) = 0
+16:05:04.572172 close(3</usr/lib/python3.13/__pycache__/warnings.cpython-313.pyc>) = 0
+16:05:04.573019 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.573220 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.573410 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/ipaddress.py", {st_mode=S_IFREG|0644, st_size=81635, ...}, 0) = 0
+16:05:04.573601 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/ipaddress.py", {st_mode=S_IFREG|0644, st_size=81635, ...}, 0) = 0
+16:05:04.573765 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/ipaddress.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/ipaddress.cpython-313.pyc>
+16:05:04.573909 fstat(3</usr/lib/python3.13/__pycache__/ipaddress.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=91964, ...}) = 0
+16:05:04.574484 ioctl(3</usr/lib/python3.13/__pycache__/ipaddress.cpython-313.pyc>, TCGETS, 0x7ffc75e1ce50) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.574884 lseek(3</usr/lib/python3.13/__pycache__/ipaddress.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.575248 lseek(3</usr/lib/python3.13/__pycache__/ipaddress.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.575609 fstat(3</usr/lib/python3.13/__pycache__/ipaddress.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=91964, ...}) = 0
+16:05:04.575954 read(3</usr/lib/python3.13/__pycache__/ipaddress.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\343>\1\0\343\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0"..., 91965) = 91964
+16:05:04.576324 read(3</usr/lib/python3.13/__pycache__/ipaddress.cpython-313.pyc>, "", 1) = 0
+16:05:04.576532 close(3</usr/lib/python3.13/__pycache__/ipaddress.cpython-313.pyc>) = 0
+16:05:04.585960 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.590020 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/_parseaddr.py", {st_mode=S_IFREG|0644, st_size=17895, ...}, 0) = 0
+16:05:04.590372 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/_parseaddr.py", {st_mode=S_IFREG|0644, st_size=17895, ...}, 0) = 0
+16:05:04.592024 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/__pycache__/_parseaddr.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/email/__pycache__/_parseaddr.cpython-313.pyc>
+16:05:04.592255 fstat(3</usr/lib/python3.13/email/__pycache__/_parseaddr.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=23562, ...}) = 0
+16:05:04.592497 ioctl(3</usr/lib/python3.13/email/__pycache__/_parseaddr.cpython-313.pyc>, TCGETS, 0x7ffc75e1d4e0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.592712 lseek(3</usr/lib/python3.13/email/__pycache__/_parseaddr.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.592952 lseek(3</usr/lib/python3.13/email/__pycache__/_parseaddr.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.593122 fstat(3</usr/lib/python3.13/email/__pycache__/_parseaddr.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=23562, ...}) = 0
+16:05:04.593348 read(3</usr/lib/python3.13/email/__pycache__/_parseaddr.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\347E\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\17\0\0"..., 23563) = 23562
+16:05:04.593607 read(3</usr/lib/python3.13/email/__pycache__/_parseaddr.cpython-313.pyc>, "", 1) = 0
+16:05:04.593907 close(3</usr/lib/python3.13/email/__pycache__/_parseaddr.cpython-313.pyc>) = 0
+16:05:04.597566 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.599061 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/message.py", {st_mode=S_IFREG|0644, st_size=48215, ...}, 0) = 0
+16:05:04.601812 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/message.py", {st_mode=S_IFREG|0644, st_size=48215, ...}, 0) = 0
+16:05:04.605534 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/__pycache__/message.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/email/__pycache__/message.cpython-313.pyc>
+16:05:04.606011 fstat(3</usr/lib/python3.13/email/__pycache__/message.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=51785, ...}) = 0
+16:05:04.606570 ioctl(3</usr/lib/python3.13/email/__pycache__/message.cpython-313.pyc>, TCGETS, 0x7ffc75e1ef20) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.606923 lseek(3</usr/lib/python3.13/email/__pycache__/message.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.607268 lseek(3</usr/lib/python3.13/email/__pycache__/message.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.607455 fstat(3</usr/lib/python3.13/email/__pycache__/message.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=51785, ...}) = 0
+16:05:04.607630 brk(0x2a6be000)         = 0x2a6be000
+16:05:04.607854 read(3</usr/lib/python3.13/email/__pycache__/message.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-jW\274\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\5\0\0"..., 51786) = 51785
+16:05:04.608533 read(3</usr/lib/python3.13/email/__pycache__/message.cpython-313.pyc>, "", 1) = 0
+16:05:04.608740 close(3</usr/lib/python3.13/email/__pycache__/message.cpython-313.pyc>) = 0
+16:05:04.610778 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.611105 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/_encoded_words.py", {st_mode=S_IFREG|0644, st_size=8541, ...}, 0) = 0
+16:05:04.611272 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/_encoded_words.py", {st_mode=S_IFREG|0644, st_size=8541, ...}, 0) = 0
+16:05:04.611471 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/__pycache__/_encoded_words.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/email/__pycache__/_encoded_words.cpython-313.pyc>
+16:05:04.611580 fstat(3</usr/lib/python3.13/email/__pycache__/_encoded_words.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=8287, ...}) = 0
+16:05:04.611649 ioctl(3</usr/lib/python3.13/email/__pycache__/_encoded_words.cpython-313.pyc>, TCGETS, 0x7ffc75e1e890) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.612749 lseek(3</usr/lib/python3.13/email/__pycache__/_encoded_words.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.614150 lseek(3</usr/lib/python3.13/email/__pycache__/_encoded_words.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.615376 fstat(3</usr/lib/python3.13/email/__pycache__/_encoded_words.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=8287, ...}) = 0
+16:05:04.615904 read(3</usr/lib/python3.13/email/__pycache__/_encoded_words.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j]!\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\5\0\0"..., 8288) = 8287
+16:05:04.616265 read(3</usr/lib/python3.13/email/__pycache__/_encoded_words.cpython-313.pyc>, "", 1) = 0
+16:05:04.616586 close(3</usr/lib/python3.13/email/__pycache__/_encoded_words.cpython-313.pyc>) = 0
+16:05:04.619186 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.619443 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/iterators.py", {st_mode=S_IFREG|0644, st_size=2129, ...}, 0) = 0
+16:05:04.621433 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/iterators.py", {st_mode=S_IFREG|0644, st_size=2129, ...}, 0) = 0
+16:05:04.623558 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/email/__pycache__/iterators.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/email/__pycache__/iterators.cpython-313.pyc>
+16:05:04.624877 fstat(3</usr/lib/python3.13/email/__pycache__/iterators.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=2816, ...}) = 0
+16:05:04.625154 ioctl(3</usr/lib/python3.13/email/__pycache__/iterators.cpython-313.pyc>, TCGETS, 0x7ffc75e1e5e0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.625459 lseek(3</usr/lib/python3.13/email/__pycache__/iterators.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.625784 lseek(3</usr/lib/python3.13/email/__pycache__/iterators.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.626058 fstat(3</usr/lib/python3.13/email/__pycache__/iterators.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=2816, ...}) = 0
+16:05:04.626329 read(3</usr/lib/python3.13/email/__pycache__/iterators.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-jQ\10\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\2\0\0"..., 2817) = 2816
+16:05:04.626573 read(3</usr/lib/python3.13/email/__pycache__/iterators.cpython-313.pyc>, "", 1) = 0
+16:05:04.627021 close(3</usr/lib/python3.13/email/__pycache__/iterators.cpython-313.pyc>) = 0
+16:05:04.627440 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.627536 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.627717 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/socket.py", {st_mode=S_IFREG|0644, st_size=37759, ...}, 0) = 0
+16:05:04.628550 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/socket.py", {st_mode=S_IFREG|0644, st_size=37759, ...}, 0) = 0
+16:05:04.628676 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/socket.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/socket.cpython-313.pyc>
+16:05:04.628749 fstat(3</usr/lib/python3.13/__pycache__/socket.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=42219, ...}) = 0
+16:05:04.628829 ioctl(3</usr/lib/python3.13/__pycache__/socket.cpython-313.pyc>, TCGETS, 0x7ffc75e1ef20) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.628975 lseek(3</usr/lib/python3.13/__pycache__/socket.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.629083 lseek(3</usr/lib/python3.13/__pycache__/socket.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.629970 fstat(3</usr/lib/python3.13/__pycache__/socket.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=42219, ...}) = 0
+16:05:04.630561 read(3</usr/lib/python3.13/__pycache__/socket.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\177\223\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\5\0\0"..., 42220) = 42219
+16:05:04.630770 read(3</usr/lib/python3.13/__pycache__/socket.cpython-313.pyc>, "", 1) = 0
+16:05:04.631092 close(3</usr/lib/python3.13/__pycache__/socket.cpython-313.pyc>) = 0
+16:05:04.635390 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.637840 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.638047 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/selectors.py", {st_mode=S_IFREG|0644, st_size=19457, ...}, 0) = 0
+16:05:04.639567 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/selectors.py", {st_mode=S_IFREG|0644, st_size=19457, ...}, 0) = 0
+16:05:04.639966 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/selectors.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/selectors.cpython-313.pyc>
+16:05:04.640124 fstat(3</usr/lib/python3.13/__pycache__/selectors.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=26355, ...}) = 0
+16:05:04.640196 ioctl(3</usr/lib/python3.13/__pycache__/selectors.cpython-313.pyc>, TCGETS, 0x7ffc75e1e890) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.640279 lseek(3</usr/lib/python3.13/__pycache__/selectors.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.640351 lseek(3</usr/lib/python3.13/__pycache__/selectors.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.640421 fstat(3</usr/lib/python3.13/__pycache__/selectors.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=26355, ...}) = 0
+16:05:04.640496 read(3</usr/lib/python3.13/__pycache__/selectors.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\1L\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0"..., 26356) = 26355
+16:05:04.640843 read(3</usr/lib/python3.13/__pycache__/selectors.cpython-313.pyc>, "", 1) = 0
+16:05:04.641583 close(3</usr/lib/python3.13/__pycache__/selectors.cpython-313.pyc>) = 0
+16:05:04.642972 epoll_create1(EPOLL_CLOEXEC) = 3<anon_inode:[eventpoll]>
+16:05:04.643268 close(3<anon_inode:[eventpoll]>) = 0
+16:05:04.649806 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.651964 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.654366 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/ssl.py", {st_mode=S_IFREG|0644, st_size=52706, ...}, 0) = 0
+16:05:04.654947 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/ssl.py", {st_mode=S_IFREG|0644, st_size=52706, ...}, 0) = 0
+16:05:04.655679 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/ssl.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/ssl.cpython-313.pyc>
+16:05:04.657064 fstat(3</usr/lib/python3.13/__pycache__/ssl.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=65204, ...}) = 0
+16:05:04.658153 ioctl(3</usr/lib/python3.13/__pycache__/ssl.cpython-313.pyc>, TCGETS, 0x7ffc75e1ef20) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.658234 lseek(3</usr/lib/python3.13/__pycache__/ssl.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.658299 lseek(3</usr/lib/python3.13/__pycache__/ssl.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.658360 fstat(3</usr/lib/python3.13/__pycache__/ssl.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=65204, ...}) = 0
+16:05:04.658422 brk(0x2a6e9000)         = 0x2a6e9000
+16:05:04.658497 read(3</usr/lib/python3.13/__pycache__/ssl.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\342\315\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\n\0\0"..., 65205) = 65204
+16:05:04.658647 read(3</usr/lib/python3.13/__pycache__/ssl.cpython-313.pyc>, "", 1) = 0
+16:05:04.658773 close(3</usr/lib/python3.13/__pycache__/ssl.cpython-313.pyc>) = 0
+16:05:04.659970 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.667079 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.667438 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=12288, ...}, 0) = 0
+16:05:04.667723 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/lib-dynload/_ssl.cpython-313-x86_64-linux-gnu.so", {st_mode=S_IFREG|0644, st_size=223664, ...}, 0) = 0
+16:05:04.668220 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/lib-dynload/_ssl.cpython-313-x86_64-linux-gnu.so", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/lib-dynload/_ssl.cpython-313-x86_64-linux-gnu.so>
+16:05:04.668408 read(3</usr/lib/python3.13/lib-dynload/_ssl.cpython-313-x86_64-linux-gnu.so>, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+16:05:04.668671 fstat(3</usr/lib/python3.13/lib-dynload/_ssl.cpython-313-x86_64-linux-gnu.so>, {st_mode=S_IFREG|0644, st_size=223664, ...}) = 0
+16:05:04.668821 mmap(NULL, 225744, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3</usr/lib/python3.13/lib-dynload/_ssl.cpython-313-x86_64-linux-gnu.so>, 0) = 0x7f23614fe000
+16:05:04.669068 mmap(0x7f2361511000, 45056, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/python3.13/lib-dynload/_ssl.cpython-313-x86_64-linux-gnu.so>, 0x13000) = 0x7f2361511000
+16:05:04.669310 mmap(0x7f236151c000, 61440, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/python3.13/lib-dynload/_ssl.cpython-313-x86_64-linux-gnu.so>, 0x1e000) = 0x7f236151c000
+16:05:04.669501 mmap(0x7f236152b000, 45056, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/python3.13/lib-dynload/_ssl.cpython-313-x86_64-linux-gnu.so>, 0x2c000) = 0x7f236152b000
+16:05:04.669729 close(3</usr/lib/python3.13/lib-dynload/_ssl.cpython-313-x86_64-linux-gnu.so>) = 0
+16:05:04.669888 openat(AT_FDCWD</home/adrian/cothink-system>, "/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3</etc/ld.so.cache>
+16:05:04.670055 fstat(3</etc/ld.so.cache>, {st_mode=S_IFREG|0644, st_size=109359, ...}) = 0
+16:05:04.670214 mmap(NULL, 109359, PROT_READ, MAP_PRIVATE, 3</etc/ld.so.cache>, 0) = 0x7f2365ed2000
+16:05:04.670364 close(3</etc/ld.so.cache>) = 0
+16:05:04.670518 openat(AT_FDCWD</home/adrian/cothink-system>, "/lib/x86_64-linux-gnu/libssl.so.3", O_RDONLY|O_CLOEXEC) = 3</usr/lib/x86_64-linux-gnu/libssl.so.3>
+16:05:04.672302 read(3</usr/lib/x86_64-linux-gnu/libssl.so.3>, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+16:05:04.672487 fstat(3</usr/lib/x86_64-linux-gnu/libssl.so.3>, {st_mode=S_IFREG|0644, st_size=1101760, ...}) = 0
+16:05:04.672579 mmap(NULL, 1103848, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libssl.so.3>, 0) = 0x7f2360bf2000
+16:05:04.672757 mmap(0x7f2360c15000, 692224, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libssl.so.3>, 0x23000) = 0x7f2360c15000
+16:05:04.672993 mmap(0x7f2360cbe000, 208896, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libssl.so.3>, 0xcc000) = 0x7f2360cbe000
+16:05:04.673177 mmap(0x7f2360cf1000, 61440, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libssl.so.3>, 0xfe000) = 0x7f2360cf1000
+16:05:04.673358 close(3</usr/lib/x86_64-linux-gnu/libssl.so.3>) = 0
+16:05:04.674163 mprotect(0x7f2360cf1000, 45056, PROT_READ) = 0
+16:05:04.674575 mprotect(0x7f236152b000, 4096, PROT_READ) = 0
+16:05:04.674753 munmap(0x7f2365ed2000, 109359) = 0
+16:05:04.676088 mmap(NULL, 1048576, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f2360af2000
+16:05:04.686520 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.688602 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.689129 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/tempfile.py", {st_mode=S_IFREG|0644, st_size=40094, ...}, 0) = 0
+16:05:04.689370 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/tempfile.py", {st_mode=S_IFREG|0644, st_size=40094, ...}, 0) = 0
+16:05:04.689477 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/tempfile.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/tempfile.cpython-313.pyc>
+16:05:04.689821 fstat(3</usr/lib/python3.13/__pycache__/tempfile.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=49845, ...}) = 0
+16:05:04.689903 ioctl(3</usr/lib/python3.13/__pycache__/tempfile.cpython-313.pyc>, TCGETS, 0x7ffc75e1f5b0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.689960 lseek(3</usr/lib/python3.13/__pycache__/tempfile.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.690071 lseek(3</usr/lib/python3.13/__pycache__/tempfile.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.690216 fstat(3</usr/lib/python3.13/__pycache__/tempfile.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=49845, ...}) = 0
+16:05:04.690343 brk(0x2a715000)         = 0x2a715000
+16:05:04.690980 read(3</usr/lib/python3.13/__pycache__/tempfile.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\236\234\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\5\0\0"..., 49846) = 49845
+16:05:04.691349 read(3</usr/lib/python3.13/__pycache__/tempfile.cpython-313.pyc>, "", 1) = 0
+16:05:04.691638 close(3</usr/lib/python3.13/__pycache__/tempfile.cpython-313.pyc>) = 0
+16:05:04.692475 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.694434 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.694867 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/shutil.py", {st_mode=S_IFREG|0644, st_size=57463, ...}, 0) = 0
+16:05:04.695121 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/shutil.py", {st_mode=S_IFREG|0644, st_size=57463, ...}, 0) = 0
+16:05:04.697691 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/shutil.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/shutil.cpython-313.pyc>
+16:05:04.698875 fstat(3</usr/lib/python3.13/__pycache__/shutil.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=67452, ...}) = 0
+16:05:04.699013 ioctl(3</usr/lib/python3.13/__pycache__/shutil.cpython-313.pyc>, TCGETS, 0x7ffc75e1ef20) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.699668 lseek(3</usr/lib/python3.13/__pycache__/shutil.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.699910 lseek(3</usr/lib/python3.13/__pycache__/shutil.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.700173 fstat(3</usr/lib/python3.13/__pycache__/shutil.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=67452, ...}) = 0
+16:05:04.700366 read(3</usr/lib/python3.13/__pycache__/shutil.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-jw\340\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\5\0\0"..., 67453) = 67452
+16:05:04.700834 read(3</usr/lib/python3.13/__pycache__/shutil.cpython-313.pyc>, "", 1) = 0
+16:05:04.701703 close(3</usr/lib/python3.13/__pycache__/shutil.cpython-313.pyc>) = 0
+16:05:04.702753 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.703038 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.703279 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/fnmatch.py", {st_mode=S_IFREG|0644, st_size=6180, ...}, 0) = 0
+16:05:04.703570 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/fnmatch.py", {st_mode=S_IFREG|0644, st_size=6180, ...}, 0) = 0
+16:05:04.703795 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/fnmatch.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/fnmatch.cpython-313.pyc>
+16:05:04.704227 fstat(3</usr/lib/python3.13/__pycache__/fnmatch.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=6804, ...}) = 0
+16:05:04.704865 ioctl(3</usr/lib/python3.13/__pycache__/fnmatch.cpython-313.pyc>, TCGETS, 0x7ffc75e1e890) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.705142 lseek(3</usr/lib/python3.13/__pycache__/fnmatch.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.705403 lseek(3</usr/lib/python3.13/__pycache__/fnmatch.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.705542 fstat(3</usr/lib/python3.13/__pycache__/fnmatch.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=6804, ...}) = 0
+16:05:04.705786 read(3</usr/lib/python3.13/__pycache__/fnmatch.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j$\30\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\5\0\0"..., 6805) = 6804
+16:05:04.706181 read(3</usr/lib/python3.13/__pycache__/fnmatch.cpython-313.pyc>, "", 1) = 0
+16:05:04.706517 close(3</usr/lib/python3.13/__pycache__/fnmatch.cpython-313.pyc>) = 0
+16:05:04.707255 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.708438 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.709490 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/bz2.py", {st_mode=S_IFREG|0644, st_size=11969, ...}, 0) = 0
+16:05:04.709990 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/bz2.py", {st_mode=S_IFREG|0644, st_size=11969, ...}, 0) = 0
+16:05:04.710703 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/bz2.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/bz2.cpython-313.pyc>
+16:05:04.711071 fstat(3</usr/lib/python3.13/__pycache__/bz2.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=15165, ...}) = 0
+16:05:04.711294 ioctl(3</usr/lib/python3.13/__pycache__/bz2.cpython-313.pyc>, TCGETS, 0x7ffc75e1e890) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.711780 lseek(3</usr/lib/python3.13/__pycache__/bz2.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.713068 lseek(3</usr/lib/python3.13/__pycache__/bz2.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.714779 fstat(3</usr/lib/python3.13/__pycache__/bz2.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=15165, ...}) = 0
+16:05:04.715264 read(3</usr/lib/python3.13/__pycache__/bz2.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\301.\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\5\0\0"..., 15166) = 15165
+16:05:04.716134 read(3</usr/lib/python3.13/__pycache__/bz2.cpython-313.pyc>, "", 1) = 0
+16:05:04.717031 close(3</usr/lib/python3.13/__pycache__/bz2.cpython-313.pyc>) = 0
+16:05:04.717646 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.718480 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.720221 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/_compression.py", {st_mode=S_IFREG|0644, st_size=5681, ...}, 0) = 0
+16:05:04.720560 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/_compression.py", {st_mode=S_IFREG|0644, st_size=5681, ...}, 0) = 0
+16:05:04.720972 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/_compression.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/_compression.cpython-313.pyc>
+16:05:04.721263 fstat(3</usr/lib/python3.13/__pycache__/_compression.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=7805, ...}) = 0
+16:05:04.721381 ioctl(3</usr/lib/python3.13/__pycache__/_compression.cpython-313.pyc>, TCGETS, 0x7ffc75e1e200) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.721457 lseek(3</usr/lib/python3.13/__pycache__/_compression.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.721934 lseek(3</usr/lib/python3.13/__pycache__/_compression.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.722327 fstat(3</usr/lib/python3.13/__pycache__/_compression.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=7805, ...}) = 0
+16:05:04.722628 read(3</usr/lib/python3.13/__pycache__/_compression.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j1\26\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\5\0\0"..., 7806) = 7805
+16:05:04.722930 read(3</usr/lib/python3.13/__pycache__/_compression.cpython-313.pyc>, "", 1) = 0
+16:05:04.723188 close(3</usr/lib/python3.13/__pycache__/_compression.cpython-313.pyc>) = 0
+16:05:04.723737 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.723956 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.724158 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=12288, ...}, 0) = 0
+16:05:04.724288 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/lib-dynload/_bz2.cpython-313-x86_64-linux-gnu.so", {st_mode=S_IFREG|0644, st_size=31952, ...}, 0) = 0
+16:05:04.724553 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/lib-dynload/_bz2.cpython-313-x86_64-linux-gnu.so", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/lib-dynload/_bz2.cpython-313-x86_64-linux-gnu.so>
+16:05:04.724745 read(3</usr/lib/python3.13/lib-dynload/_bz2.cpython-313-x86_64-linux-gnu.so>, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+16:05:04.725089 fstat(3</usr/lib/python3.13/lib-dynload/_bz2.cpython-313-x86_64-linux-gnu.so>, {st_mode=S_IFREG|0644, st_size=31952, ...}) = 0
+16:05:04.725351 mmap(NULL, 34032, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3</usr/lib/python3.13/lib-dynload/_bz2.cpython-313-x86_64-linux-gnu.so>, 0) = 0x7f23663cd000
+16:05:04.725594 mmap(0x7f23663cf000, 12288, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/python3.13/lib-dynload/_bz2.cpython-313-x86_64-linux-gnu.so>, 0x2000) = 0x7f23663cf000
+16:05:04.725804 mmap(0x7f23663d2000, 8192, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/python3.13/lib-dynload/_bz2.cpython-313-x86_64-linux-gnu.so>, 0x5000) = 0x7f23663d2000
+16:05:04.726094 mmap(0x7f23663d4000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/python3.13/lib-dynload/_bz2.cpython-313-x86_64-linux-gnu.so>, 0x6000) = 0x7f23663d4000
+16:05:04.726291 close(3</usr/lib/python3.13/lib-dynload/_bz2.cpython-313-x86_64-linux-gnu.so>) = 0
+16:05:04.726574 openat(AT_FDCWD</home/adrian/cothink-system>, "/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3</etc/ld.so.cache>
+16:05:04.726874 fstat(3</etc/ld.so.cache>, {st_mode=S_IFREG|0644, st_size=109359, ...}) = 0
+16:05:04.727145 mmap(NULL, 109359, PROT_READ, MAP_PRIVATE, 3</etc/ld.so.cache>, 0) = 0x7f2365ed2000
+16:05:04.727351 close(3</etc/ld.so.cache>) = 0
+16:05:04.727461 openat(AT_FDCWD</home/adrian/cothink-system>, "/lib/x86_64-linux-gnu/libbz2.so.1.0", O_RDONLY|O_CLOEXEC) = 3</usr/lib/x86_64-linux-gnu/libbz2.so.1.0.4>
+16:05:04.727558 read(3</usr/lib/x86_64-linux-gnu/libbz2.so.1.0.4>, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+16:05:04.727785 fstat(3</usr/lib/x86_64-linux-gnu/libbz2.so.1.0.4>, {st_mode=S_IFREG|0644, st_size=74688, ...}) = 0
+16:05:04.728080 mmap(NULL, 76840, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libbz2.so.1.0.4>, 0) = 0x7f23614eb000
+16:05:04.728330 mmap(0x7f23614ed000, 53248, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libbz2.so.1.0.4>, 0x2000) = 0x7f23614ed000
+16:05:04.728552 mmap(0x7f23614fa000, 8192, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libbz2.so.1.0.4>, 0xf000) = 0x7f23614fa000
+16:05:04.728778 mmap(0x7f23614fc000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libbz2.so.1.0.4>, 0x10000) = 0x7f23614fc000
+16:05:04.729089 close(3</usr/lib/x86_64-linux-gnu/libbz2.so.1.0.4>) = 0
+16:05:04.729780 mprotect(0x7f23614fc000, 4096, PROT_READ) = 0
+16:05:04.731763 mprotect(0x7f23663d4000, 4096, PROT_READ) = 0
+16:05:04.732471 munmap(0x7f2365ed2000, 109359) = 0
+16:05:04.733389 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.733677 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.733994 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/lzma.py", {st_mode=S_IFREG|0644, st_size=13399, ...}, 0) = 0
+16:05:04.734664 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/lzma.py", {st_mode=S_IFREG|0644, st_size=13399, ...}, 0) = 0
+16:05:04.735194 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/lzma.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/lzma.cpython-313.pyc>
+16:05:04.735489 fstat(3</usr/lib/python3.13/__pycache__/lzma.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=15718, ...}) = 0
+16:05:04.735780 ioctl(3</usr/lib/python3.13/__pycache__/lzma.cpython-313.pyc>, TCGETS, 0x7ffc75e1e890) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.735931 lseek(3</usr/lib/python3.13/__pycache__/lzma.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.736142 lseek(3</usr/lib/python3.13/__pycache__/lzma.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.736383 fstat(3</usr/lib/python3.13/__pycache__/lzma.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=15718, ...}) = 0
+16:05:04.736675 read(3</usr/lib/python3.13/__pycache__/lzma.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-jW4\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\t\0\0"..., 15719) = 15718
+16:05:04.736982 read(3</usr/lib/python3.13/__pycache__/lzma.cpython-313.pyc>, "", 1) = 0
+16:05:04.737304 close(3</usr/lib/python3.13/__pycache__/lzma.cpython-313.pyc>) = 0
+16:05:04.737794 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.738307 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.738592 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=12288, ...}, 0) = 0
+16:05:04.738852 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/lib-dynload/_lzma.cpython-313-x86_64-linux-gnu.so", {st_mode=S_IFREG|0644, st_size=40848, ...}, 0) = 0
+16:05:04.739184 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/lib-dynload/_lzma.cpython-313-x86_64-linux-gnu.so", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/lib-dynload/_lzma.cpython-313-x86_64-linux-gnu.so>
+16:05:04.739554 read(3</usr/lib/python3.13/lib-dynload/_lzma.cpython-313-x86_64-linux-gnu.so>, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+16:05:04.739850 fstat(3</usr/lib/python3.13/lib-dynload/_lzma.cpython-313-x86_64-linux-gnu.so>, {st_mode=S_IFREG|0644, st_size=40848, ...}) = 0
+16:05:04.740171 mmap(NULL, 42928, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3</usr/lib/python3.13/lib-dynload/_lzma.cpython-313-x86_64-linux-gnu.so>, 0) = 0x7f2365ee2000
+16:05:04.740405 mmap(0x7f2365ee4000, 16384, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/python3.13/lib-dynload/_lzma.cpython-313-x86_64-linux-gnu.so>, 0x2000) = 0x7f2365ee4000
+16:05:04.740630 mmap(0x7f2365ee8000, 12288, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/python3.13/lib-dynload/_lzma.cpython-313-x86_64-linux-gnu.so>, 0x6000) = 0x7f2365ee8000
+16:05:04.740897 mmap(0x7f2365eeb000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/python3.13/lib-dynload/_lzma.cpython-313-x86_64-linux-gnu.so>, 0x8000) = 0x7f2365eeb000
+16:05:04.741112 close(3</usr/lib/python3.13/lib-dynload/_lzma.cpython-313-x86_64-linux-gnu.so>) = 0
+16:05:04.741238 openat(AT_FDCWD</home/adrian/cothink-system>, "/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3</etc/ld.so.cache>
+16:05:04.741401 fstat(3</etc/ld.so.cache>, {st_mode=S_IFREG|0644, st_size=109359, ...}) = 0
+16:05:04.741536 mmap(NULL, 109359, PROT_READ, MAP_PRIVATE, 3</etc/ld.so.cache>, 0) = 0x7f23614d0000
+16:05:04.741684 close(3</etc/ld.so.cache>) = 0
+16:05:04.741794 openat(AT_FDCWD</home/adrian/cothink-system>, "/lib/x86_64-linux-gnu/liblzma.so.5", O_RDONLY|O_CLOEXEC) = 3</usr/lib/x86_64-linux-gnu/liblzma.so.5.8.1>
+16:05:04.741971 read(3</usr/lib/x86_64-linux-gnu/liblzma.so.5.8.1>, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+16:05:04.742125 fstat(3</usr/lib/x86_64-linux-gnu/liblzma.so.5.8.1>, {st_mode=S_IFREG|0644, st_size=198832, ...}) = 0
+16:05:04.742362 mmap(NULL, 196824, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/liblzma.so.5.8.1>, 0) = 0x7f236149f000
+16:05:04.742472 mmap(0x7f23614a3000, 126976, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/liblzma.so.5.8.1>, 0x4000) = 0x7f23614a3000
+16:05:04.742627 mmap(0x7f23614c2000, 49152, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/liblzma.so.5.8.1>, 0x23000) = 0x7f23614c2000
+16:05:04.742735 mmap(0x7f23614ce000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/liblzma.so.5.8.1>, 0x2f000) = 0x7f23614ce000
+16:05:04.742882 close(3</usr/lib/x86_64-linux-gnu/liblzma.so.5.8.1>) = 0
+16:05:04.743065 mprotect(0x7f23614ce000, 4096, PROT_READ) = 0
+16:05:04.743279 mprotect(0x7f2365eeb000, 4096, PROT_READ) = 0
+16:05:04.743538 munmap(0x7f23614d0000, 109359) = 0
+16:05:04.744694 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.745147 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.746247 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/random.py", {st_mode=S_IFREG|0644, st_size=37006, ...}, 0) = 0
+16:05:04.747308 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/random.py", {st_mode=S_IFREG|0644, st_size=37006, ...}, 0) = 0
+16:05:04.748521 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/random.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/random.cpython-313.pyc>
+16:05:04.750147 fstat(3</usr/lib/python3.13/__pycache__/random.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=35256, ...}) = 0
+16:05:04.750775 ioctl(3</usr/lib/python3.13/__pycache__/random.cpython-313.pyc>, TCGETS, 0x7ffc75e1ef20) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.751383 lseek(3</usr/lib/python3.13/__pycache__/random.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.751817 lseek(3</usr/lib/python3.13/__pycache__/random.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.752099 fstat(3</usr/lib/python3.13/__pycache__/random.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=35256, ...}) = 0
+16:05:04.752782 read(3</usr/lib/python3.13/__pycache__/random.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\216\220\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0"..., 35257) = 35256
+16:05:04.752967 read(3</usr/lib/python3.13/__pycache__/random.cpython-313.pyc>, "", 1) = 0
+16:05:04.753104 close(3</usr/lib/python3.13/__pycache__/random.cpython-313.pyc>) = 0
+16:05:04.754737 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.755717 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.756222 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/weakref.py", {st_mode=S_IFREG|0644, st_size=21513, ...}, 0) = 0
+16:05:04.756519 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/weakref.py", {st_mode=S_IFREG|0644, st_size=21513, ...}, 0) = 0
+16:05:04.757056 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/weakref.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/weakref.cpython-313.pyc>
+16:05:04.757335 fstat(3</usr/lib/python3.13/__pycache__/weakref.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=31803, ...}) = 0
+16:05:04.757586 ioctl(3</usr/lib/python3.13/__pycache__/weakref.cpython-313.pyc>, TCGETS, 0x7ffc75e1ef20) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.757813 lseek(3</usr/lib/python3.13/__pycache__/weakref.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.757998 lseek(3</usr/lib/python3.13/__pycache__/weakref.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.758219 fstat(3</usr/lib/python3.13/__pycache__/weakref.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=31803, ...}) = 0
+16:05:04.758459 read(3</usr/lib/python3.13/__pycache__/weakref.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\tT\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\5\0\0"..., 31804) = 31803
+16:05:04.758695 read(3</usr/lib/python3.13/__pycache__/weakref.cpython-313.pyc>, "", 1) = 0
+16:05:04.758905 close(3</usr/lib/python3.13/__pycache__/weakref.cpython-313.pyc>) = 0
+16:05:04.759559 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.759678 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.759857 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/_weakrefset.py", {st_mode=S_IFREG|0644, st_size=5893, ...}, 0) = 0
+16:05:04.760126 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/_weakrefset.py", {st_mode=S_IFREG|0644, st_size=5893, ...}, 0) = 0
+16:05:04.760354 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/_weakrefset.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/_weakrefset.cpython-313.pyc>
+16:05:04.760553 fstat(3</usr/lib/python3.13/__pycache__/_weakrefset.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=12049, ...}) = 0
+16:05:04.760973 ioctl(3</usr/lib/python3.13/__pycache__/_weakrefset.cpython-313.pyc>, TCGETS, 0x7ffc75e1e890) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.761205 lseek(3</usr/lib/python3.13/__pycache__/_weakrefset.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.761504 lseek(3</usr/lib/python3.13/__pycache__/_weakrefset.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.761672 fstat(3</usr/lib/python3.13/__pycache__/_weakrefset.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=12049, ...}) = 0
+16:05:04.761890 read(3</usr/lib/python3.13/__pycache__/_weakrefset.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\5\27\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\4\0\0"..., 12050) = 12049
+16:05:04.762071 read(3</usr/lib/python3.13/__pycache__/_weakrefset.cpython-313.pyc>, "", 1) = 0
+16:05:04.762296 close(3</usr/lib/python3.13/__pycache__/_weakrefset.cpython-313.pyc>) = 0
+16:05:04.767165 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/home/adrian/cothink-system", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.767394 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=20480, ...}, 0) = 0
+16:05:04.767563 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/contextlib.py", {st_mode=S_IFREG|0644, st_size=27801, ...}, 0) = 0
+16:05:04.767834 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/contextlib.py", {st_mode=S_IFREG|0644, st_size=27801, ...}, 0) = 0
+16:05:04.767936 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/__pycache__/contextlib.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/__pycache__/contextlib.cpython-313.pyc>
+16:05:04.768098 fstat(3</usr/lib/python3.13/__pycache__/contextlib.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=30494, ...}) = 0
+16:05:04.768261 ioctl(3</usr/lib/python3.13/__pycache__/contextlib.cpython-313.pyc>, TCGETS, 0x7ffc75e1f5b0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.768425 lseek(3</usr/lib/python3.13/__pycache__/contextlib.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.768562 lseek(3</usr/lib/python3.13/__pycache__/contextlib.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.768724 fstat(3</usr/lib/python3.13/__pycache__/contextlib.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=30494, ...}) = 0
+16:05:04.768838 read(3</usr/lib/python3.13/__pycache__/contextlib.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j\231l\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\7\0\0"..., 30495) = 30494
+16:05:04.768965 read(3</usr/lib/python3.13/__pycache__/contextlib.cpython-313.pyc>, "", 1) = 0
+16:05:04.769093 close(3</usr/lib/python3.13/__pycache__/contextlib.cpython-313.pyc>) = 0
+16:05:04.770930 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/urllib", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.771334 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/urllib/error.py", {st_mode=S_IFREG|0644, st_size=2415, ...}, 0) = 0
+16:05:04.771596 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/urllib/error.py", {st_mode=S_IFREG|0644, st_size=2415, ...}, 0) = 0
+16:05:04.771796 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/urllib/__pycache__/error.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/urllib/__pycache__/error.cpython-313.pyc>
+16:05:04.772096 fstat(3</usr/lib/python3.13/urllib/__pycache__/error.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=3752, ...}) = 0
+16:05:04.772302 ioctl(3</usr/lib/python3.13/urllib/__pycache__/error.cpython-313.pyc>, TCGETS, 0x7ffc75e1f5b0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.773519 lseek(3</usr/lib/python3.13/urllib/__pycache__/error.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.773773 lseek(3</usr/lib/python3.13/urllib/__pycache__/error.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.773981 fstat(3</usr/lib/python3.13/urllib/__pycache__/error.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=3752, ...}) = 0
+16:05:04.774474 read(3</usr/lib/python3.13/urllib/__pycache__/error.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-jo\t\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0"..., 3753) = 3752
+16:05:04.774656 read(3</usr/lib/python3.13/urllib/__pycache__/error.cpython-313.pyc>, "", 1) = 0
+16:05:04.774870 close(3</usr/lib/python3.13/urllib/__pycache__/error.cpython-313.pyc>) = 0
+16:05:04.775440 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/urllib", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+16:05:04.776242 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/urllib/response.py", {st_mode=S_IFREG|0644, st_size=2361, ...}, 0) = 0
+16:05:04.776604 newfstatat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/urllib/response.py", {st_mode=S_IFREG|0644, st_size=2361, ...}, 0) = 0
+16:05:04.776844 openat(AT_FDCWD</home/adrian/cothink-system>, "/usr/lib/python3.13/urllib/__pycache__/response.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3</usr/lib/python3.13/urllib/__pycache__/response.cpython-313.pyc>
+16:05:04.776966 fstat(3</usr/lib/python3.13/urllib/__pycache__/response.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=4591, ...}) = 0
+16:05:04.777094 ioctl(3</usr/lib/python3.13/urllib/__pycache__/response.cpython-313.pyc>, TCGETS, 0x7ffc75e1ef20) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.777277 lseek(3</usr/lib/python3.13/urllib/__pycache__/response.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.777472 lseek(3</usr/lib/python3.13/urllib/__pycache__/response.cpython-313.pyc>, 0, SEEK_CUR) = 0
+16:05:04.777697 fstat(3</usr/lib/python3.13/urllib/__pycache__/response.cpython-313.pyc>, {st_mode=S_IFREG|0644, st_size=4591, ...}) = 0
+16:05:04.777960 read(3</usr/lib/python3.13/urllib/__pycache__/response.cpython-313.pyc>, "\363\r\r\n\0\0\0\0\231f-j9\t\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\5\0\0"..., 4592) = 4591
+16:05:04.778173 read(3</usr/lib/python3.13/urllib/__pycache__/response.cpython-313.pyc>, "", 1) = 0
+16:05:04.778357 close(3</usr/lib/python3.13/urllib/__pycache__/response.cpython-313.pyc>) = 0
+16:05:04.780199 brk(0x2a736000)         = 0x2a736000
+16:05:04.782625 ioctl(0<pipe:[29360]>, TCGETS, 0x7ffc75e201c0) = -1 ENOTTY (Inappropriate ioctl for device)
+16:05:04.783153 lseek(0<pipe:[29360]>, 0, SEEK_CUR) = -1 ESPIPE (Illegal seek)
+16:05:04.783534 fstat(0<pipe:[29360]>, {st_mode=S_IFIFO|0600, st_size=0, ...}) = 0
+16:05:04.784245 read(0<pipe:[29360]>, "", 8192) = 0
+16:05:04.784704 clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, {tv_sec=1107, tv_nsec=837636897}, NULL) = 0
+16:05:05.286759 write(1<pipe:[30189]>, "{\"task_id\": 1, \"status\": \"succes"..., 215) = 215
+16:05:05.286967 rt_sigaction(SIGINT, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=SA_RESTORER|SA_ONSTACK, sa_restorer=0x7f23660d7df0}, {sa_handler=0x6df360, sa_mask=[], sa_flags=SA_RESTORER|SA_ONSTACK, sa_restorer=0x7f23660d7df0}, 8) = 0
+16:05:05.333626 munmap(0x7f2365efe000, 208896) = 0
+16:05:05.350480 munmap(0x7f23663d6000, 16384) = 0
+16:05:05.351012 exit_group(0)           = ?
+16:05:05.362607 +++ exited with 0 +++

@@ -1,0 +1,160 @@
+16:05:03.968529 execve("./target/release/cothink-system", ["./target/release/cothink-system"], 0x7fffe7fdead8 /* 63 vars */) = 0
+16:05:03.969075 brk(NULL)               = 0x55827855f000
+16:05:03.969228 mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7efd011ed000
+16:05:03.969325 access("/etc/ld.so.preload", R_OK) = -1 ENOENT (No such file or directory)
+16:05:03.969492 openat(AT_FDCWD</home/adrian/cothink-system>, "/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3</etc/ld.so.cache>
+16:05:03.969677 fstat(3</etc/ld.so.cache>, {st_mode=S_IFREG|0644, st_size=109359, ...}) = 0
+16:05:03.969777 mmap(NULL, 109359, PROT_READ, MAP_PRIVATE, 3</etc/ld.so.cache>, 0) = 0x7efd011d2000
+16:05:03.969901 close(3</etc/ld.so.cache>) = 0
+16:05:03.969981 openat(AT_FDCWD</home/adrian/cothink-system>, "/lib/x86_64-linux-gnu/libgcc_s.so.1", O_RDONLY|O_CLOEXEC) = 3</usr/lib/x86_64-linux-gnu/libgcc_s.so.1>
+16:05:03.970155 read(3</usr/lib/x86_64-linux-gnu/libgcc_s.so.1>, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+16:05:03.970259 fstat(3</usr/lib/x86_64-linux-gnu/libgcc_s.so.1>, {st_mode=S_IFREG|0644, st_size=182856, ...}) = 0
+16:05:03.970353 mmap(NULL, 181160, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libgcc_s.so.1>, 0) = 0x7efd011a5000
+16:05:03.970433 mmap(0x7efd011a9000, 143360, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libgcc_s.so.1>, 0x4000) = 0x7efd011a9000
+16:05:03.970522 mmap(0x7efd011cc000, 16384, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libgcc_s.so.1>, 0x27000) = 0x7efd011cc000
+16:05:03.970590 mmap(0x7efd011d0000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libgcc_s.so.1>, 0x2b000) = 0x7efd011d0000
+16:05:03.970659 close(3</usr/lib/x86_64-linux-gnu/libgcc_s.so.1>) = 0
+16:05:03.970745 openat(AT_FDCWD</home/adrian/cothink-system>, "/lib/x86_64-linux-gnu/libm.so.6", O_RDONLY|O_CLOEXEC) = 3</usr/lib/x86_64-linux-gnu/libm.so.6>
+16:05:03.970823 read(3</usr/lib/x86_64-linux-gnu/libm.so.6>, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+16:05:03.970867 fstat(3</usr/lib/x86_64-linux-gnu/libm.so.6>, {st_mode=S_IFREG|0644, st_size=977112, ...}) = 0
+16:05:03.970914 mmap(NULL, 978968, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libm.so.6>, 0) = 0x7efd010b5000
+16:05:03.970959 mmap(0x7efd010c6000, 512000, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libm.so.6>, 0x11000) = 0x7efd010c6000
+16:05:03.971035 mmap(0x7efd01143000, 393216, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libm.so.6>, 0x8e000) = 0x7efd01143000
+16:05:03.971139 mmap(0x7efd011a3000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libm.so.6>, 0xed000) = 0x7efd011a3000
+16:05:03.971241 close(3</usr/lib/x86_64-linux-gnu/libm.so.6>) = 0
+16:05:03.971296 openat(AT_FDCWD</home/adrian/cothink-system>, "/lib/x86_64-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC) = 3</usr/lib/x86_64-linux-gnu/libc.so.6>
+16:05:03.971351 read(3</usr/lib/x86_64-linux-gnu/libc.so.6>, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0p\236\2\0\0\0\0\0"..., 832) = 832
+16:05:03.971392 pread64(3</usr/lib/x86_64-linux-gnu/libc.so.6>, "\6\0\0\0\4\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0"..., 840, 64) = 840
+16:05:03.971428 fstat(3</usr/lib/x86_64-linux-gnu/libc.so.6>, {st_mode=S_IFREG|0755, st_size=1995216, ...}) = 0
+16:05:03.971467 pread64(3</usr/lib/x86_64-linux-gnu/libc.so.6>, "\6\0\0\0\4\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0"..., 840, 64) = 840
+16:05:03.971504 mmap(NULL, 2047568, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libc.so.6>, 0) = 0x7efd00ec1000
+16:05:03.971559 mmap(0x7efd00ee9000, 1454080, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libc.so.6>, 0x28000) = 0x7efd00ee9000
+16:05:03.971643 mmap(0x7efd0104c000, 352256, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libc.so.6>, 0x18b000) = 0x7efd0104c000
+16:05:03.971729 mmap(0x7efd010a2000, 24576, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3</usr/lib/x86_64-linux-gnu/libc.so.6>, 0x1e0000) = 0x7efd010a2000
+16:05:03.971810 mmap(0x7efd010a8000, 52816, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x7efd010a8000
+16:05:03.971869 close(3</usr/lib/x86_64-linux-gnu/libc.so.6>) = 0
+16:05:03.971960 mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7efd00ebf000
+16:05:03.972037 arch_prctl(ARCH_SET_FS, 0x7efd00ec0200) = 0
+16:05:03.972101 set_tid_address(0x7efd00ec04d0) = 5741
+16:05:03.972135 set_robust_list(0x7efd00ec04e0, 24) = 0
+16:05:03.972171 rseq(0x7efd00ec0040, 0x21, 0, 0x53053053) = 0
+16:05:03.972299 mprotect(0x7efd010a2000, 16384, PROT_READ) = 0
+16:05:03.972402 mprotect(0x7efd011a3000, 4096, PROT_READ) = 0
+16:05:03.972461 mprotect(0x7efd011d0000, 4096, PROT_READ) = 0
+16:05:03.972570 mprotect(0x5582543f8000, 36864, PROT_READ) = 0
+16:05:03.972640 mprotect(0x7efd0122b000, 8192, PROT_READ) = 0
+16:05:03.972777 prlimit64(0, RLIMIT_STACK, NULL, {rlim_cur=8192*1024, rlim_max=RLIM64_INFINITY}) = 0
+16:05:03.972953 munmap(0x7efd011d2000, 109359) = 0
+16:05:03.973102 poll([{fd=0</dev/pts/3<char 136:3>>, events=0}, {fd=1</dev/pts/3<char 136:3>>, events=0}, {fd=2</dev/pts/3<char 136:3>>, events=0}], 3, 0) = 0 (Timeout)
+16:05:03.973191 rt_sigaction(SIGPIPE, {sa_handler=SIG_IGN, sa_mask=[PIPE], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7efd00f00df0}, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:03.973270 getrandom("\x84\xdb\xb7\x80\x81\xad\x82\xee", 8, GRND_NONBLOCK) = 8
+16:05:03.973307 brk(NULL)               = 0x55827855f000
+16:05:03.973334 brk(0x558278580000)     = 0x558278580000
+16:05:03.973378 openat(AT_FDCWD</home/adrian/cothink-system>, "/proc/self/maps", O_RDONLY|O_CLOEXEC) = 3</proc/5741/maps>
+16:05:03.973481 prlimit64(0, RLIMIT_STACK, NULL, {rlim_cur=8192*1024, rlim_max=RLIM64_INFINITY}) = 0
+16:05:03.973601 fstat(3</proc/5741/maps>, {st_mode=S_IFREG|0444, st_size=0, ...}) = 0
+16:05:03.973653 read(3</proc/5741/maps>, "55825432b000-558254339000 r--p 0"..., 1024) = 1024
+16:05:03.973726 read(3</proc/5741/maps>, "000 r--p 0018b000 08:01 562778  "..., 1024) = 1024
+16:05:03.973888 read(3</proc/5741/maps>, "-7efd011cc000 r-xp 00004000 08:0"..., 1024) = 1024
+16:05:03.974080 read(3</proc/5741/maps>, "2054                     /usr/li"..., 1024) = 526
+16:05:03.974341 close(3</proc/5741/maps>) = 0
+16:05:03.974418 sched_getaffinity(5741, 32, [0 1 2 3]) = 16
+16:05:03.974535 rt_sigaction(SIGSEGV, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:03.974589 sigaltstack(NULL, {ss_sp=NULL, ss_flags=SS_DISABLE, ss_size=0}) = 0
+16:05:03.974640 mmap(NULL, 12288, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK, -1, 0) = 0x7efd011ea000
+16:05:03.974707 mprotect(0x7efd011ea000, 4096, PROT_NONE) = 0
+16:05:03.974765 sigaltstack({ss_sp=0x7efd011eb000, ss_flags=0, ss_size=8192}, NULL) = 0
+16:05:03.974815 rt_sigaction(SIGSEGV, {sa_handler=0x5582543aa450, sa_mask=[], sa_flags=SA_RESTORER|SA_ONSTACK|SA_SIGINFO, sa_restorer=0x7efd00f00df0}, NULL, 8) = 0
+16:05:03.974863 rt_sigaction(SIGBUS, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+16:05:03.974908 rt_sigaction(SIGBUS, {sa_handler=0x5582543aa450, sa_mask=[], sa_flags=SA_RESTORER|SA_ONSTACK|SA_SIGINFO, sa_restorer=0x7efd00f00df0}, NULL, 8) = 0
+16:05:03.974997 write(1</dev/pts/3<char 136:3>>, "cothink-system is booting...\n", 29) = 29
+16:05:03.975145 rt_sigprocmask(SIG_BLOCK, ~[], [], 8) = 0
+16:05:03.975197 mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_DROPPABLE|MAP_ANONYMOUS, -1, 0) = 0x7efd011e9000
+16:05:03.975249 mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7efd011e8000
+16:05:03.975395 rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+16:05:03.975464 getrandom("\x30\xe6\x87\xdd\x67\xd9\x89\xc7\x83\x3c\xb7\x9b\xce\xfb\x0d\xf0\xff\x9c\xe3\x2b\xfb\x3c\x67\xd1\xfa\xcb\x59\x32\x1a\xa6\xb1\x2b", 32, 0) = 32
+16:05:03.975545 openat(AT_FDCWD</home/adrian/cothink-system>, "/proc/self/cgroup", O_RDONLY|O_CLOEXEC) = 3</proc/5741/cgroup>
+16:05:03.975651 statx(3</proc/5741/cgroup>, "", AT_STATX_SYNC_AS_STAT|AT_EMPTY_PATH, STATX_ALL, {stx_mask=STATX_BASIC_STATS|STATX_MNT_ID, stx_attributes=0, stx_mode=S_IFREG|0444, stx_size=0, ...}) = 0
+16:05:03.975723 lseek(3</proc/5741/cgroup>, 0, SEEK_CUR) = 0
+16:05:03.975837 read(3</proc/5741/cgroup>, "0::/user.slice/user-1000.slice/s"..., 128) = 47
+16:05:03.975959 read(3</proc/5741/cgroup>, "", 81) = 0
+16:05:03.976005 close(3</proc/5741/cgroup>) = 0
+16:05:03.976067 statx(AT_FDCWD</home/adrian/cothink-system>, "/sys/fs/cgroup/user.slice/user-1000.slice/session-1.scope/cgroup.controllers", AT_STATX_SYNC_AS_STAT, STATX_ALL, {stx_mask=STATX_BASIC_STATS|STATX_MNT_ID, stx_attributes=0, stx_mode=S_IFREG|0444, stx_size=0, ...}) = 0
+16:05:03.976156 openat(AT_FDCWD</home/adrian/cothink-system>, "/sys/fs/cgroup/user.slice/user-1000.slice/session-1.scope/cpu.max", O_RDONLY|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+16:05:03.976242 openat(AT_FDCWD</home/adrian/cothink-system>, "/sys/fs/cgroup/user.slice/user-1000.slice/cpu.max", O_RDONLY|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+16:05:03.976318 openat(AT_FDCWD</home/adrian/cothink-system>, "/sys/fs/cgroup/user.slice/cpu.max", O_RDONLY|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+16:05:03.976422 openat(AT_FDCWD</home/adrian/cothink-system>, "/sys/fs/cgroup/cpu.max", O_RDONLY|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+16:05:03.976486 sched_getaffinity(0, 128, [0 1 2 3]) = 16
+16:05:03.976532 epoll_create1(EPOLL_CLOEXEC) = 3<anon_inode:[eventpoll]>
+16:05:03.976582 eventfd2(0, EFD_CLOEXEC|EFD_NONBLOCK) = 4<{eventfd-count=0, eventfd-id=192, eventfd-semaphore=0}>
+16:05:03.976666 epoll_ctl(3<anon_inode:[eventpoll]>, EPOLL_CTL_ADD, 4<{eventfd-count=0, eventfd-id=192, eventfd-semaphore=0}>, {events=EPOLLIN|EPOLLRDHUP|EPOLLET, data=0}) = 0
+16:05:03.976744 fcntl(3<anon_inode:[eventpoll]>, F_DUPFD_CLOEXEC, 3) = 5<anon_inode:[eventpoll]>
+16:05:03.976807 socketpair(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0, [6<UNIX-STREAM:[29339->29340]>, 7<UNIX-STREAM:[29340->29339]>]) = 0
+16:05:03.983461 fcntl(6<UNIX-STREAM:[29339->29340]>, F_DUPFD_CLOEXEC, 3) = 8<UNIX-STREAM:[29339->29340]>
+16:05:03.983718 epoll_ctl(5<anon_inode:[eventpoll]>, EPOLL_CTL_ADD, 8<UNIX-STREAM:[29339->29340]>, {events=EPOLLIN|EPOLLRDHUP|EPOLLET, data=0x1}) = 0
+16:05:03.983863 rt_sigaction(SIGRT_1, {sa_handler=0x7efd00f514b0, sa_mask=[], sa_flags=SA_RESTORER|SA_ONSTACK|SA_RESTART|SA_SIGINFO, sa_restorer=0x7efd00f00df0}, NULL, 8) = 0
+16:05:03.983934 rt_sigprocmask(SIG_UNBLOCK, [RTMIN RT_1], NULL, 8) = 0
+16:05:03.983977 mmap(NULL, 2101248, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK, -1, 0) = 0x7efd00cbe000
+16:05:03.984028 mprotect(0x7efd00cbf000, 2097152, PROT_READ|PROT_WRITE) = 0
+16:05:03.984104 rt_sigprocmask(SIG_BLOCK, ~[], [], 8) = 0
+16:05:03.984229 clone3({flags=CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID, child_tid=0x7efd00ebe990, parent_tid=0x7efd00ebe990, exit_signal=0, stack=0x7efd00cbe000, stack_size=0x1ffe80, tls=0x7efd00ebe6c0} => {parent_tid=[5744]}, 88) = 5744
+16:05:03.984498 rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+16:05:03.984647 mmap(NULL, 2101248, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK, -1, 0) = 0x7efd00abd000
+16:05:03.984810 mprotect(0x7efd00abe000, 2097152, PROT_READ|PROT_WRITE) = 0
+16:05:03.984995 rt_sigprocmask(SIG_BLOCK, ~[], [], 8) = 0
+16:05:03.985320 clone3({flags=CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID, child_tid=0x7efd00cbd990, parent_tid=0x7efd00cbd990, exit_signal=0, stack=0x7efd00abd000, stack_size=0x1ffe80, tls=0x7efd00cbd6c0} => {parent_tid=[5745]}, 88) = 5745
+16:05:03.986068 rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+16:05:03.986221 mmap(NULL, 2101248, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK, -1, 0) = 0x7efd008bc000
+16:05:03.986350 mprotect(0x7efd008bd000, 2097152, PROT_READ|PROT_WRITE) = 0
+16:05:03.986513 rt_sigprocmask(SIG_BLOCK, ~[], [], 8) = 0
+16:05:03.986645 clone3({flags=CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID, child_tid=0x7efd00abc990, parent_tid=0x7efd00abc990, exit_signal=0, stack=0x7efd008bc000, stack_size=0x1ffe80, tls=0x7efd00abc6c0} => {parent_tid=[5746]}, 88) = 5746
+16:05:03.986890 rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+16:05:03.987019 mmap(NULL, 2101248, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK, -1, 0) = 0x7efd006bb000
+16:05:03.987169 mprotect(0x7efd006bc000, 2097152, PROT_READ|PROT_WRITE) = 0
+16:05:03.987334 rt_sigprocmask(SIG_BLOCK, ~[], [], 8) = 0
+16:05:03.987445 clone3({flags=CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID, child_tid=0x7efd008bb990, parent_tid=0x7efd008bb990, exit_signal=0, stack=0x7efd006bb000, stack_size=0x1ffe80, tls=0x7efd008bb6c0} => {parent_tid=[5747]}, 88) = 5747
+16:05:03.987757 rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+16:05:03.988619 mmap(NULL, 397312, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7efd0065a000
+16:05:03.989154 futex(0x55827856d120, FUTEX_WAIT_BITSET_PRIVATE, 0, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+16:05:05.308934 futex(0x55827856d120, FUTEX_WAIT_BITSET_PRIVATE, 1, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+16:05:05.331526 futex(0x55827856d120, FUTEX_WAIT_BITSET_PRIVATE, 2, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+16:05:05.349978 futex(0x55827856d120, FUTEX_WAIT_BITSET_PRIVATE, 3, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+16:05:05.370517 futex(0x55827856d120, FUTEX_WAIT_BITSET_PRIVATE, 4, NULL, FUTEX_BITSET_MATCH_ANY) = ? ERESTARTSYS (To be restarted if SA_RESTART is set)
+16:05:05.373915 futex(0x55827856d120, FUTEX_WAIT_BITSET_PRIVATE, 4, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+16:05:05.384901 futex(0x55827856d120, FUTEX_WAIT_BITSET_PRIVATE, 5, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+16:05:05.399825 futex(0x55827856d120, FUTEX_WAIT_BITSET_PRIVATE, 6, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+16:05:05.400371 futex(0x55827856d120, FUTEX_WAIT_BITSET_PRIVATE, 7, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+16:05:05.413955 write(1</dev/pts/3<char 136:3>>, "spiral allocation: [0, 1, 2, 5, "..., 44) = 44
+16:05:05.414890 write(1</dev/pts/3<char 136:3>>, "completed subagents: [2, 6, 4, 1"..., 46) = 46
+16:05:05.416848 write(1</dev/pts/3<char 136:3>>, "\n--- Execution History (Rust) --"..., 34) = 34
+16:05:05.416964 write(1</dev/pts/3<char 136:3>>, "  [83103.989s] Orch: 1 | Agent: "..., 95) = 95
+16:05:05.417031 write(1</dev/pts/3<char 136:3>>, "  [83103.989s] Orch: 1 | Agent: "..., 87) = 87
+16:05:05.417110 write(1</dev/pts/3<char 136:3>>, "  [83103.989s] Orch: 1 | Agent: "..., 87) = 87
+16:05:05.417167 write(1</dev/pts/3<char 136:3>>, "  [83103.990s] Orch: 1 | Agent: "..., 87) = 87
+16:05:05.417219 write(1</dev/pts/3<char 136:3>>, "  [83103.990s] Orch: 1 | Agent: "..., 87) = 87
+16:05:05.417270 write(1</dev/pts/3<char 136:3>>, "  [83103.998s] Orch: 1 | Agent: "..., 87) = 87
+16:05:05.417321 write(1</dev/pts/3<char 136:3>>, "  [83104.000s] Orch: 1 | Agent: "..., 87) = 87
+16:05:05.417371 write(1</dev/pts/3<char 136:3>>, "  [83104.009s] Orch: 1 | Agent: "..., 87) = 87
+16:05:05.417423 write(1</dev/pts/3<char 136:3>>, "  [83104.009s] Orch: 1 | Agent: "..., 87) = 87
+16:05:05.417477 write(1</dev/pts/3<char 136:3>>, "  [83105.294s] Orch: 1 | Agent: "..., 303) = 303
+16:05:05.417536 write(1</dev/pts/3<char 136:3>>, "  [83105.331s] Orch: 1 | Agent: "..., 303) = 303
+16:05:05.417594 write(1</dev/pts/3<char 136:3>>, "  [83105.338s] Orch: 1 | Agent: "..., 303) = 303
+16:05:05.417652 write(1</dev/pts/3<char 136:3>>, "  [83105.370s] Orch: 1 | Agent: "..., 303) = 303
+16:05:05.417710 write(1</dev/pts/3<char 136:3>>, "  [83105.384s] Orch: 1 | Agent: "..., 303) = 303
+16:05:05.417765 write(1</dev/pts/3<char 136:3>>, "  [83105.395s] Orch: 1 | Agent: "..., 303) = 303
+16:05:05.417822 write(1</dev/pts/3<char 136:3>>, "  [83105.400s] Orch: 1 | Agent: "..., 303) = 303
+16:05:05.417877 write(1</dev/pts/3<char 136:3>>, "  [83105.410s] Orch: 1 | Agent: "..., 303) = 303
+16:05:05.417934 write(1</dev/pts/3<char 136:3>>, "  [83105.413s] Orch: 1 | Agent: "..., 95) = 95
+16:05:05.418008 write(4<{eventfd-count=0, eventfd-id=192, eventfd-semaphore=0}>, "\1\0\0\0\0\0\0\0", 8) = 8
+16:05:05.418183 futex(0x55827856ba48, FUTEX_WAKE_PRIVATE, 1) = 1
+16:05:05.418296 futex(0x55827856c348, FUTEX_WAKE_PRIVATE, 1) = 1
+16:05:05.418441 futex(0x55827856cc48, FUTEX_WAKE_PRIVATE, 1) = 1
+16:05:05.418547 futex(0x55827856a6c0, FUTEX_WAKE_PRIVATE, 2147483647) = 3
+16:05:05.420272 futex(0x55827856d120, FUTEX_WAIT_BITSET_PRIVATE, 8, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+16:05:05.422717 futex(0x7efd00ebe990, FUTEX_WAIT_BITSET|FUTEX_CLOCK_REALTIME, 5744, NULL, FUTEX_BITSET_MATCH_ANY) = -1 EAGAIN (Resource temporarily unavailable)
+16:05:05.422944 futex(0x7efd00cbd990, FUTEX_WAIT_BITSET|FUTEX_CLOCK_REALTIME, 5745, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+16:05:05.423210 futex(0x7efd008bb990, FUTEX_WAIT_BITSET|FUTEX_CLOCK_REALTIME, 5747, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+16:05:05.427970 sigaltstack({ss_sp=NULL, ss_flags=SS_DISABLE, ss_size=8192}, NULL) = 0
+16:05:05.430192 munmap(0x7efd011ea000, 12288) = 0
+16:05:05.430290 exit_group(0)           = ?
+16:05:05.430709 +++ exited with 0 +++
