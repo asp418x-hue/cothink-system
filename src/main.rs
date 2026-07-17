@@ -109,10 +109,10 @@ fn spiral_order(task_count: usize, truncation_depth: usize) -> Vec<usize> {
 
 async fn spawn_subagent(orch_id: u64, task_id: usize) -> Result<usize, String> {
     cothink_system::history::record(orch_id, task_id, "subagent_start", true, "".to_string());
-    let child_res = Command::new("sh")
-        .arg("-c")
-        .arg(format!("echo subagent:{}; sleep 0.02", task_id))
-        .stdin(Stdio::null())
+    let child_res = Command::new("python3")
+        .arg("agent.py")
+        .arg(task_id.to_string())
+        .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn();
@@ -127,6 +127,8 @@ async fn spawn_subagent(orch_id: u64, task_id: usize) -> Result<usize, String> {
             return Err(err_msg);
         }
     };
+
+    drop(child.stdin.take());
 
     let stdout = child.stdout.take().expect("child stdout");
     let mut reader = AsyncBufReader::new(stdout);
