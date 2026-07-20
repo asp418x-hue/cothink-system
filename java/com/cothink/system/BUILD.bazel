@@ -1,0 +1,67 @@
+load(
+    "@rules_android//android:rules.bzl",
+    "android_binary",
+    "android_library",
+)
+load("@rules_java//java:defs.bzl", "java_library")
+
+package(default_visibility = ["//visibility:public"])
+
+# Exported sources for host-side JVM unit tests (no Android SDK required).
+filegroup(
+    name = "core_srcs",
+    srcs = glob(["core/*.java"]),
+)
+
+# Plain JVM library used by javatests.
+java_library(
+    name = "cothink_core_jvm",
+    srcs = [":core_srcs"],
+    javacopts = [
+        "-source",
+        "17",
+        "-target",
+        "17",
+        "-Xlint:-options",
+    ],
+)
+
+android_library(
+    name = "cothink_core",
+    srcs = glob(["core/*.java"]),
+    javacopts = [
+        "-source",
+        "17",
+        "-target",
+        "17",
+        "-Xlint:-options",
+    ],
+)
+
+android_library(
+    name = "cothink_lib",
+    srcs = [
+        "MainActivity.java",
+    ],
+    manifest = "AndroidManifest.xml",
+    resource_files = glob(["res/**"]),
+    deps = [
+        ":cothink_core",
+    ],
+)
+
+android_binary(
+    name = "cothink_app",
+    custom_package = "com.cothink.system",
+    manifest = "AndroidManifest.xml",
+    manifest_values = {
+        "applicationId": "com.cothink.system",
+        "versionCode": "1",
+        "versionName": "0.1.0",
+        "minSdkVersion": "24",
+        "targetSdkVersion": "34",
+    },
+    deps = [
+        ":cothink_lib",
+    ],
+)

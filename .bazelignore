@@ -1,0 +1,23 @@
+# Keep Bazel analysis away from large / unrelated trees
+phone_backup.tar.gz
+target
+__pycache__
+classifier
+classifier-test
+classifier_test
+thermal_monitor
+cothink-shell
+strace-cs-2.log
+strace-ctsr.log.5741
+strace-ctsr.log.5744
+strace-ctsr.log.5745
+strace-ctsr.log.5746
+strace-ctsr.log.5747
+strace-ctsr.log.5749
+strace-ctsr.log.5750
+strace-ctsr.log.5751
+strace-ctsr.log.5752
+strace-ctsr.log.5753
+strace-ctsr.log.5754
+strace-ctsr.log.5755
+strace-ctsr.log.5756

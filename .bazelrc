@@ -1,0 +1,35 @@
+# Cothink System — Bazel Android build configuration
+
+# Java language / runtime for Android builder tools
+common --java_language_version=17
+common --java_runtime_version=17
+common --tool_java_language_version=17
+common --tool_java_runtime_version=17
+
+# C++17 required by modern protobuf
+common:linux --cxxopt=-std=c++17
+common:linux --host_cxxopt=-std=c++17
+common:macos --cxxopt=-std=c++17
+common:macos --host_cxxopt=-std=c++17
+
+# Suppress noisy warnings from external repos
+common:linux --per_file_copt=external/.*@-w
+common:linux --host_per_file_copt=external/.*@-w
+common:macos --per_file_copt=external/.*@-w
+common:macos --host_per_file_copt=external/.*@-w
+
+common --enable_platform_specific_config
+
+# Keep action results local by default (sandbox-friendly)
+build --disk_cache=~/.cache/bazel-disk
+build --repository_cache=~/.cache/bazel-repo
+
+# Android SDK path (override with --action_env=ANDROID_HOME=... if needed)
+try-import %workspace%/user.bazelrc
+
+# Low-memory / CI-friendly defaults (override in user.bazelrc if needed)
+build --local_ram_resources=512
+build --local_cpu_resources=1
+build --jobs=1
+build --loading_phase_threads=1
+test --test_output=errors

@@ -1,0 +1,4 @@
+# Copy to user.bazelrc and adjust paths for your machine.
+# user.bazelrc is gitignored.
+build --action_env=ANDROID_HOME=/path/to/android-sdk
+build --action_env=ANDROID_SDK_ROOT=/path/to/android-sdk
