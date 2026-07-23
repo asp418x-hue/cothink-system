@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Cothink System</string>
+    <string name="app_subtitle" translatable="false">Thinkspace Orchestrator · Bazel Android</string>
+    <string name="run" translatable="false">Run</string>
+    <string name="cancel" translatable="false">Cancel</string>
+    <string name="metrics" translatable="false">Metrics</string>
+    <string name="status_idle" translatable="false">Idle — ready to orchestrate</string>
+    <string name="status_running" translatable="false">Running %1$d agents…</string>
+    <string name="status_cancelling" translatable="false">Cancelling…</string>
+    <string name="status_error" translatable="false">Error during run</string>
+    <string name="status_done" translatable="false">Done — ok=%1$d fail=%2$d in %3$dms</string>
+    <string name="agents_count" translatable="false">Agents: %1$d</string>
+    <string name="agents_count_default" translatable="false">Agents: 8</string>
+    <string name="metrics_placeholder" translatable="false">Metrics: probing…</string>
+    <string name="metrics_line" translatable="false">Temp: %1$.1f°C | CPU: %2$d MHz | Disk: %3$s%4$s</string>
+    <string name="fov_line" translatable="false">FOV active=%1$d temp=%2$.1f°C freq=%3$dMHz ok=%4$d fail=%5$d</string>
+    <string name="sim_tag" translatable="false"> (sim)</string>
+    <string name="already_running" translatable="false">A run is already in progress</string>
+    <string name="toast_done" translatable="false">Completed %1$d / failed %2$d</string>
+    <string name="action_about" translatable="false">About</string>
+</resources>

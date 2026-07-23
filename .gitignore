@@ -1,2 +1,31 @@
 /target
 /cothink-orchestrator
+
+# Bazel
+/bazel-bin
+/bazel-out
+/bazel-testlogs
+/bazel-webapp
+/bazel-cothink_system
+user.bazelrc
+user.bazelrc.local
+
+# Android / IDE
+*.apk
+*.ap_
+*.dex
+*.class
+.idea/
+*.iml
+.gradle/
+local.properties
+*.hprof
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db

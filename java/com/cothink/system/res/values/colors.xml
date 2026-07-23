@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="cothink_bg">#0B1220</color>
+    <color name="cothink_panel">#132033</color>
+    <color name="cothink_accent">#7DFFB3</color>
+    <color name="cothink_text">#E8F1FF</color>
+    <color name="cothink_muted">#8FA3C1</color>
+</resources>

@@ -1,0 +1,13 @@
+# Root package — package groups and convenience aliases.
+
+package(default_visibility = ["//visibility:public"])
+
+alias(
+    name = "cothink_app",
+    actual = "//java/com/cothink/system:cothink_app",
+)
+
+alias(
+    name = "cothink_lib",
+    actual = "//java/com/cothink/system:cothink_lib",
+)

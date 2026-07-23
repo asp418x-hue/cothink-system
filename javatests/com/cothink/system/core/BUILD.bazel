@@ -1,0 +1,38 @@
+load("@rules_java//java:defs.bzl", "java_test")
+
+package(default_visibility = ["//visibility:private"])
+
+# Host-side unit tests for pure Java core (no Android runtime required).
+
+java_test(
+    name = "SpiralAllocatorTest",
+    size = "small",
+    srcs = ["SpiralAllocatorTest.java"],
+    test_class = "com.cothink.system.core.SpiralAllocatorTest",
+    deps = [
+        "//java/com/cothink/system:cothink_core_jvm",
+        "@maven//:junit_junit",
+    ],
+)
+
+java_test(
+    name = "ClassifierTest",
+    size = "small",
+    srcs = ["ClassifierTest.java"],
+    test_class = "com.cothink.system.core.ClassifierTest",
+    deps = [
+        "//java/com/cothink/system:cothink_core_jvm",
+        "@maven//:junit_junit",
+    ],
+)
+
+java_test(
+    name = "OrchestratorTest",
+    size = "small",
+    srcs = ["OrchestratorTest.java"],
+    test_class = "com.cothink.system.core.OrchestratorTest",
+    deps = [
+        "//java/com/cothink/system:cothink_core_jvm",
+        "@maven//:junit_junit",
+    ],
+)

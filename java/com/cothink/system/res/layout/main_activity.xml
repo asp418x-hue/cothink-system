@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#0B1220">
+
+    <TextView
+        android:id="@+id/title_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/app_name"
+        android:textColor="#E8F1FF"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:paddingBottom="4dp" />
+
+    <TextView
+        android:id="@+id/subtitle_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/app_subtitle"
+        android:textColor="#8FA3C1"
+        android:textSize="13sp"
+        android:paddingBottom="12dp" />
+
+    <TextView
+        android:id="@+id/fov_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/metrics_placeholder"
+        android:textColor="#7DFFB3"
+        android:textSize="12sp"
+        android:padding="10dp"
+        android:background="#132033"
+        android:layout_marginBottom="12dp" />
+
+    <TextView
+        android:id="@+id/agents_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/agents_count_default"
+        android:textColor="#C9D7EE"
+        android:textSize="14sp" />
+
+    <SeekBar
+        android:id="@+id/agents_seek"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp">
+
+        <Button
+            android:id="@+id/button_run"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/run"
+            android:layout_marginEnd="6dp" />
+
+        <Button
+            android:id="@+id/button_cancel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/cancel"
+            android:layout_marginEnd="6dp" />
+
+        <Button
+            android:id="@+id/button_metrics"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/metrics" />
+    </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:indeterminate="true"
+        android:visibility="gone"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/status_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/status_idle"
+        android:textColor="#FFD27D"
+        android:textSize="13sp"
+        android:paddingBottom="6dp" />
+
+    <TextView
+        android:id="@+id/log_view"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:textColor="#D7E6FF"
+        android:textSize="11sp"
+        android:padding="10dp"
+        android:background="#0A1628"
+        android:scrollbars="vertical"
+        android:fadeScrollbars="false"
+        android:gravity="top|start" />
+
+</LinearLayout>
