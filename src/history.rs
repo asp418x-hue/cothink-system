@@ -43,13 +43,16 @@ impl HistoryTracker {
     ) {
         if event == "subagent_start" {
             self.active_workers.fetch_add(1, Ordering::SeqCst);
-        } else if event == "subagent_success" || event == "subagent_fail" || event == "subagent_cancel" {
+        } else if event == "subagent_success"
+            || event == "subagent_fail"
+            || event == "subagent_cancel"
+        {
             self.active_workers.fetch_sub(1, Ordering::SeqCst);
         }
 
         let seq = self.cursor.fetch_add(1, Ordering::Relaxed);
         let idx = seq % HISTORY_CAPACITY;
-        
+
         let mut slot = self.buffer[idx].lock().unwrap();
         *slot = Some(HistoryEntry {
             timestamp: SystemTime::now(),
@@ -123,7 +126,9 @@ pub fn get_fov(orch_id: u64, _device: &str) -> FOV {
         0.0
     };
 
-    let freq = if let Ok(f_str) = std::fs::read_to_string("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq") {
+    let freq = if let Ok(f_str) =
+        std::fs::read_to_string("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq")
+    {
         f_str.trim().parse::<u64>().unwrap_or(0) / 1000
     } else {
         0
@@ -162,7 +167,12 @@ pub fn show_history() {
         };
         println!(
             "  [{}] Orch: {} | Agent: {} | Event: {} | Status: {} | Detail: {}",
-            time_str, entry.orchestrator_id, entry.subagent_id, entry.event, success_str, entry.detail
+            time_str,
+            entry.orchestrator_id,
+            entry.subagent_id,
+            entry.event,
+            success_str,
+            entry.detail
         );
     }
 }
@@ -184,7 +194,13 @@ mod tests {
         for t_idx in 0..num_threads {
             handles.push(thread::spawn(move || {
                 for i in 0..writes_per_thread {
-                    record(t_idx as u64, i, "test_rust_event", true, format!("payload_{}", i));
+                    record(
+                        t_idx as u64,
+                        i,
+                        "test_rust_event",
+                        true,
+                        format!("payload_{}", i),
+                    );
                 }
             }));
         }

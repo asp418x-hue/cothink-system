@@ -17,10 +17,7 @@ pub trait Execute {
 // The self-similar tree structure
 pub enum CommandNode {
     // A single, leaf-level system command (e.g., "grep")
-    Leaf {
-        program: String,
-        args: Vec<String>,
-    },
+    Leaf { program: String, args: Vec<String> },
     // A pipeline containing a sequential vector of nested CommandNodes
     Pipeline(Vec<CommandNode>),
 }

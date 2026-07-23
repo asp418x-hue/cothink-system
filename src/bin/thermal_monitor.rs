@@ -82,7 +82,10 @@ impl CpuGovernor {
     }
 
     pub fn set_frequency_limit(&self, max_freq_mhz: u64) -> Result<(), String> {
-        println!("[Rust Governor] Setting CPU max limit to {} MHz...", max_freq_mhz);
+        println!(
+            "[Rust Governor] Setting CPU max limit to {} MHz...",
+            max_freq_mhz
+        );
         if Path::new(&self.path).exists() {
             let max_freq_path = self.path.replace("scaling_cur_freq", "scaling_max_freq");
             let mhz_str = format!("{}", max_freq_mhz * 1000);
@@ -91,7 +94,10 @@ impl CpuGovernor {
             }
         }
         // Simulated confirmation
-        println!("[Rust Governor Simulation] Successfully simulated limit of {} MHz.", max_freq_mhz);
+        println!(
+            "[Rust Governor Simulation] Successfully simulated limit of {} MHz.",
+            max_freq_mhz
+        );
         Ok(())
     }
 }
@@ -107,7 +113,7 @@ pub struct ThermalManager {
 impl ThermalManager {
     pub fn run_optimization_cycle(&self, time_step: usize) {
         println!("\n=== Optimization Cycle #{} ===", time_step);
-        
+
         // 1. Check Disk S.M.A.R.T. equivalent status
         let disk = DiskStats::read_device(&self.target_disk);
         println!(
@@ -127,22 +133,34 @@ impl ThermalManager {
 
         for zone in &self.zones {
             let temp = zone.get_temperature(simulated_temp);
-            println!("[Thermal Zone {}] Current Temperature: {:.1}°C", zone.zone_id, temp);
+            println!(
+                "[Thermal Zone {}] Current Temperature: {:.1}°C",
+                zone.zone_id, temp
+            );
 
             // 3. Apply clock speed optimization if threshold breached
             if temp >= self.critical_temp_celsius {
-                println!("[Optimization Action] Thermal Throttling Triggered! (Exceeded {}°C)", self.critical_temp_celsius);
+                println!(
+                    "[Optimization Action] Thermal Throttling Triggered! (Exceeded {}°C)",
+                    self.critical_temp_celsius
+                );
                 // Lower governor clock speed limit to cool down the processor
                 let _ = self.governor.set_frequency_limit(1200); // 1.2GHz throttled limit
             } else {
-                println!("[Optimization Action] Temperatures normal. Optimizing for high clock speed performance...");
+                println!(
+                    "[Optimization Action] Temperatures normal. Optimizing for high clock speed performance..."
+                );
                 let _ = self.governor.set_frequency_limit(2400); // 2.4GHz performance mode
             }
         }
-        
+
         // Print current CPU frequency
         // Simulating throttled vs performance clocks
-        let current_clock = if simulated_temp >= self.critical_temp_celsius { 1200 } else { 2400 };
+        let current_clock = if simulated_temp >= self.critical_temp_celsius {
+            1200
+        } else {
+            2400
+        };
         let freq = self.governor.get_current_frequency(current_clock);
         println!("[CPU Clock] Current frequency: {} MHz", freq);
     }
@@ -150,8 +168,14 @@ impl ThermalManager {
 
 fn main() {
     let zones = vec![
-        ThermalZone { zone_id: 0, path: "/sys/class/thermal/thermal_zone0/temp".to_string() },
-        ThermalZone { zone_id: 1, path: "/sys/class/thermal/thermal_zone1/temp".to_string() }
+        ThermalZone {
+            zone_id: 0,
+            path: "/sys/class/thermal/thermal_zone0/temp".to_string(),
+        },
+        ThermalZone {
+            zone_id: 1,
+            path: "/sys/class/thermal/thermal_zone1/temp".to_string(),
+        },
     ];
 
     let governor = CpuGovernor {

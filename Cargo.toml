@@ -20,6 +20,10 @@ name = "thermal_monitor"
 path = "src/bin/thermal_monitor.rs"
 
 [dependencies]
+deep_causality = "0.15.0"
+grpc = "0.9.0"
+inference = "0.3.0"
+subjective-time-expansion = "0.1.2"
 tokio = { version = "1.40", features = ["macros", "rt-multi-thread", "sync", "time", "process", "io-util", "net"] }
 
 [profile.release]

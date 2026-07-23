@@ -23,7 +23,9 @@ impl Execute for CommandNode {
                     // Determine where this step outputs to
                     let current_stdout = if i == len - 1 {
                         // The final node in the pipeline routes directly to the macro stdout
-                        stdout_opt.take().expect("stdout must be available for the final stage")
+                        stdout_opt
+                            .take()
+                            .expect("stdout must be available for the final stage")
                     } else {
                         // Intermediate nodes pipe into the next stage
                         Stdio::piped()
@@ -35,7 +37,7 @@ impl Execute for CommandNode {
                     // Recursively execute the node—whether it's a Leaf or another Sub-Pipeline
                     let mut spawned_children = node.run(current_stdin, current_stdout)?;
 
-                    // If an intermediate node spawned a process, steal its stdout descriptor 
+                    // If an intermediate node spawned a process, steal its stdout descriptor
                     // to allocate it sequentially as the stdin for the next iteration
                     if i < len - 1 {
                         let mut next_stdin = None;
@@ -60,9 +62,9 @@ impl Execute for CommandNode {
 // Secure Token Exchange Patterns (Main Orchestrator & Child processes)
 // ============================================================================
 
-use tokio::process::Command as TokioCommand;
 use tokio::io::AsyncWriteExt;
 use tokio::net::UnixListener;
+use tokio::process::Command as TokioCommand;
 
 /// Pattern 1: Spawning a child with an environment variable set specifically for it.
 /// This prevents credentials from showing up in command-line arguments (visible in 'ps').
@@ -119,10 +121,8 @@ pub async fn run_orchestrator_uds(
     // Spawn the child subagent, passing the socket path as an argument
     let mut child_args: Vec<String> = args.iter().map(|&s| s.to_string()).collect();
     child_args.push(socket_path.to_string());
-    
-    TokioCommand::new(program)
-        .args(child_args)
-        .spawn()?;
+
+    TokioCommand::new(program).args(child_args).spawn()?;
 
     // Wait for the child to connect and stream the token
     if let Ok((mut stream, _)) = listener.accept().await {

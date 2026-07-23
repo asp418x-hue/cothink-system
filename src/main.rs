@@ -1,8 +1,8 @@
+use std::process::Stdio;
 use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, BufReader as AsyncBufReader};
 use tokio::process::Command;
 use tokio::task::JoinSet;
-use std::process::Stdio;
 
 fn main() {
     println!("cothink-system is booting...");
@@ -11,11 +11,17 @@ fn main() {
     runtime.block_on(async {
         let orch_id = cothink_system::history::next_orchestrator_id();
         cothink_system::history::record(orch_id, 0, "orch_start", true, "allocation=8".to_string());
-        
+
         let allocation = spiral_order(8, 2);
         let completed = spawn_concurrent_subagents(orch_id, &allocation).await;
-        
-        cothink_system::history::record(orch_id, 0, "orch_finish", true, format!("completed={}", completed.len()));
+
+        cothink_system::history::record(
+            orch_id,
+            0,
+            "orch_finish",
+            true,
+            format!("completed={}", completed.len()),
+        );
         println!("spiral allocation: {:?}", allocation);
         println!("completed subagents: {:?}", completed);
         cothink_system::history::show_history();
@@ -121,7 +127,13 @@ async fn spawn_subagent(orch_id: u64, task_id: usize) -> Result<usize, String> {
         Ok(c) => c,
         Err(e) => {
             let err_msg = format!("failed to spawn: {}", e);
-            cothink_system::history::record(orch_id, task_id, "subagent_fail", false, err_msg.clone());
+            cothink_system::history::record(
+                orch_id,
+                task_id,
+                "subagent_fail",
+                false,
+                err_msg.clone(),
+            );
             let diag = query_failure_diagnostics("sda");
             cothink_system::history::record(orch_id, task_id, "subagent_fail_query", false, diag);
             return Err(err_msg);
@@ -145,7 +157,13 @@ async fn spawn_subagent(orch_id: u64, task_id: usize) -> Result<usize, String> {
         Ok(s) => s,
         Err(e) => {
             let err_msg = format!("failed to wait: {}", e);
-            cothink_system::history::record(orch_id, task_id, "subagent_fail", false, err_msg.clone());
+            cothink_system::history::record(
+                orch_id,
+                task_id,
+                "subagent_fail",
+                false,
+                err_msg.clone(),
+            );
             let diag = query_failure_diagnostics("sda");
             cothink_system::history::record(orch_id, task_id, "subagent_fail_query", false, diag);
             return Err(err_msg);
@@ -160,7 +178,13 @@ async fn spawn_subagent(orch_id: u64, task_id: usize) -> Result<usize, String> {
         return Err(err_msg);
     }
 
-    cothink_system::history::record(orch_id, task_id, "subagent_success", true, line.trim().to_string());
+    cothink_system::history::record(
+        orch_id,
+        task_id,
+        "subagent_success",
+        true,
+        line.trim().to_string(),
+    );
     Ok(task_id)
 }
 
@@ -171,7 +195,9 @@ fn query_failure_diagnostics(device: &str) -> String {
         0.0
     };
 
-    let freq = if let Ok(f_str) = std::fs::read_to_string("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq") {
+    let freq = if let Ok(f_str) =
+        std::fs::read_to_string("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq")
+    {
         f_str.trim().parse::<u64>().unwrap_or(0) / 1000
     } else {
         0
@@ -183,7 +209,10 @@ fn query_failure_diagnostics(device: &str) -> String {
         "PASSED (simulated)"
     };
 
-    format!("diagnostics - Temp: {:.1}°C | CPU Freq: {}MHz | Disk Status: {}", temp, freq, disk_health)
+    format!(
+        "diagnostics - Temp: {:.1}°C | CPU Freq: {}MHz | Disk Status: {}",
+        temp, freq, disk_health
+    )
 }
 
 async fn spawn_concurrent_subagents(orch_id: u64, task_ids: &[usize]) -> Vec<usize> {
@@ -204,7 +233,13 @@ async fn spawn_concurrent_subagents(orch_id: u64, task_ids: &[usize]) -> Vec<usi
             }
             Err(e) => {
                 let err_msg = format!("task panicked: {}", e);
-                cothink_system::history::record(orch_id, 0, "subagent_panic", false, err_msg.clone());
+                cothink_system::history::record(
+                    orch_id,
+                    0,
+                    "subagent_panic",
+                    false,
+                    err_msg.clone(),
+                );
                 eprintln!("{}", err_msg);
             }
         }
@@ -214,7 +249,10 @@ async fn spawn_concurrent_subagents(orch_id: u64, task_ids: &[usize]) -> Vec<usi
 }
 
 #[allow(dead_code)]
-async fn spawn_concurrent_subagents_from_arc(orch_id: u64, task_ids: Arc<Vec<usize>>) -> Vec<usize> {
+async fn spawn_concurrent_subagents_from_arc(
+    orch_id: u64,
+    task_ids: Arc<Vec<usize>>,
+) -> Vec<usize> {
     spawn_concurrent_subagents(orch_id, &task_ids).await
 }
 

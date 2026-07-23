@@ -23,19 +23,21 @@ fn agent_classifier(frame: Arc<SensorFrame>) {
     // Agent reads frame, performs analysis, never mutates.
     println!("[Rust Agent] Reading frame ID {}...", frame.frame_id);
     println!("[Rust Agent] Payload size: {} bytes", frame.raw_data.len());
-    
+
     // Simulate classification processing time
     std::thread::sleep(std::time::Duration::from_millis(150));
-    
-    println!("[Rust Agent] Analysis anomaly score: {:.2} (Threshold crossed: {})", 
-             frame.anomaly_score.score, frame.anomaly_score.threshold_crossed);
+
+    println!(
+        "[Rust Agent] Analysis anomaly score: {:.2} (Threshold crossed: {})",
+        frame.anomaly_score.score, frame.anomaly_score.threshold_crossed
+    );
 }
 
 /// Load simulated sensor data
 fn load_sensor_data(id: u64) -> SensorFrame {
     // Mocking raw data vector
     let mock_bytes = vec![0x1A, 0x2B, 0x3C, 0x4D, 0x5E];
-    
+
     // Simulate anomaly score calculation based on frame ID
     let score = (id as f64 * 0.07).min(1.0);
     let threshold_crossed = score > 0.5;
@@ -61,7 +63,7 @@ fn main() {
     };
 
     let raw_data = Arc::new(load_sensor_data(frame_id));
-    
+
     // Multiple agents referencing the same memory block
     // No copying, no mutation, no decoherence.
     let handle = std::thread::spawn(move || {
@@ -94,4 +96,3 @@ mod tests {
         assert_eq!(data_clone[0], 0x1A);
     }
 }
-
