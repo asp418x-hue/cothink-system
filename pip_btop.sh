@@ -1,9 +1,9 @@
 #!/bin/bash
 # pip_btop.sh - Setup, start, and stop a Picture-in-Picture btop window for thermal monitoring.
 
-BTOP_CONF_DIR="/home/adrian/.config/btop"
+BTOP_CONF_DIR="${BTOP_CONF_DIR:-$HOME/.config/btop}"
 BTOP_CONF="$BTOP_CONF_DIR/btop.conf"
-FLUXBOX_APPS="/home/adrian/.fluxbox/apps"
+FLUXBOX_APPS="${FLUXBOX_APPS:-$HOME/.fluxbox/apps}"
 DISPLAY="${DISPLAY:-:1}"
 
 setup_btop() {
@@ -21,7 +21,7 @@ proc_info=True
 cpu_single_graph=False
 cpu_bottom=False
 EOF
-    chown -R adrian:adrian "$BTOP_CONF_DIR" || true
+    chown -R $(id -u):$(id -g) "$BTOP_CONF_DIR" || true
     
     # Configure fluxbox apps rule for btop_pip
     if ! grep -q "title=btop_pip" "$FLUXBOX_APPS" 2>/dev/null; then
@@ -36,7 +36,7 @@ EOF
   [Deco]	{NONE}
 [end]
 EOF
-        chown adrian:adrian "$FLUXBOX_APPS" || true
+        chown $(id -u):$(id -g) "$FLUXBOX_APPS" || true
         # Signal fluxbox to reload configuration if running
         if pgrep fluxbox >/dev/null; then
             DISPLAY="$DISPLAY" fluxbox-remote Reconfigure || true
@@ -52,8 +52,8 @@ start_btop() {
     fi
     
     echo "Starting pip'ed btop window..."
-    # Start lxterminal in background executing btop under user 'adrian' to ensure proper X session permissions
-    sudo -u adrian DISPLAY="$DISPLAY" lxterminal -t "btop_pip" -e btop &
+    # Start lxterminal in background executing btop under current user
+    DISPLAY="$DISPLAY" lxterminal -t "btop_pip" -e btop &
     
     # Wait for the window to appear (up to 3 seconds)
     local win_id=""

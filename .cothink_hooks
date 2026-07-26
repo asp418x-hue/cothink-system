@@ -21,6 +21,8 @@
 #
 ################################################################################
 
+PROJ_ROOT="${PROJ_ROOT:-/data/data/com.termux/files/home/cothink/cothink-system}"
+
 ################################################################################
 # Example: Pre-execution setup
 ################################################################################
@@ -28,7 +30,7 @@
 hook_pre_execute() {
     local cmd="$1"
     if [[ "$cmd" == *"run"* ]]; then
-        /home/adrian/cothink-system/pip_btop.sh start
+        "$PROJ_ROOT/pip_btop.sh" start
     fi
 }
 
@@ -40,7 +42,7 @@ hook_post_execute() {
     local exit_code="$1"
     local cmd="$2"
     if [[ "$cmd" == *"run"* ]]; then
-        /home/adrian/cothink-system/pip_btop.sh stop
+        "$PROJ_ROOT/pip_btop.sh" stop
     fi
 }
 
@@ -49,7 +51,7 @@ hook_post_execute() {
 ################################################################################
 
 hook_pre_passthrough() {
-    /home/adrian/cothink-system/pip_btop.sh start
+    "$PROJ_ROOT/pip_btop.sh" start
 }
 
 ################################################################################
@@ -58,15 +60,15 @@ hook_pre_passthrough() {
 
 hook_post_passthrough() {
     local exit_code="$1"
-    /home/adrian/cothink-system/pip_btop.sh stop
+    "$PROJ_ROOT/pip_btop.sh" stop
 }
 
 hook_pre_run() {
-    /home/adrian/cothink-system/pip_btop.sh start
+    "$PROJ_ROOT/pip_btop.sh" start
 }
 
 hook_post_run() {
-    /home/adrian/cothink-system/pip_btop.sh stop
+    "$PROJ_ROOT/pip_btop.sh" stop
 }
 
 ################################################################################

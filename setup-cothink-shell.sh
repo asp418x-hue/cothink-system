@@ -6,8 +6,9 @@
 
 set -euo pipefail
 
-SHELL_PATH="/usr/local/bin/cothink-shell"
-COTHINK_SYSTEM_PATH="/home/adrian/cothink-system"
+PROJ_ROOT="${PROJ_ROOT:-/data/data/com.termux/files/home/cothink/cothink-system}"
+SHELL_PATH="${SHELL_PATH:-/usr/local/bin/cothink-shell}"
+COTHINK_SYSTEM_PATH="${COTHINK_SYSTEM_PATH:-$PROJ_ROOT}"
 
 # Colors
 RED='\033[0;31m'
