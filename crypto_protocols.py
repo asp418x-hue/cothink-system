@@ -9,6 +9,7 @@ Extensions to the deterministic encryption protocol including:
 - Secure message sequencing
 """
 
+import math
 import hashlib
 import hmac
 import struct
@@ -338,7 +339,7 @@ class ProtocolAnalyzer:
         data_len = len(data)
         for count in byte_counts.values():
             probability = count / data_len
-            entropy -= probability * (probability ** 0.5)
+            entropy -= probability * math.log2(probability)
         
         unique_bytes = len(byte_counts)
         

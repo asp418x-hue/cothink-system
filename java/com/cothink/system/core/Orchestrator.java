@@ -80,7 +80,7 @@ public final class Orchestrator {
     private final HistoryTracker history;
     private final DynamicSemaphore semaphore;
     private final AtomicBoolean cancelled = new AtomicBoolean(false);
-    private ExecutorService pool;
+    private volatile ExecutorService pool;
 
     public Orchestrator(Config config) {
         this.config = config == null ? Config.defaults() : config;
@@ -90,8 +90,9 @@ public final class Orchestrator {
 
     public void cancel() {
         cancelled.set(true);
-        if (pool != null) {
-            pool.shutdownNow();
+        ExecutorService p = pool;
+        if (p != null) {
+            p.shutdownNow();
         }
     }
 

@@ -28,7 +28,8 @@ import java.util.concurrent.atomic.AtomicReference;
 public class MainActivity extends Activity {
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
-    private final ExecutorService bg = Executors.newSingleThreadExecutor();
+    private final ExecutorService orchExecutor = Executors.newSingleThreadExecutor();
+    private final ExecutorService metricsExecutor = Executors.newSingleThreadExecutor();
     private final AtomicReference<Orchestrator> running = new AtomicReference<>(null);
 
     private TextView logView;
@@ -117,7 +118,7 @@ public class MainActivity extends Activity {
         statusView.setText(getString(R.string.status_running, agents));
         appendLog(String.format(Locale.US, "Starting run: agents=%d semaphore=%d\n", agents, sem));
 
-        bg.execute(
+        orchExecutor.execute(
                 () -> {
                     Orchestrator orch = new Orchestrator(cfg);
                     running.set(orch);
@@ -167,7 +168,7 @@ public class MainActivity extends Activity {
     }
 
     private void refreshMetrics() {
-        bg.execute(
+        metricsExecutor.execute(
                 () -> {
                     SystemMetrics.Snapshot snap = SystemMetrics.query("sda");
                     mainHandler.post(
@@ -244,7 +245,8 @@ public class MainActivity extends Activity {
         if (orch != null) {
             orch.cancel();
         }
-        bg.shutdownNow();
+        orchExecutor.shutdownNow();
+        metricsExecutor.shutdownNow();
         super.onDestroy();
     }
 }

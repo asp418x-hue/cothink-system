@@ -5,7 +5,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync/atomic"
+	"sync"
 	"time"
 )
 
@@ -25,30 +25,36 @@ type HistoryEntry struct {
 
 var (
 	historyBuffer [HistoryCapacity]HistoryEntry
-	historyCursor uint64 // atomic counter
+	historyCursor uint64
+	historyMu     sync.RWMutex
 )
 
-// RecordEvent appends a new trace log to the ring buffer. It is lock-free
-// and allocates no memory on the hot path (except for dynamic strings passed).
+// RecordEvent appends a new trace log to the ring buffer under write lock.
 func RecordEvent(orchID int64, subagentID int, event string, success bool, detail string) {
-	seq := atomic.AddUint64(&historyCursor, 1) - 1
+	historyMu.Lock()
+	defer historyMu.Unlock()
+
+	seq := historyCursor
+	historyCursor++
 	idx := seq % HistoryCapacity
 
-	entry := &historyBuffer[idx]
-	entry.Timestamp = time.Now()
-	entry.OrchestratorID = orchID
-	entry.SubagentID = subagentID
-	entry.Event = event
-	entry.Success = success
-	entry.Detail = detail
-
-	// Publish the update atomically with release semantics
-	atomic.StoreUint64(&entry.Sequence, seq+1)
+	historyBuffer[idx] = HistoryEntry{
+		Timestamp:      time.Now(),
+		OrchestratorID: orchID,
+		SubagentID:     subagentID,
+		Event:          event,
+		Success:        success,
+		Detail:         detail,
+		Sequence:       seq + 1,
+	}
 }
 
 // GetHistory returns the slice of valid, completed trace logs currently stored.
 func GetHistory() []HistoryEntry {
-	cursor := atomic.LoadUint64(&historyCursor)
+	historyMu.RLock()
+	defer historyMu.RUnlock()
+
+	cursor := historyCursor
 	var start uint64
 	if cursor > HistoryCapacity {
 		start = cursor - HistoryCapacity
@@ -58,20 +64,21 @@ func GetHistory() []HistoryEntry {
 	for i := start; i < cursor; i++ {
 		idx := i % HistoryCapacity
 		entry := historyBuffer[idx]
-		seq := atomic.LoadUint64(&entry.Sequence)
-		// Only read if the slot corresponds exactly to the current cursor iteration (is not being overwritten)
-		if seq == i+1 {
+		if entry.Sequence == i+1 {
 			results = append(results, entry)
 		}
 	}
 	return results
 }
 
-// ClearHistory resets the history cursor and pre-allocated buffer
+// ClearHistory resets the history cursor and pre-allocated buffer under write lock.
 func ClearHistory() {
-	atomic.StoreUint64(&historyCursor, 0)
+	historyMu.Lock()
+	defer historyMu.Unlock()
+
+	historyCursor = 0
 	for i := 0; i < HistoryCapacity; i++ {
-		atomic.StoreUint64(&historyBuffer[i].Sequence, 0)
+		historyBuffer[i] = HistoryEntry{}
 	}
 }
 
@@ -96,7 +103,8 @@ func (orch *Orchestrator) GetFOV(device string) FOV {
 	successes := 0
 	failures := 0
 
-	cursor := atomic.LoadUint64(&historyCursor)
+	historyMu.RLock()
+	cursor := historyCursor
 	var start uint64
 	if cursor > HistoryCapacity {
 		start = cursor - HistoryCapacity
@@ -105,8 +113,7 @@ func (orch *Orchestrator) GetFOV(device string) FOV {
 	for i := start; i < cursor; i++ {
 		idx := i % HistoryCapacity
 		entry := historyBuffer[idx]
-		seq := atomic.LoadUint64(&entry.Sequence)
-		if seq == i+1 && entry.OrchestratorID == orch.ID {
+		if entry.Sequence == i+1 && entry.OrchestratorID == orch.ID {
 			switch entry.Event {
 			case "subagent_success":
 				successes++
@@ -115,6 +122,7 @@ func (orch *Orchestrator) GetFOV(device string) FOV {
 			}
 		}
 	}
+	historyMu.RUnlock()
 
 	return FOV{
 		ActiveWorkers: active,
@@ -148,3 +156,4 @@ func QuerySystemMetrics(device string) (temp float64, freq uint64, diskHealth st
 
 	return temp, freq, diskHealth
 }
+
