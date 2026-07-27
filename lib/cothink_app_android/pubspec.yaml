@@ -34,6 +34,8 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  cothink_core:
+    path: ../cothink_core
 
 dev_dependencies:
   flutter_test:
