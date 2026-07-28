@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'config_screen.dart';
 import '../widgets/editor_overlay.dart';
 import '../services/api_client.dart';
+import 'dart:async';
 
 class ToggleEditorIntent extends Intent {
   const ToggleEditorIntent();
@@ -18,6 +19,35 @@ class CoreDashboard extends StatefulWidget {
 
 class _CoreDashboardState extends State<CoreDashboard> {
   bool _showEditor = false;
+  Timer? _statusTimer;
+  List<dynamic> _agents = [];
+  int _activeWorkers = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _statusTimer = Timer.periodic(const Duration(milliseconds: 500), (_) => _fetchStatus());
+  }
+
+  @override
+  void dispose() {
+    _statusTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _fetchStatus() async {
+    try {
+      final status = await ApiClient.getStatus();
+      if (mounted && status['status'] != 'error') {
+        setState(() {
+          _agents = status['agents'] ?? [];
+          _activeWorkers = status['active_workers'] ?? 0;
+        });
+      }
+    } catch (e) {
+      // Ignore polling errors
+    }
+  }
 
   void _toggleEditor() {
     setState(() {
@@ -195,6 +225,84 @@ class _CoreDashboardState extends State<CoreDashboard> {
                           ),
                         ),
                       ),
+                      if (_agents.isNotEmpty) ...[
+                        const SizedBox(height: 32),
+                        Row(
+                          children: [
+                            const Text(
+                              'Subagent Activity',
+                              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: -0.5),
+                            ),
+                            const Spacer(),
+                            if (_activeWorkers > 0)
+                              Chip(
+                                label: Text('$_activeWorkers Active', style: const TextStyle(fontSize: 12)),
+                                backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                side: BorderSide.none,
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          children: _agents.map((agent) {
+                            final int id = agent['id'];
+                            final metadata = agent['metadata'] as Map<String, dynamic>? ?? {};
+                            final String output = metadata['output'] ?? '';
+                            
+                            bool isDone = output.isNotEmpty;
+                            bool isAnomaly = output.contains('Threshold crossed: true');
+                            
+                            Color cardColor;
+                            if (!isDone) {
+                              cardColor = Colors.grey.withOpacity(0.1);
+                            } else if (isAnomaly) {
+                              cardColor = Colors.red.withOpacity(0.1);
+                            } else {
+                              cardColor = Colors.green.withOpacity(0.1);
+                            }
+                            
+                            Color iconColor;
+                            if (!isDone) {
+                              iconColor = Colors.grey;
+                            } else if (isAnomaly) {
+                              iconColor = Colors.red;
+                            } else {
+                              iconColor = Colors.green;
+                            }
+
+                            return Container(
+                              width: 160,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: cardColor,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: isDone ? iconColor.withOpacity(0.3) : Colors.transparent,
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(isDone ? (isAnomaly ? Icons.warning : Icons.check_circle) : Icons.pending, color: iconColor, size: 18),
+                                      const SizedBox(width: 8),
+                                      Text('Agent $id', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    isDone ? (isAnomaly ? 'Anomaly Detected' : 'Normal') : 'Analyzing...',
+                                    style: TextStyle(fontSize: 12, color: isDone ? iconColor : Colors.grey, fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
                     ],
                   ),
                 ),
