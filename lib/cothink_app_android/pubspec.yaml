@@ -36,6 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   cothink_core:
     path: ../cothink_core
+  path_provider: ^2.0.15
 
 dev_dependencies:
   flutter_test:
