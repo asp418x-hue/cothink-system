@@ -3,7 +3,7 @@ import 'dart:io';
 
 class ApiClient {
   static const int port = 5000;
-  static const String host = '10.8.10.55';
+  static const String host = '127.0.0.1';
 
   static Future<Map<String, dynamic>> _sendRequest(Map<String, dynamic> requestData) async {
     Socket? socket;
