@@ -83,9 +83,9 @@ class RuntimeManager {
 
       debugPrint('Starting Go json_server...');
       _goServerProcess = await Process.start(
-        'go',
-        ['run', 'main/main.go', 'main/json_server.go'],
-        runInShell: true,
+        '/home/asp418x/cothink-system/bin/json_server',
+        [],
+        runInShell: false,
         workingDirectory: '/home/asp418x/cothink-system',
       );
       _goServerProcess?.stdout.listen((data) => debugPrint('Go: ${String.fromCharCodes(data)}'));
@@ -93,9 +93,9 @@ class RuntimeManager {
 
       debugPrint('Starting Rust thermal_monitor...');
       _rustThermalProcess = await Process.start(
-        'cargo',
-        ['run', '--bin', 'thermal_monitor'],
-        runInShell: true,
+        '/home/asp418x/cothink-system/bin/thermal_monitor',
+        [],
+        runInShell: false,
         workingDirectory: '/home/asp418x/cothink-system',
       );
       _rustThermalProcess?.stdout.listen((data) {
@@ -107,9 +107,9 @@ class RuntimeManager {
 
       debugPrint('Starting Rust classifier...');
       _rustClassifierProcess = await Process.start(
-        'cargo',
-        ['run', '--bin', 'classifier'],
-        runInShell: true,
+        '/home/asp418x/cothink-system/bin/classifier',
+        [],
+        runInShell: false,
         workingDirectory: '/home/asp418x/cothink-system',
       );
       _rustClassifierProcess?.stdout.listen((data) {
