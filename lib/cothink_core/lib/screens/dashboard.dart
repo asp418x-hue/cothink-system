@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'config_screen.dart';
 import '../widgets/editor_overlay.dart';
 
 class ToggleEditorIntent extends Intent {
@@ -7,10 +8,10 @@ class ToggleEditorIntent extends Intent {
 }
 
 class CoreDashboard extends StatefulWidget {
-  const CoreDashboard({Key? key}) : super(key: key);
+  const CoreDashboard({super.key});
 
   @override
-  _CoreDashboardState createState() => _CoreDashboardState();
+  State<CoreDashboard> createState() => _CoreDashboardState();
 }
 
 class _CoreDashboardState extends State<CoreDashboard> {
@@ -38,8 +39,18 @@ class _CoreDashboardState extends State<CoreDashboard> {
           autofocus: true,
           child: Scaffold(
             appBar: AppBar(
-              title: const Text('Cothink System Dashboard'),
+              title: const Text('Cothink Orchestrator', style: TextStyle(fontWeight: FontWeight.w600)),
               actions: [
+                IconButton(
+                  icon: const Icon(Icons.settings),
+                  tooltip: 'Configuration',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const ConfigScreen()),
+                    );
+                  },
+                ),
                 IconButton(
                   icon: const Icon(Icons.code),
                   tooltip: 'Toggle Editor (Ctrl+E)',
@@ -47,26 +58,95 @@ class _CoreDashboardState extends State<CoreDashboard> {
                 )
               ],
             ),
+            floatingActionButton: FloatingActionButton.extended(
+              onPressed: _toggleEditor,
+              icon: Icon(_showEditor ? Icons.close : Icons.terminal),
+              label: Text(_showEditor ? 'Close Editor' : 'Open Editor'),
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            ),
             body: Stack(
               children: [
                 // Main Dashboard Content
-                Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                SafeArea(
+                  child: ListView(
+                    padding: const EdgeInsets.all(24.0),
                     children: [
                       const Text(
-                        'Welcome to the Cothink Orchestrator',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                        'Welcome Back,',
+                        style: TextStyle(fontSize: 16, color: Colors.grey),
                       ),
-                      const SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: () {
-                          // Placeholder for future actions
-                        },
-                        child: const Text('View Thermal Monitor'),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'System Overview',
+                        style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: -0.5),
                       ),
-                      const SizedBox(height: 10),
-                      const Text('Press Ctrl+E to open the Neovim editor.'),
+                      const SizedBox(height: 32),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Card(
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(16),
+                                onTap: () {},
+                                child: Padding(
+                                  padding: const EdgeInsets.all(24.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(Icons.thermostat, color: Theme.of(context).colorScheme.primary, size: 32),
+                                      const SizedBox(height: 16),
+                                      const Text('Thermal Monitor', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                                      const SizedBox(height: 4),
+                                      const Text('System temps & fans', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Card(
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(16),
+                                onTap: () {},
+                                child: Padding(
+                                  padding: const EdgeInsets.all(24.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(Icons.memory, color: Theme.of(context).colorScheme.primary, size: 32),
+                                      const SizedBox(height: 16),
+                                      const Text('Task Manager', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                                      const SizedBox(height: 4),
+                                      const Text('Process resources', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Row(
+                            children: [
+                              Icon(Icons.info_outline, color: Theme.of(context).colorScheme.secondary),
+                              const SizedBox(width: 16),
+                              const Expanded(
+                                child: Text(
+                                  'Pro Tip: You can also press Ctrl+E on a physical keyboard to instantly toggle the Neovim editor overlay.',
+                                  style: TextStyle(height: 1.5),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -74,17 +154,24 @@ class _CoreDashboardState extends State<CoreDashboard> {
                 // Editor Overlay
                 if (_showEditor)
                   Positioned.fill(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32.0),
-                      child: Material(
-                        elevation: 10,
-                        borderRadius: BorderRadius.circular(8.0),
-                        child: NeovimEditorOverlay(
-                          onClose: () {
-                            setState(() {
-                              _showEditor = false;
-                            });
-                          },
+                    child: AnimatedOpacity(
+                      opacity: _showEditor ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: SafeArea(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Material(
+                            elevation: 24,
+                            borderRadius: BorderRadius.circular(16.0),
+                            clipBehavior: Clip.antiAlias,
+                            child: NeovimEditorOverlay(
+                              onClose: () {
+                                setState(() {
+                                  _showEditor = false;
+                                });
+                              },
+                            ),
+                          ),
                         ),
                       ),
                     ),
