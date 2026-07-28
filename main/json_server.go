@@ -141,6 +141,38 @@ func handleConnection(conn net.Conn) {
 			response["error"] = "Invalid paths array"
 		}
 
+	case "digest_files_content":
+		contentsInterface, ok := request["contents"].([]interface{})
+		if ok {
+			var combinedContent strings.Builder
+			for _, c := range contentsInterface {
+				if contentStr, ok := c.(string); ok {
+					combinedContent.WriteString(contentStr)
+					combinedContent.WriteString("\n")
+				}
+			}
+			if GlobalRootNode != nil {
+				if GlobalRootNode.Metadata == nil {
+					GlobalRootNode.Metadata = make(map[string]string)
+				}
+				GlobalRootNode.Metadata["file_content"] = combinedContent.String()
+				fmt.Printf("[JSON Server] Digested file contents via network, bytes: %d, triggering sweep...\n", combinedContent.Len())
+				
+				GlobalRootNode.Children = make([]*cothink.AgentNode, 0)
+				go func() {
+					ctx, cancel := context.WithCancel(context.Background())
+					defer cancel()
+					GlobalOrchestrator.ScalarSpawn(ctx, GlobalRootNode)
+				}()
+			} else {
+				response["status"] = "error"
+				response["error"] = "GlobalRootNode not initialized"
+			}
+		} else {
+			response["status"] = "error"
+			response["error"] = "Invalid contents array"
+		}
+
 	default:
 		response["status"] = "error"
 		response["error"] = "Unknown action"
