@@ -34,8 +34,26 @@ print(string.format("[Rust Agent #%d] Buffer size: %d bytes", id, #payload))
 
 if threshold then
     print(string.format("[CRITICAL #%d] Anomaly Score: %.2f (Threshold Exceeded!)", id, score))
-    print(string.format("[DIAGNOSTIC #%d] Payload signatures indicate buffer desynchronization or unauthorized memory mutation.", id))
-    print(string.format("[DIAGNOSTIC #%d] Stack frame compromised. Payload signature: 0x%08X", id, payload_hash))
+    
+    print(string.format("[DIAGNOSTIC #%d] Fetching real system state for debugging...", id))
+    
+    -- Gather real system load and memory info
+    local function getSysCommandOutput(cmd)
+        local f = io.popen(cmd)
+        if not f then return "N/A" end
+        local result = f:read("*a")
+        f:close()
+        return result
+    end
+    
+    local load_avg = getSysCommandOutput("cat /proc/loadavg")
+    local mem_info = getSysCommandOutput("free -m | grep Mem")
+    
+    print(string.format("[DIAGNOSTIC #%d] Load Avg: %s", id, load_avg:gsub("\n", "")))
+    print(string.format("[DIAGNOSTIC #%d] Memory (MB): %s", id, mem_info:gsub("\n", "")))
+    
+    -- Print out the exact payload that caused it
+    print(string.format("[DIAGNOSTIC #%d] Faulting Payload: %s", id, payload))
 else
-    print(string.format("[INFO #%d] Analysis nominal. Score: %.2f (Safe)", id, score))
+    print(string.format("[INFO #%d] Telemetry nominal. Score: %.2f (Safe)", id, score))
 end
