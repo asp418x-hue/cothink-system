@@ -63,12 +63,30 @@ class _CoreDashboardState extends State<CoreDashboard> {
         
         List<String> paths = result.files.map((e) => e.path).whereType<String>().toList();
         if (paths.isNotEmpty) {
-          final response = await ApiClient.digestFiles(paths);
+          List<String> contents = [];
+          for (String path in paths) {
+            try {
+              final content = await File(path).readAsString();
+              contents.add(content);
+            } catch (e) {
+              debugPrint('Could not read file: $e');
+            }
+          }
+          
+          if (contents.isEmpty) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('No readable text files found')),
+            );
+            return;
+          }
+
+          final response = await ApiClient.digestFileContents(contents);
           if (!mounted) return;
           
           if (response['status'] == 'success') {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Started digesting ${paths.length} file(s)')),
+              SnackBar(content: Text('Started digesting ${contents.length} file(s)')),
             );
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
