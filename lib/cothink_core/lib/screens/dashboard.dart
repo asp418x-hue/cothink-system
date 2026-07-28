@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'config_screen.dart';
+import 'thermal_screen.dart';
+import 'task_manager_screen.dart';
 import '../widgets/editor_overlay.dart';
 import '../services/api_client.dart';
 import 'dart:async';
@@ -185,7 +187,12 @@ class _CoreDashboardState extends State<CoreDashboard> {
                             child: Card(
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(16),
-                                onTap: () {},
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const ThermalScreen()),
+                                  );
+                                },
                                 child: Padding(
                                   padding: const EdgeInsets.all(24.0),
                                   child: Column(
@@ -207,7 +214,12 @@ class _CoreDashboardState extends State<CoreDashboard> {
                             child: Card(
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(16),
-                                onTap: () {},
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const TaskManagerScreen()),
+                                  );
+                                },
                                 child: Padding(
                                   padding: const EdgeInsets.all(24.0),
                                   child: Column(

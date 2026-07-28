@@ -8,6 +8,9 @@ class RuntimeManager {
   Process? _rustThermalProcess;
   Process? _rustClassifierProcess;
   
+  final StreamController<String> thermalStream = StreamController<String>.broadcast();
+  final StreamController<String> classifierStream = StreamController<String>.broadcast();
+  
   static final RuntimeManager _instance = RuntimeManager._internal();
   factory RuntimeManager() => _instance;
   RuntimeManager._internal();
@@ -93,7 +96,11 @@ class RuntimeManager {
         ['run', '--bin', 'thermal_monitor'],
         runInShell: true,
       );
-      _rustThermalProcess?.stdout.listen((data) => debugPrint('Rust Thermal: ${String.fromCharCodes(data)}'));
+      _rustThermalProcess?.stdout.listen((data) {
+        final str = String.fromCharCodes(data);
+        debugPrint('Rust Thermal: $str');
+        thermalStream.add(str);
+      });
       _rustThermalProcess?.stderr.listen((data) => debugPrint('Rust Thermal Error: ${String.fromCharCodes(data)}'));
 
       debugPrint('Starting Rust classifier...');
@@ -102,7 +109,11 @@ class RuntimeManager {
         ['run', '--bin', 'classifier'],
         runInShell: true,
       );
-      _rustClassifierProcess?.stdout.listen((data) => debugPrint('Rust Classifier: ${String.fromCharCodes(data)}'));
+      _rustClassifierProcess?.stdout.listen((data) {
+        final str = String.fromCharCodes(data);
+        debugPrint('Rust Classifier: $str');
+        classifierStream.add(str);
+      });
       _rustClassifierProcess?.stderr.listen((data) => debugPrint('Rust Classifier Error: ${String.fromCharCodes(data)}'));
 
     } catch (e) {
