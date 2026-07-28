@@ -1,6 +1,5 @@
 use std::io::{self, Read};
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
+use std::fs;
 
 fn main() {
     let mut payload = String::new();
@@ -14,32 +13,44 @@ fn main() {
         return;
     }
 
-    let mut hasher = DefaultHasher::new();
-    payload.hash(&mut hasher);
-    let hash = hasher.finish();
+    // Read actual system metrics
+    let loadavg = fs::read_to_string("/proc/loadavg").unwrap_or_else(|_| "0.00 0.00 0.00".to_string());
+    let load_1m: f64 = loadavg.split_whitespace().next().unwrap_or("0").parse().unwrap_or(0.0);
 
-    let score = (hash % 100) as f64 / 100.0;
-    let threshold = score > 0.65;
+    let meminfo = fs::read_to_string("/proc/meminfo").unwrap_or_default();
+    let mut mem_total = 1.0;
+    let mut mem_avail = 1.0;
+    
+    for line in meminfo.lines() {
+        if line.starts_with("MemTotal:") {
+            mem_total = line.split_whitespace().nth(1).unwrap_or("1").parse().unwrap_or(1.0);
+        }
+        if line.starts_with("MemAvailable:") {
+            mem_avail = line.split_whitespace().nth(1).unwrap_or("1").parse().unwrap_or(1.0);
+        }
+    }
+    
+    let mem_usage_pct = 1.0 - (mem_avail / mem_total);
+    
+    // We determine anomalies based on ACTUAL system conditions
+    let threshold = load_1m > 4.0 || mem_usage_pct > 0.85;
+    let score = (load_1m / 4.0).max(mem_usage_pct);
 
     let mut result = format!("{{\"status\":\"success\",\"score\":{:.2},\"threshold_exceeded\":{}", score, threshold);
     
     if threshold {
-        let anomaly_type = hash % 3;
-        let (diagnostic, solution) = match anomaly_type {
-            0 => (
-                "Thermal cascade imminent: Governor failing to scale CPU frequency against load spike.",
-                "1. Audit cpufreq governor settings (e.g. switch from 'performance' to 'schedutil').\\n2. Profile the instruction payload for infinite loops or unyielded tight polling.\\n3. Check for blocked thermal daemon (thermald)."
-            ),
-            1 => (
-                "Priority inversion detected: Excessive context switch rate on RT thread.",
-                "1. Inspect futex contention in the payload execution path.\\n2. Demote the RT (Real-Time) scheduling policy (SCHED_FIFO/SCHED_RR) of the faulting thread to SCHED_OTHER.\\n3. Use priority inheritance mutexes (PI-mutex) if lock sharing is mandatory."
-            ),
-            _ => (
-                "I/O starvation: Block device queue saturated by anomalous write bursts.",
-                "1. Implement application-level write batching or buffering.\\n2. Tune 'dirty_ratio' and 'dirty_background_ratio' in sysctl.\\n3. Profile fsync() calls in the payload execution path."
+        let (diagnostic, solution) = if mem_usage_pct > 0.85 {
+            (
+                format!("Memory starvation detected: System RAM usage is at {:.1}%. OOM killer risk is critical.", mem_usage_pct * 100.0),
+                "1. Audit running subagents and terminate idle or memory-leaking workers.\\n2. Increase swap space using `mkswap` and `swapon`.\\n3. Tune `vm.swappiness` to a higher value to reclaim page cache."
+            )
+        } else {
+            (
+                format!("CPU saturation cascade: Load average (1m) is at {:.2}, exceeding safe threshold.", load_1m),
+                "1. Inspect process queue with `top` or `htop` to identify CPU hogs.\\n2. Adjust execution delay of the swarm payload.\\n3. Lower priority of non-critical agents using `renice`."
             )
         };
-        result.push_str(&format!(",\"diagnostic\":\"{}\",\"solution\":\"{}\",\"signature\":\"0x{:08X}\"", diagnostic, solution, hash));
+        result.push_str(&format!(",\"diagnostic\":\"{}\",\"solution\":\"{}\",\"signature\":\"0x{:08X}\"", diagnostic, solution, 0x1A2B3C4D));
     }
     
     result.push_str("}");
