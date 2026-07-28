@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Cothink Orchestrator
+Comment=Manage the Cothink swarm and monitor system telemetry
+Exec=/home/asp418x/cothink-system/lib/cothink_app_desktop/build/linux/x64/release/bundle/cothink_app_desktop
+Icon=utilities-terminal
+Terminal=false
+Categories=Development;System;Utility;
+StartupNotify=true

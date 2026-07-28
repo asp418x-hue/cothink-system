@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:file_picker/file_picker.dart';
 import 'config_screen.dart';
 import 'thermal_screen.dart';
 import 'task_manager_screen.dart';
@@ -62,87 +61,6 @@ class _CoreDashboardState extends State<CoreDashboard> {
     });
   }
 
-  Future<void> _pickFile() async {
-    try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles();
-      if (result != null) {
-        if (!mounted) return;
-        
-        List<String> paths = result.files.map((e) => e.path).whereType<String>().toList();
-        if (paths.isNotEmpty) {
-          bool hasJsonInstruction = false;
-          
-          // Check if any file is a JSON file to use as an instruction
-          for (String path in paths) {
-            if (path.toLowerCase().endsWith('.json')) {
-              hasJsonInstruction = true;
-              try {
-                final content = await File(path).readAsString();
-                final instruction = jsonDecode(content) as Map<String, dynamic>;
-                final response = await ApiClient.executeInstruction(instruction);
-                if (!mounted) return;
-                if (response['status'] == 'success') {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Instruction executed successfully!')),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Instruction error: ${response['error']}')),
-                  );
-                }
-              } catch (e) {
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Failed to parse instruction JSON: $e')),
-                );
-              }
-              break; // Only process one JSON instruction file per upload batch
-            }
-          }
-
-          if (!hasJsonInstruction) {
-            // Standard text file fallback
-            List<String> contents = [];
-            for (String path in paths) {
-              try {
-                final content = await File(path).readAsString();
-                contents.add(content);
-              } catch (e) {
-                debugPrint('Could not read file: $e');
-              }
-            }
-            
-            if (contents.isEmpty) {
-              if (!mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('No readable text files found')),
-              );
-              return;
-            }
-
-            final response = await ApiClient.digestFileContents(contents);
-            if (!mounted) return;
-            
-            if (response['status'] == 'success') {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Started digesting ${contents.length} file(s)')),
-              );
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Backend error: ${response['error']}')),
-              );
-            }
-          }
-        }
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading file: $e')),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Shortcuts(
@@ -182,15 +100,6 @@ class _CoreDashboardState extends State<CoreDashboard> {
               mainAxisAlignment: MainAxisAlignment.end,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                FloatingActionButton(
-                  heroTag: 'load_file_fab',
-                  onPressed: _pickFile,
-                  backgroundColor: Theme.of(context).colorScheme.secondary,
-                  foregroundColor: Theme.of(context).colorScheme.onSecondary,
-                  tooltip: 'Load Task File',
-                  child: const Icon(Icons.add),
-                ),
-                const SizedBox(height: 16),
                 FloatingActionButton.extended(
                   heroTag: 'toggle_editor_fab',
                   onPressed: _toggleEditor,
