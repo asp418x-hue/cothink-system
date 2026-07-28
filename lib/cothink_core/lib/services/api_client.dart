@@ -14,7 +14,7 @@ class ApiClient {
       socket.write(payload);
       
       final responseBuffer = StringBuffer();
-      await for (final data in socket.transform(utf8.decoder)) {
+      await for (final data in socket.cast<List<int>>().transform(utf8.decoder)) {
         responseBuffer.write(data);
       }
       

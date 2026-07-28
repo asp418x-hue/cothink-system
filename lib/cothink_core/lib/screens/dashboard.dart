@@ -28,12 +28,14 @@ class _CoreDashboardState extends State<CoreDashboard> {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles();
       if (result != null) {
+        if (!mounted) return;
         // Placeholder for file digestion logic
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Loaded: ${result.files.single.name} for digestion')),
         );
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error loading file: $e')),
       );
