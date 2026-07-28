@@ -71,13 +71,16 @@ class _InstructionBuilderScreenState extends State<InstructionBuilderScreen> {
         if (response['status'] == 'success') {
           String msg = 'Native Rust Execution: Score ${response['score']}';
           if (response['threshold_exceeded'] == true) {
-             msg += '\n${response['diagnostic']}';
+             msg += '\n\n[DIAGNOSTIC]: ${response['diagnostic']}';
+             if (response.containsKey('solution')) {
+               msg += '\n\n[SUGGESTED SOLUTION]:\n${response['solution']}';
+             }
           }
           
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(msg),
-              duration: const Duration(seconds: 4),
+              content: Text(msg, style: const TextStyle(height: 1.4)),
+              duration: const Duration(seconds: 15),
               backgroundColor: response['threshold_exceeded'] == true ? Colors.red.shade900 : Colors.green.shade900,
             ),
           );
