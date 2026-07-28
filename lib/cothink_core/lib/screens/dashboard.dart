@@ -6,6 +6,7 @@ import 'thermal_screen.dart';
 import 'task_manager_screen.dart';
 import '../widgets/editor_overlay.dart';
 import '../services/api_client.dart';
+import '../services/runtime_manager.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -29,6 +30,7 @@ class _CoreDashboardState extends State<CoreDashboard> {
   @override
   void initState() {
     super.initState();
+    RuntimeManager().startRuntimes();
     _statusTimer = Timer.periodic(const Duration(milliseconds: 500), (_) => _fetchStatus());
   }
 
