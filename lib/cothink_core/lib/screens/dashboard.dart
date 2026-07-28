@@ -5,6 +5,7 @@ import 'config_screen.dart';
 import '../widgets/editor_overlay.dart';
 import '../services/api_client.dart';
 import 'dart:async';
+import 'dart:io';
 
 class ToggleEditorIntent extends Intent {
   const ToggleEditorIntent();
