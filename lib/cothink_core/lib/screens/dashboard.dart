@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'config_screen.dart';
 import '../widgets/editor_overlay.dart';
+import '../services/api_client.dart';
 
 class ToggleEditorIntent extends Intent {
   const ToggleEditorIntent();
@@ -29,10 +30,22 @@ class _CoreDashboardState extends State<CoreDashboard> {
       FilePickerResult? result = await FilePicker.pickFiles();
       if (result != null) {
         if (!mounted) return;
-        // Placeholder for file digestion logic
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Loaded: ${result.files.single.name} for digestion')),
-        );
+        
+        List<String> paths = result.files.map((e) => e.path).whereType<String>().toList();
+        if (paths.isNotEmpty) {
+          final response = await ApiClient.digestFiles(paths);
+          if (!mounted) return;
+          
+          if (response['status'] == 'success') {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Started digesting ${paths.length} file(s)')),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Backend error: ${response['error']}')),
+            );
+          }
+        }
       }
     } catch (e) {
       if (!mounted) return;

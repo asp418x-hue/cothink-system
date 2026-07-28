@@ -47,4 +47,11 @@ class ApiClient {
   static Future<Map<String, dynamic>> triggerSweep() async {
     return _sendRequest({'action': 'trigger_sweep'});
   }
+
+  static Future<Map<String, dynamic>> digestFiles(List<String> paths) async {
+    return _sendRequest({
+      'action': 'digest_files',
+      'paths': paths,
+    });
+  }
 }
