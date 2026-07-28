@@ -69,22 +69,53 @@ class _InstructionBuilderScreenState extends State<InstructionBuilderScreen> {
       try {
         final Map<String, dynamic> response = jsonDecode(output);
         if (response['status'] == 'success') {
-          String msg = 'Native Rust Execution: Score ${response['score']}';
           if (response['threshold_exceeded'] == true) {
-             msg += '\n\n[DIAGNOSTIC]: ${response['diagnostic']}';
-             if (response.containsKey('solution')) {
-               msg += '\n\n[SUGGESTED SOLUTION]:\n${response['solution']}';
-             }
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: const Text('Anomaly Detected', style: TextStyle(color: Colors.redAccent)),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('Score: ${response['score']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 16),
+                        const Text('[DIAGNOSTIC]:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orangeAccent)),
+                        const SizedBox(height: 8),
+                        Text('${response['diagnostic']}'),
+                        if (response.containsKey('solution')) ...[
+                          const SizedBox(height: 16),
+                          const Text('[SUGGESTED SOLUTION]:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.greenAccent)),
+                          const SizedBox(height: 8),
+                          Text('${response['solution']}'),
+                        ]
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context); // Close dialog
+                        Navigator.pop(this.context); // Go back to dashboard
+                      },
+                      child: const Text('Acknowledge'),
+                    ),
+                  ],
+                );
+              },
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Native Rust Execution: Score ${response['score']}'),
+                backgroundColor: Colors.green.shade900,
+              ),
+            );
+            Navigator.pop(context); // Go back to dashboard
           }
-          
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(msg, style: const TextStyle(height: 1.4)),
-              duration: const Duration(seconds: 15),
-              backgroundColor: response['threshold_exceeded'] == true ? Colors.red.shade900 : Colors.green.shade900,
-            ),
-          );
-          Navigator.pop(context); // Go back to dashboard
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Native Error: ${response['error']}')),
