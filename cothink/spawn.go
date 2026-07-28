@@ -46,6 +46,9 @@ func (orch *Orchestrator) ScalarSpawn(ctx context.Context, root *AgentNode) {
 			// 1. Run Perl preprocessor binary
 			RecordEvent(orch.ID, id, "subagent_perl_start", true, "")
 			perlCmd := exec.CommandContext(ctx, "perl", "agent.pl", strconv.Itoa(id))
+			if root.Metadata != nil && root.Metadata["file_content"] != "" {
+				perlCmd.Stdin = strings.NewReader(root.Metadata["file_content"])
+			}
 			perlOut, err := perlCmd.Output()
 			if err != nil {
 				fmt.Printf("[Orchestrator] Perl agent %d failed to execute: %v\n", id, err)
