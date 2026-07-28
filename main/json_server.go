@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 	"cothink-system/cothink"
+	"time"
 )
 
 type OrchestratorStatus struct {
@@ -171,6 +172,54 @@ func handleConnection(conn net.Conn) {
 		} else {
 			response["status"] = "error"
 			response["error"] = "Invalid contents array"
+		}
+
+	case "execute_instruction":
+		instructionData, ok := request["instruction"].(map[string]interface{})
+		if ok {
+			maxChildren := 0
+			if mc, ok := instructionData["max_children"].(float64); ok {
+				maxChildren = int(mc)
+			}
+			baseDelay := int64(0)
+			if bd, ok := instructionData["base_delay_ms"].(float64); ok {
+				baseDelay = int64(bd)
+			}
+			payload := ""
+			if p, ok := instructionData["payload"].(string); ok {
+				payload = p
+			}
+
+			if GlobalOrchestrator != nil {
+				if maxChildren > 0 {
+					GlobalOrchestrator.MaxChildren = maxChildren
+					GlobalOrchestrator.Semaphore.SetLimit(maxChildren)
+				}
+				if baseDelay > 0 {
+					GlobalOrchestrator.BaseDelay = time.Duration(baseDelay) * time.Millisecond
+				}
+			}
+
+			if GlobalRootNode != nil {
+				if GlobalRootNode.Metadata == nil {
+					GlobalRootNode.Metadata = make(map[string]string)
+				}
+				GlobalRootNode.Metadata["file_content"] = payload
+				fmt.Printf("[JSON Server] Executing instruction... max_children: %d, delay_ms: %d, payload_len: %d\n", maxChildren, baseDelay, len(payload))
+				
+				GlobalRootNode.Children = make([]*cothink.AgentNode, 0)
+				go func() {
+					ctx, cancel := context.WithCancel(context.Background())
+					defer cancel()
+					GlobalOrchestrator.ScalarSpawn(ctx, GlobalRootNode)
+				}()
+			} else {
+				response["status"] = "error"
+				response["error"] = "GlobalRootNode not initialized"
+			}
+		} else {
+			response["status"] = "error"
+			response["error"] = "Invalid instruction payload"
 		}
 
 	default:

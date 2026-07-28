@@ -4,11 +4,13 @@ import 'package:file_picker/file_picker.dart';
 import 'config_screen.dart';
 import 'thermal_screen.dart';
 import 'task_manager_screen.dart';
+import 'instruction_builder.dart';
 import '../widgets/editor_overlay.dart';
 import '../services/api_client.dart';
 import '../services/runtime_manager.dart';
 import 'dart:async';
 import 'dart:io';
+import 'dart:convert';
 
 class ToggleEditorIntent extends Intent {
   const ToggleEditorIntent();
@@ -68,35 +70,68 @@ class _CoreDashboardState extends State<CoreDashboard> {
         
         List<String> paths = result.files.map((e) => e.path).whereType<String>().toList();
         if (paths.isNotEmpty) {
-          List<String> contents = [];
+          bool hasJsonInstruction = false;
+          
+          // Check if any file is a JSON file to use as an instruction
           for (String path in paths) {
-            try {
-              final content = await File(path).readAsString();
-              contents.add(content);
-            } catch (e) {
-              debugPrint('Could not read file: $e');
+            if (path.toLowerCase().endsWith('.json')) {
+              hasJsonInstruction = true;
+              try {
+                final content = await File(path).readAsString();
+                final instruction = jsonDecode(content) as Map<String, dynamic>;
+                final response = await ApiClient.executeInstruction(instruction);
+                if (!mounted) return;
+                if (response['status'] == 'success') {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Instruction executed successfully!')),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Instruction error: ${response['error']}')),
+                  );
+                }
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Failed to parse instruction JSON: $e')),
+                );
+              }
+              break; // Only process one JSON instruction file per upload batch
             }
           }
-          
-          if (contents.isEmpty) {
-            if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('No readable text files found')),
-            );
-            return;
-          }
 
-          final response = await ApiClient.digestFileContents(contents);
-          if (!mounted) return;
-          
-          if (response['status'] == 'success') {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Started digesting ${contents.length} file(s)')),
-            );
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Backend error: ${response['error']}')),
-            );
+          if (!hasJsonInstruction) {
+            // Standard text file fallback
+            List<String> contents = [];
+            for (String path in paths) {
+              try {
+                final content = await File(path).readAsString();
+                contents.add(content);
+              } catch (e) {
+                debugPrint('Could not read file: $e');
+              }
+            }
+            
+            if (contents.isEmpty) {
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('No readable text files found')),
+              );
+              return;
+            }
+
+            final response = await ApiClient.digestFileContents(contents);
+            if (!mounted) return;
+            
+            if (response['status'] == 'success') {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Started digesting ${contents.length} file(s)')),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Backend error: ${response['error']}')),
+              );
+            }
           }
         }
       }
@@ -163,6 +198,20 @@ class _CoreDashboardState extends State<CoreDashboard> {
                   label: Text(_showEditor ? 'Close Editor' : 'Open Editor'),
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                ),
+                const SizedBox(height: 16),
+                FloatingActionButton.extended(
+                  heroTag: 'instruction_builder_fab',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const InstructionBuilderScreen()),
+                    );
+                  },
+                  icon: const Icon(Icons.auto_fix_high),
+                  label: const Text('Create Instruction'),
+                  backgroundColor: Colors.deepPurpleAccent,
+                  foregroundColor: Colors.white,
                 ),
               ],
             ),

@@ -1,0 +1,5 @@
+{
+  "max_children": 5,
+  "base_delay_ms": 150,
+  "payload": "42,0.95"
+}

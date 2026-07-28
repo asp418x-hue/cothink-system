@@ -61,4 +61,11 @@ class ApiClient {
       'contents': contents,
     });
   }
+
+  static Future<Map<String, dynamic>> executeInstruction(Map<String, dynamic> instruction) async {
+    return _sendRequest({
+      'action': 'execute_instruction',
+      'instruction': instruction,
+    });
+  }
 }
