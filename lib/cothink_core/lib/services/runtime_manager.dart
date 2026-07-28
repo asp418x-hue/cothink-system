@@ -29,6 +29,16 @@ class RuntimeManager {
       debugPrint('Warning: Could not extract proot binary from assets: $e');
     }
 
+    // Extract payload_executor binary for native Dart execution
+    final payloadExecutorFile = File('${supportDir.path}/payload_executor');
+    try {
+      final executorData = await rootBundle.load('assets/bin/payload_executor');
+      await payloadExecutorFile.writeAsBytes(executorData.buffer.asUint8List(executorData.offsetInBytes, executorData.lengthInBytes), flush: true);
+      await Process.run('chmod', ['+x', payloadExecutorFile.path]);
+    } catch (e) {
+      debugPrint('Warning: Could not extract payload_executor binary from assets: $e');
+    }
+
     if (!await rootfsDir.exists()) {
       debugPrint('Rootfs not found, extracting from assets...');
       await rootfsDir.create(recursive: true);

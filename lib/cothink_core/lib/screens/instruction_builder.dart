@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/api_client.dart';
+import 'dart:io';
+import 'dart:convert';
+import 'package:path_provider/path_provider.dart';
 
 class InstructionBuilderScreen extends StatefulWidget {
   const InstructionBuilderScreen({super.key});
@@ -33,23 +36,60 @@ class _InstructionBuilderScreenState extends State<InstructionBuilderScreen> {
       final baseDelay = int.tryParse(_delayController.text) ?? 150;
       final payload = _payloadController.text;
 
+      // 1. Send to Go backend to spawn the swarm
       final instruction = {
         'max_children': maxChildren,
         'base_delay_ms': baseDelay,
         'payload': payload,
       };
+      
+      // We don't await this so it happens in parallel
+      ApiClient.executeInstruction(instruction).catchError((e) {
+        debugPrint('Go backend instruction failed: $e');
+        return <String, dynamic>{};
+      });
 
-      final response = await ApiClient.executeInstruction(instruction);
+      // 2. Execute natively in Rust for immediate host telemetry
+      String execPath = '/home/asp418x/cothink-system/bin/payload_executor';
+      if (Platform.isAndroid) {
+        final supportDir = await getApplicationSupportDirectory();
+        execPath = '${supportDir.path}/payload_executor';
+      }
+
+      final process = await Process.start(execPath, []);
+      process.stdin.write(payload);
+      await process.stdin.flush();
+      await process.stdin.close();
+
+      final outputBytes = await process.stdout.toList();
+      final output = utf8.decode(outputBytes.expand((x) => x).toList());
 
       if (!mounted) return;
-      if (response['status'] == 'success') {
+      
+      try {
+        final Map<String, dynamic> response = jsonDecode(output);
+        if (response['status'] == 'success') {
+          String msg = 'Native Rust Execution: Score ${response['score']}';
+          if (response['threshold_exceeded'] == true) {
+             msg += '\n${response['diagnostic']}';
+          }
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(msg),
+              duration: const Duration(seconds: 4),
+              backgroundColor: response['threshold_exceeded'] == true ? Colors.red.shade900 : Colors.green.shade900,
+            ),
+          );
+          Navigator.pop(context); // Go back to dashboard
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Native Error: ${response['error']}')),
+          );
+        }
+      } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Instruction executed successfully! Agents deployed.')),
-        );
-        Navigator.pop(context); // Go back to dashboard
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${response['error']}')),
+          SnackBar(content: Text('Failed to parse Rust output: $e\nOutput: $output')),
         );
       }
     } catch (e) {
