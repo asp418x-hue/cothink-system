@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:file_picker/file_picker.dart';
 import 'config_screen.dart';
 import '../widgets/editor_overlay.dart';
 
@@ -21,6 +22,22 @@ class _CoreDashboardState extends State<CoreDashboard> {
     setState(() {
       _showEditor = !_showEditor;
     });
+  }
+
+  Future<void> _pickFile() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles();
+      if (result != null) {
+        // Placeholder for file digestion logic
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Loaded: ${result.files.single.name} for digestion')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading file: $e')),
+      );
+    }
   }
 
   @override
@@ -58,12 +75,28 @@ class _CoreDashboardState extends State<CoreDashboard> {
                 )
               ],
             ),
-            floatingActionButton: FloatingActionButton.extended(
-              onPressed: _toggleEditor,
-              icon: Icon(_showEditor ? Icons.close : Icons.terminal),
-              label: Text(_showEditor ? 'Close Editor' : 'Open Editor'),
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            floatingActionButton: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                FloatingActionButton(
+                  heroTag: 'load_file_fab',
+                  onPressed: _pickFile,
+                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                  foregroundColor: Theme.of(context).colorScheme.onSecondary,
+                  tooltip: 'Load Task File',
+                  child: const Icon(Icons.add),
+                ),
+                const SizedBox(height: 16),
+                FloatingActionButton.extended(
+                  heroTag: 'toggle_editor_fab',
+                  onPressed: _toggleEditor,
+                  icon: Icon(_showEditor ? Icons.close : Icons.terminal),
+                  label: Text(_showEditor ? 'Close Editor' : 'Open Editor'),
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                ),
+              ],
             ),
             body: Stack(
               children: [
