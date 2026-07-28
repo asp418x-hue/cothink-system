@@ -86,6 +86,7 @@ class RuntimeManager {
         'go',
         ['run', 'main/main.go', 'main/json_server.go'],
         runInShell: true,
+        workingDirectory: '/home/asp418x/cothink-system',
       );
       _goServerProcess?.stdout.listen((data) => debugPrint('Go: ${String.fromCharCodes(data)}'));
       _goServerProcess?.stderr.listen((data) => debugPrint('Go Error: ${String.fromCharCodes(data)}'));
@@ -95,6 +96,7 @@ class RuntimeManager {
         'cargo',
         ['run', '--bin', 'thermal_monitor'],
         runInShell: true,
+        workingDirectory: '/home/asp418x/cothink-system',
       );
       _rustThermalProcess?.stdout.listen((data) {
         final str = String.fromCharCodes(data);
@@ -108,6 +110,7 @@ class RuntimeManager {
         'cargo',
         ['run', '--bin', 'classifier'],
         runInShell: true,
+        workingDirectory: '/home/asp418x/cothink-system',
       );
       _rustClassifierProcess?.stdout.listen((data) {
         final str = String.fromCharCodes(data);
