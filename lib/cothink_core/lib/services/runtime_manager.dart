@@ -14,27 +14,61 @@ class RuntimeManager {
 
   Future<void> _extractAndRunAndroid() async {
     final supportDir = await getApplicationSupportDirectory();
-    
-    Future<Process> extractAndRun(String name) async {
-      final file = File('${supportDir.path}/$name');
-      final data = await rootBundle.load('assets/bin/$name');
-      await file.writeAsBytes(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes), flush: true);
-      await Process.run('chmod', ['+x', file.path]);
-      return Process.start(file.path, []);
+    final rootfsDir = Directory('${supportDir.path}/rootfs');
+
+    // Extract proot binary
+    final prootFile = File('${supportDir.path}/proot');
+    try {
+      final prootData = await rootBundle.load('assets/bin/proot');
+      await prootFile.writeAsBytes(prootData.buffer.asUint8List(prootData.offsetInBytes, prootData.lengthInBytes), flush: true);
+      await Process.run('chmod', ['+x', prootFile.path]);
+    } catch (e) {
+      debugPrint('Warning: Could not extract proot binary from assets: $e');
     }
 
-    debugPrint('Extracting and starting Android binaries...');
-    _goServerProcess = await extractAndRun('json_server');
-    _goServerProcess?.stdout.listen((data) => debugPrint('Go: ${String.fromCharCodes(data)}'));
-    _goServerProcess?.stderr.listen((data) => debugPrint('Go Error: ${String.fromCharCodes(data)}'));
+    if (!await rootfsDir.exists()) {
+      debugPrint('Rootfs not found, extracting from assets...');
+      await rootfsDir.create(recursive: true);
+      final tarballFile = File('${supportDir.path}/antiX-rootfs.tar.gz');
+      
+      try {
+        final tarballData = await rootBundle.load('assets/rootfs/antiX-rootfs.tar.gz');
+        if (tarballData.lengthInBytes > 0) {
+          await tarballFile.writeAsBytes(tarballData.buffer.asUint8List(tarballData.offsetInBytes, tarballData.lengthInBytes), flush: true);
+          
+          // Extract tarball using native tar
+          debugPrint('Decompressing antiX rootfs...');
+          final tarResult = await Process.run('tar', ['-xzf', tarballFile.path, '-C', rootfsDir.path]);
+          if (tarResult.exitCode != 0) {
+            debugPrint('Error extracting tarball: ${tarResult.stderr}');
+          }
+          await tarballFile.delete(); // Cleanup
+        }
+      } catch (e) {
+        debugPrint('Warning: Could not extract antiX-rootfs.tar.gz from assets: $e');
+      }
+    }
 
-    _rustThermalProcess = await extractAndRun('thermal_monitor');
-    _rustThermalProcess?.stdout.listen((data) => debugPrint('Rust Thermal: ${String.fromCharCodes(data)}'));
-    _rustThermalProcess?.stderr.listen((data) => debugPrint('Rust Thermal Error: ${String.fromCharCodes(data)}'));
-
-    _rustClassifierProcess = await extractAndRun('classifier');
-    _rustClassifierProcess?.stdout.listen((data) => debugPrint('Rust Classifier: ${String.fromCharCodes(data)}'));
-    _rustClassifierProcess?.stderr.listen((data) => debugPrint('Rust Classifier Error: ${String.fromCharCodes(data)}'));
+    // Start the Go server using proot
+    debugPrint('Starting proot container...');
+    try {
+      _goServerProcess = await Process.start(
+        prootFile.path,
+        [
+          '-r', rootfsDir.path,
+          '-0', // fake root
+          '-b', '/dev',
+          '-b', '/proc',
+          '-b', '/sys',
+          '-w', '/opt/cothink',
+          '/bin/bash', '-c', './json_server'
+        ],
+      );
+      _goServerProcess?.stdout.listen((data) => debugPrint('Proot: ${String.fromCharCodes(data)}'));
+      _goServerProcess?.stderr.listen((data) => debugPrint('Proot Error: ${String.fromCharCodes(data)}'));
+    } catch (e) {
+      debugPrint('Error starting proot container: $e');
+    }
   }
 
   Future<void> startRuntimes() async {
