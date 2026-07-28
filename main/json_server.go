@@ -104,6 +104,42 @@ func handleConnection(conn net.Conn) {
 				GlobalOrchestrator.ScalarSpawn(ctx, GlobalRootNode)
 			}()
 		}
+	case "digest_files":
+		pathsInterface, ok := request["paths"].([]interface{})
+		if ok {
+			var combinedContent strings.Builder
+			for _, p := range pathsInterface {
+				if pathStr, ok := p.(string); ok {
+					content, err := os.ReadFile(pathStr)
+					if err == nil {
+						combinedContent.WriteString(string(content))
+						combinedContent.WriteString("\n")
+					} else {
+						fmt.Printf("[JSON Server] Failed to read file %s: %v\n", pathStr, err)
+					}
+				}
+			}
+			if GlobalRootNode != nil {
+				if GlobalRootNode.Metadata == nil {
+					GlobalRootNode.Metadata = make(map[string]string)
+				}
+				GlobalRootNode.Metadata["file_content"] = combinedContent.String()
+				fmt.Printf("[JSON Server] Digested files, bytes: %d, triggering sweep...\n", combinedContent.Len())
+				
+				GlobalRootNode.Children = make([]*cothink.AgentNode, 0)
+				go func() {
+					ctx, cancel := context.WithCancel(context.Background())
+					defer cancel()
+					GlobalOrchestrator.ScalarSpawn(ctx, GlobalRootNode)
+				}()
+			} else {
+				response["status"] = "error"
+				response["error"] = "GlobalRootNode not initialized"
+			}
+		} else {
+			response["status"] = "error"
+			response["error"] = "Invalid paths array"
+		}
 
 	default:
 		response["status"] = "error"
