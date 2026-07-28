@@ -1,4 +1,26 @@
 load("@gazelle//:def.bzl", "gazelle")
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
 
 # gazelle:prefix cothink-system
 gazelle(name = "gazelle")
+
+go_library(
+    name = "cothink-system_lib",
+    srcs = [
+        "main.go",
+        "run_thermal_opt.go",
+        "scalar_logphi_pstack.go",
+    ],
+    importpath = "cothink-system",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//cothink",
+        "//thermalopt",
+    ],
+)
+
+go_binary(
+    name = "cothink-system",
+    embed = [":cothink-system_lib"],
+    visibility = ["//visibility:public"],
+)

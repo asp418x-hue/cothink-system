@@ -1,0 +1,20 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "main_lib",
+    srcs = [
+        "json_client.go",
+        "json_server.go",
+        "main.go",
+        "scalar_logphi_pstack.go",
+    ],
+    importpath = "cothink-system/main",
+    visibility = ["//visibility:private"],
+    deps = ["//cothink"],
+)
+
+go_binary(
+    name = "main",
+    embed = [":main_lib"],
+    visibility = ["//visibility:public"],
+)
