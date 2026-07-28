@@ -60,7 +60,7 @@ class _CoreDashboardState extends State<CoreDashboard> {
 
   Future<void> _pickFile() async {
     try {
-      FilePickerResult? result = await FilePicker.pickFiles();
+      FilePickerResult? result = await FilePicker.platform.pickFiles();
       if (result != null) {
         if (!mounted) return;
         
