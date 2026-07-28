@@ -69,6 +69,47 @@ class RuntimeManager {
       );
       _goServerProcess?.stdout.listen((data) => debugPrint('Proot: ${String.fromCharCodes(data)}'));
       _goServerProcess?.stderr.listen((data) => debugPrint('Proot Error: ${String.fromCharCodes(data)}'));
+
+      debugPrint('Starting Rust thermal_monitor in proot...');
+      _rustThermalProcess = await Process.start(
+        prootFile.path,
+        [
+          '-r', rootfsDir.path,
+          '-0',
+          '-b', '/dev',
+          '-b', '/proc',
+          '-b', '/sys',
+          '-w', '/opt/cothink',
+          '/bin/bash', '-c', './thermal_monitor'
+        ],
+      );
+      _rustThermalProcess?.stdout.listen((data) {
+        final str = String.fromCharCodes(data);
+        debugPrint('Proot Thermal: $str');
+        thermalStream.add(str);
+      });
+      _rustThermalProcess?.stderr.listen((data) => debugPrint('Proot Thermal Error: ${String.fromCharCodes(data)}'));
+
+      debugPrint('Starting Rust classifier in proot...');
+      _rustClassifierProcess = await Process.start(
+        prootFile.path,
+        [
+          '-r', rootfsDir.path,
+          '-0',
+          '-b', '/dev',
+          '-b', '/proc',
+          '-b', '/sys',
+          '-w', '/opt/cothink',
+          '/bin/bash', '-c', './classifier'
+        ],
+      );
+      _rustClassifierProcess?.stdout.listen((data) {
+        final str = String.fromCharCodes(data);
+        debugPrint('Proot Classifier: $str');
+        classifierStream.add(str);
+      });
+      _rustClassifierProcess?.stderr.listen((data) => debugPrint('Proot Classifier Error: ${String.fromCharCodes(data)}'));
+
     } catch (e) {
       debugPrint('Error starting proot container: $e');
     }
