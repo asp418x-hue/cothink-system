@@ -37,7 +37,7 @@ dependencies:
   xterm: ^4.0.0
   pty: ^0.1.1
   path_provider: ^2.0.15
-  file_picker: ^4.6.1
+  file_picker: ^11.0.2
 
 dev_dependencies:
   flutter_test:
@@ -91,3 +91,5 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+dependency_overrides:
+  win32: ^5.9.0
