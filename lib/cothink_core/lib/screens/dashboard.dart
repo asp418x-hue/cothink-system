@@ -175,10 +175,7 @@ class _CoreDashboardState extends State<CoreDashboard> {
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(16),
                                 onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => const TaskManagerScreen()),
-                                  );
+                                  Process.run('bash', ['/home/asp418x/cothink-system/pip_btop.sh', 'start']);
                                 },
                                 child: Padding(
                                   padding: const EdgeInsets.all(24.0),
@@ -187,9 +184,9 @@ class _CoreDashboardState extends State<CoreDashboard> {
                                     children: [
                                       Icon(Icons.memory, color: Theme.of(context).colorScheme.primary, size: 32),
                                       const SizedBox(height: 16),
-                                      const Text('Task Manager', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                                      const Text('Process Monitor', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                                       const SizedBox(height: 4),
-                                      const Text('Process resources', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                      const Text('btop snap-in', style: TextStyle(color: Colors.grey, fontSize: 12)),
                                     ],
                                   ),
                                 ),

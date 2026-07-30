@@ -43,7 +43,9 @@ class ConfigScreen extends StatelessWidget {
                     leading: const Icon(Icons.memory),
                     title: const Text('Resource Monitor'),
                     trailing: const Icon(Icons.chevron_right),
-                    onTap: () {},
+                    onTap: () {
+                      Process.run('bash', ['/home/asp418x/cothink-system/pip_btop.sh', 'start']);
+                    },
                   ),
                   ListTile(
                     leading: const Icon(Icons.terminal),
