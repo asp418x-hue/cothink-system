@@ -29,6 +29,8 @@ litert-lm-sys = "0.2.1"
 litert-rs = "0.1.2"
 litert-sys = "0.2.1"
 litertlm = "0.2.1"
+petgraph = "0.8.3"
+serde_json = "1.0.151"
 subjective-time-expansion = "0.1.2"
 tokio = { version = "1.40", features = ["macros", "rt-multi-thread", "sync", "time", "process", "io-util", "net"] }
 

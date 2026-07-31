@@ -1,5 +1,10 @@
+use std::fs::File;
+use std::io::Write;
 use std::process::Stdio;
 use std::sync::Arc;
+
+use petgraph::dot::{Config, Dot};
+use petgraph::Graph;
 use tokio::io::{AsyncBufReadExt, BufReader as AsyncBufReader};
 use tokio::process::Command;
 use tokio::task::JoinSet;
@@ -10,7 +15,13 @@ fn main() {
     let runtime = tokio::runtime::Runtime::new().expect("tokio runtime");
     runtime.block_on(async {
         let orch_id = cothink_system::history::next_orchestrator_id();
-        cothink_system::history::record(orch_id, 0, "orch_start", true, "allocation=8".to_string());
+        cothink_system::history::record(
+            orch_id,
+            0,
+            "orch_start",
+            true,
+            "allocation=8".to_string(),
+        );
 
         let allocation = spiral_order(8, 2);
         let completed = spawn_concurrent_subagents(orch_id, &allocation).await;
@@ -22,8 +33,36 @@ fn main() {
             true,
             format!("completed={}", completed.len()),
         );
+
         println!("spiral allocation: {:?}", allocation);
         println!("completed subagents: {:?}", completed);
+
+        // ------------------------------------------------------------------
+        // Build & Render Causal Graph (petgraph)
+        // ------------------------------------------------------------------
+        let mut causal_graph = Graph::<&str, &str>::new();
+        let orch_node = causal_graph.add_node("Orchestrator");
+
+        for &task_id in &completed {
+            let label = Box::leak(format!("Agent_{}", task_id).into_boxed_str());
+            let agent_node = causal_graph.add_node(label);
+            causal_graph.add_edge(orch_node, agent_node, "dispatched");
+        }
+
+        let dot_output = format!(
+            "{:?}",
+            Dot::with_config(&causal_graph, &[Config::EdgeNoLabel])
+        );
+
+        if let Ok(mut file) = File::create("causal_graph.dot") {
+            let _ = file.write_all(dot_output.as_bytes());
+        }
+
+        println!("\n--- CAUSAL GRAPH DOT START ---");
+        println!("{}", dot_output);
+        println!("--- CAUSAL GRAPH DOT END ---\n");
+
+        println!("\n--- Execution History (Rust) ---");
         cothink_system::history::show_history();
     });
 }
@@ -329,3 +368,4 @@ mod tests {
         assert_eq!(line.trim(), "ready");
     }
 }
+
