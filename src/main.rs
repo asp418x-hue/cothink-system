@@ -3,8 +3,8 @@ use std::io::Write;
 use std::process::Stdio;
 use std::sync::Arc;
 
-use petgraph::dot::{Config, Dot};
 use petgraph::Graph;
+use petgraph::dot::{Config, Dot};
 use tokio::io::{AsyncBufReadExt, BufReader as AsyncBufReader};
 use tokio::process::Command;
 use tokio::task::JoinSet;
@@ -15,13 +15,7 @@ fn main() {
     let runtime = tokio::runtime::Runtime::new().expect("tokio runtime");
     runtime.block_on(async {
         let orch_id = cothink_system::history::next_orchestrator_id();
-        cothink_system::history::record(
-            orch_id,
-            0,
-            "orch_start",
-            true,
-            "allocation=8".to_string(),
-        );
+        cothink_system::history::record(orch_id, 0, "orch_start", true, "allocation=8".to_string());
 
         let allocation = spiral_order(8, 2);
         let completed = spawn_concurrent_subagents(orch_id, &allocation).await;
@@ -368,4 +362,3 @@ mod tests {
         assert_eq!(line.trim(), "ready");
     }
 }
-

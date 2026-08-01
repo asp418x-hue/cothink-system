@@ -1,9 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"/home/asp418x/cothink-system/target_local/debug/build/rdkafka-sys-7e7c8699c2c65cc6/out/build/cmake_install.cmake",
-		"/home/asp418x/cothink-system/target_local/debug/build/rdkafka-sys-7e7c8699c2c65cc6/out/build/src/cmake_install.cmake",
-		"/home/asp418x/cothink-system/target_local/debug/build/rdkafka-sys-7e7c8699c2c65cc6/out/build/src-cpp/cmake_install.cmake"
-	],
-	"Parallel" : false
-}
