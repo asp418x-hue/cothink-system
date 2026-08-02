@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'config_screen.dart';
-import 'thermal_screen.dart';
-import 'task_manager_screen.dart';
 import 'instruction_builder.dart';
 import '../widgets/editor_overlay.dart';
-import '../services/api_client.dart';
-import '../services/runtime_manager.dart';
-import 'dart:async';
-import 'dart:io';
-import 'dart:convert';
+import '../widgets/dashboard/thermal_card.dart';
+import '../widgets/dashboard/process_card.dart';
+import '../widgets/dashboard/agent_activity_section.dart';
+import '../services/dashboard_controller.dart';
 
 class ToggleEditorIntent extends Intent {
   const ToggleEditorIntent();
@@ -23,42 +20,12 @@ class CoreDashboard extends StatefulWidget {
 }
 
 class _CoreDashboardState extends State<CoreDashboard> {
-  bool _showEditor = false;
-  Timer? _statusTimer;
-  List<dynamic> _agents = [];
-  int _activeWorkers = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    RuntimeManager().startRuntimes();
-    _statusTimer = Timer.periodic(const Duration(milliseconds: 500), (_) => _fetchStatus());
-  }
+  final DashboardController _controller = DashboardController();
 
   @override
   void dispose() {
-    _statusTimer?.cancel();
+    _controller.dispose();
     super.dispose();
-  }
-
-  Future<void> _fetchStatus() async {
-    try {
-      final status = await ApiClient.getStatus();
-      if (mounted && status['status'] != 'error') {
-        setState(() {
-          _agents = status['agents'] ?? [];
-          _activeWorkers = status['active_workers'] ?? 0;
-        });
-      }
-    } catch (e) {
-      // Ignore polling errors
-    }
-  }
-
-  void _toggleEditor() {
-    setState(() {
-      _showEditor = !_showEditor;
-    });
   }
 
   @override
@@ -70,258 +37,138 @@ class _CoreDashboardState extends State<CoreDashboard> {
       child: Actions(
         actions: <Type, Action<Intent>>{
           ToggleEditorIntent: CallbackAction<ToggleEditorIntent>(
-            onInvoke: (ToggleEditorIntent intent) => _toggleEditor(),
+            onInvoke: (ToggleEditorIntent intent) => _controller.toggleEditor(),
           ),
         },
         child: Focus(
           autofocus: true,
-          child: Scaffold(
-            appBar: AppBar(
-              title: const Text('Cothink Orchestrator', style: TextStyle(fontWeight: FontWeight.w600)),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.settings),
-                  tooltip: 'Configuration',
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const ConfigScreen()),
-                    );
-                  },
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              return Scaffold(
+                appBar: AppBar(
+                  title: const Text('Cothink Orchestrator', style: TextStyle(fontWeight: FontWeight.w600)),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.settings),
+                      tooltip: 'Configuration',
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const ConfigScreen()),
+                        );
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.code),
+                      tooltip: 'Toggle Editor (Ctrl+E)',
+                      onPressed: _controller.toggleEditor,
+                    )
+                  ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.code),
-                  tooltip: 'Toggle Editor (Ctrl+E)',
-                  onPressed: _toggleEditor,
-                )
-              ],
-            ),
-            floatingActionButton: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                FloatingActionButton.extended(
-                  heroTag: 'toggle_editor_fab',
-                  onPressed: _toggleEditor,
-                  icon: Icon(_showEditor ? Icons.close : Icons.terminal),
-                  label: Text(_showEditor ? 'Close Editor' : 'Open Editor'),
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                floatingActionButton: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    FloatingActionButton.extended(
+                      heroTag: 'toggle_editor_fab',
+                      onPressed: _controller.toggleEditor,
+                      icon: Icon(_controller.showEditor ? Icons.close : Icons.terminal),
+                      label: Text(_controller.showEditor ? 'Close Editor' : 'Open Editor'),
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                    const SizedBox(height: 16),
+                    FloatingActionButton.extended(
+                      heroTag: 'instruction_builder_fab',
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const InstructionBuilderScreen()),
+                        );
+                      },
+                      icon: const Icon(Icons.auto_fix_high),
+                      label: const Text('Create Instruction'),
+                      backgroundColor: Colors.deepPurpleAccent,
+                      foregroundColor: Colors.white,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                FloatingActionButton.extended(
-                  heroTag: 'instruction_builder_fab',
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const InstructionBuilderScreen()),
-                    );
-                  },
-                  icon: const Icon(Icons.auto_fix_high),
-                  label: const Text('Create Instruction'),
-                  backgroundColor: Colors.deepPurpleAccent,
-                  foregroundColor: Colors.white,
-                ),
-              ],
-            ),
-            body: Stack(
-              children: [
-                // Main Dashboard Content
-                SafeArea(
-                  child: ListView(
-                    padding: const EdgeInsets.all(24.0),
-                    children: [
-                      const Text(
-                        'Welcome Back,',
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'System Overview',
-                        style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: -0.5),
-                      ),
-                      const SizedBox(height: 32),
-                      Row(
+                body: Stack(
+                  children: [
+                    // Main Dashboard Content
+                    SafeArea(
+                      child: ListView(
+                        padding: const EdgeInsets.all(24.0),
                         children: [
-                          Expanded(
-                            child: Card(
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(16),
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => const ThermalScreen()),
-                                  );
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.all(24.0),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Icon(Icons.thermostat, color: Theme.of(context).colorScheme.primary, size: 32),
-                                      const SizedBox(height: 16),
-                                      const Text('Thermal Monitor', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                                      const SizedBox(height: 4),
-                                      const Text('System temps & fans', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
+                          const Text(
+                            'Welcome Back,',
+                            style: TextStyle(fontSize: 16, color: Colors.grey),
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Card(
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(16),
-                                onTap: () {
-                                  Process.run('bash', ['/home/asp418x/cothink-system/pip_btop.sh', 'start']);
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.all(24.0),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Icon(Icons.memory, color: Theme.of(context).colorScheme.primary, size: 32),
-                                      const SizedBox(height: 16),
-                                      const Text('Process Monitor', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                                      const SizedBox(height: 4),
-                                      const Text('btop snap-in', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'System Overview',
+                            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: -0.5),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24.0),
-                          child: Row(
-                            children: [
-                              Icon(Icons.info_outline, color: Theme.of(context).colorScheme.secondary),
-                              const SizedBox(width: 16),
-                              const Expanded(
-                                child: Text(
-                                  'Pro Tip: You can also press Ctrl+E on a physical keyboard to instantly toggle the Neovim editor overlay.',
-                                  style: TextStyle(height: 1.5),
-                                ),
-                              ),
+                          const SizedBox(height: 32),
+                          Row(
+                            children: const [
+                              Expanded(child: ThermalMonitorCard()),
+                              SizedBox(width: 16),
+                              Expanded(child: ProcessMonitorCard()),
                             ],
                           ),
-                        ),
-                      ),
-                      if (_agents.isNotEmpty) ...[
-                        const SizedBox(height: 32),
-                        Row(
-                          children: [
-                            const Text(
-                              'Subagent Activity',
-                              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: -0.5),
-                            ),
-                            const Spacer(),
-                            if (_activeWorkers > 0)
-                              Chip(
-                                label: Text('$_activeWorkers Active', style: const TextStyle(fontSize: 12)),
-                                backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                                side: BorderSide.none,
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Wrap(
-                          spacing: 12,
-                          runSpacing: 12,
-                          children: _agents.map((agent) {
-                            final int id = agent['id'];
-                            final metadata = agent['metadata'] as Map<String, dynamic>? ?? {};
-                            final String output = metadata['output'] ?? '';
-                            
-                            bool isDone = output.isNotEmpty;
-                            bool isAnomaly = output.contains('Threshold crossed: true');
-                            
-                            Color cardColor;
-                            if (!isDone) {
-                              cardColor = Colors.grey.withOpacity(0.1);
-                            } else if (isAnomaly) {
-                              cardColor = Colors.red.withOpacity(0.1);
-                            } else {
-                              cardColor = Colors.green.withOpacity(0.1);
-                            }
-                            
-                            Color iconColor;
-                            if (!isDone) {
-                              iconColor = Colors.grey;
-                            } else if (isAnomaly) {
-                              iconColor = Colors.red;
-                            } else {
-                              iconColor = Colors.green;
-                            }
-
-                            return Container(
-                              width: 160,
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: cardColor,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: isDone ? iconColor.withOpacity(0.3) : Colors.transparent,
-                                ),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                          const SizedBox(height: 24),
+                          Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24.0),
+                              child: Row(
                                 children: [
-                                  Row(
-                                    children: [
-                                      Icon(isDone ? (isAnomaly ? Icons.warning : Icons.check_circle) : Icons.pending, color: iconColor, size: 18),
-                                      const SizedBox(width: 8),
-                                      Text('Agent $id', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    isDone ? (isAnomaly ? 'Anomaly Detected' : 'Normal') : 'Analyzing...',
-                                    style: TextStyle(fontSize: 12, color: isDone ? iconColor : Colors.grey, fontWeight: FontWeight.w600),
+                                  Icon(Icons.info_outline, color: Theme.of(context).colorScheme.secondary),
+                                  const SizedBox(width: 16),
+                                  const Expanded(
+                                    child: Text(
+                                      'Pro Tip: You can also press Ctrl+E on a physical keyboard to instantly toggle the Neovim editor overlay.',
+                                      style: TextStyle(height: 1.5),
+                                    ),
                                   ),
                                 ],
                               ),
-                            );
-                          }).toList(),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                
-                // Editor Overlay
-                if (_showEditor)
-                  Positioned.fill(
-                    child: AnimatedOpacity(
-                      opacity: _showEditor ? 1.0 : 0.0,
-                      duration: const Duration(milliseconds: 200),
-                      child: SafeArea(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Material(
-                            elevation: 24,
-                            borderRadius: BorderRadius.circular(16.0),
-                            clipBehavior: Clip.antiAlias,
-                            child: NeovimEditorOverlay(
-                              onClose: () {
-                                setState(() {
-                                  _showEditor = false;
-                                });
-                              },
+                            ),
+                          ),
+                          AgentActivitySection(
+                            agents: _controller.agents,
+                            activeWorkers: _controller.activeWorkers,
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    // Editor Overlay
+                    if (_controller.showEditor)
+                      Positioned.fill(
+                        child: AnimatedOpacity(
+                          opacity: _controller.showEditor ? 1.0 : 0.0,
+                          duration: const Duration(milliseconds: 200),
+                          child: SafeArea(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Material(
+                                elevation: 24,
+                                borderRadius: BorderRadius.circular(16.0),
+                                clipBehavior: Clip.antiAlias,
+                                child: NeovimEditorOverlay(
+                                  onClose: _controller.toggleEditor,
+                                ),
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-              ],
-            ),
+                  ],
+                ),
+              );
+            }
           ),
         ),
       ),
