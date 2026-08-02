@@ -53,10 +53,7 @@ class _CoreDashboardState extends State<CoreDashboard> {
                       icon: const Icon(Icons.settings),
                       tooltip: 'Configuration',
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const ConfigScreen()),
-                        );
+                        Navigator.pushNamed(context, '/config');
                       },
                     ),
                     IconButton(
@@ -82,10 +79,7 @@ class _CoreDashboardState extends State<CoreDashboard> {
                     FloatingActionButton.extended(
                       heroTag: 'instruction_builder_fab',
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const InstructionBuilderScreen()),
-                        );
+                        Navigator.pushNamed(context, '/instruction');
                       },
                       icon: const Icon(Icons.auto_fix_high),
                       label: const Text('Create Instruction'),

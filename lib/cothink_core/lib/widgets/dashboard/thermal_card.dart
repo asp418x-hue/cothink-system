@@ -10,10 +10,7 @@ class ThermalMonitorCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const ThermalScreen()),
-          );
+          Navigator.pushNamed(context, '/thermal');
         },
         child: Padding(
           padding: const EdgeInsets.all(24.0),

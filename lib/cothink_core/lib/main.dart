@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'screens/dashboard.dart';
+import 'screens/config_screen.dart';
+import 'screens/thermal_screen.dart';
+import 'screens/instruction_builder.dart';
 
 void main() {
   runApp(const CothinkApp());
@@ -35,7 +38,12 @@ class CothinkApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const CoreDashboard(),
-    );
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const CoreDashboard(),
+        '/config': (context) => const ConfigScreen(),
+        '/thermal': (context) => const ThermalScreen(),
+        '/instruction': (context) => const InstructionBuilderScreen(),
+      },
   }
 }
