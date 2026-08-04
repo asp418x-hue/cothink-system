@@ -8,10 +8,11 @@
 set -euo pipefail
 
 # Configuration - Define early, before any functions
-COTHINK_BINARY="${COTHINK_BINARY:-/home/adrian/cothink-system/target/release/cothink-system}"
-COTHINK_HOME="${COTHINK_HOME:-/home/adrian/cothink-system}"
-COTHINK_VERSION="1.0.0"
-
+COTHINK_BINARY="${COTHINK_BINARY:-/data/data/com.termux/files/home/cothink-system/cothink-system}"
+COTHINK_HOME="${COTHINK_HOME:-/data/data/com.termux/files/home/cothink-system}"
+COTHINK_VERSION="0.1.0"
+USER="u0_a207"
+SHELL="/data/data/com.termux/files/usr/bin/zsh"
 ################################################################################
 # Display Help
 ################################################################################
@@ -72,8 +73,8 @@ Examples:
   chsh -s /usr/local/bin/cothink-shell   Set as login shell
 
 Configuration:
-  COTHINK_HOME       Location of cothink-system (default: /home/adrian/cothink-system)
-  COTHINK_BINARY     Path to binary (default: $COTHINK_HOME/target/release/cothink-system)
+  COTHINK_HOME       Location of cothink-system (default: /data/data/com.termux/files/home/cothink-system)
+  COTHINK_BINARY     Path to binary (default: $COTHINK_HOME/cothink-system)
   COTHINK_WORKERS    Default worker count (default: 4)
   COTHINK_SUBAGENTS  Default subagent count (default: 8)
   COTHINK_SCHEDULE   Scheduling algorithm (default: spiral)
@@ -192,7 +193,7 @@ pass_through_args() {
 
 login_shell_mode() {
     # Source login profile if it exists
-    local profile="$HOME/.cothink_profile"
+    local profile="$COTHINK_HOME/.cothink_profile"
     if [[ -f "$profile" ]]; then
         source "$profile"
     fi
@@ -223,8 +224,6 @@ run_hook() {
 load_hooks() {
     # Load user-defined hooks
     local hook_files=(
-        "$HOME/.cothink_hooks"
-        "$HOME/.cothink_hooks.local"
         "${COTHINK_HOME}/.cothink_hooks"
     )
     
