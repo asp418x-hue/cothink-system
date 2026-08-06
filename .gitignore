@@ -29,3 +29,13 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
+# Agent Checkpoint Manager
+.vscode/.agent-checkpoints/
+
+# Database Stack & Environments
+config.toml
+.env
+db_python/venv/
+*.db
+*.sqlite
+
