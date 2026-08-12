@@ -1,0 +1,39 @@
+{
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "features": {
+    {
+  "name": "CoThink System Development",
+  "image": "mcr.microsoft.com/devcontainers/base:debian",
+  "features": {
+    // Installs a modern, stable Go toolchain
+    "ghcr.io/devcontainers/features/go:1": {
+      "version": "latest"
+    },
+    // Installs the Rust toolchain (rustc, cargo, rustup)
+    "ghcr.io/devcontainers/features/rust:1": {
+      "version": "latest",
+      "profile": "default"
+    },
+    // Pulls in essential build tools, compilers, and utilities
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "configureZshAsDefaultShell": true,
+      "upgradePackages": true
+    }
+  },
+  // Runs commands inside the container immediately after creation
+  "updateContentCommand": "rustup target add aarch64-linux-android && cargo install cargo-vendor",
+  // Runs commands every time the container starts up
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y neovim build-essential git gcc-aarch64-linux-gnu",
+  "customizations": {
+    "codespaces": {
+      "openFiles": [
+        "Cargo.toml"
+      ]
+    }
+  },
+  "remoteUser": "vscode"
+}
+
+  }
+}
