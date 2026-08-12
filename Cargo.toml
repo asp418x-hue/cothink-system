@@ -2,6 +2,7 @@
 name = "cothink-system"
 version = "0.1.0"
 edition = "2024"
+description = "I made this binary to be a multitasking agent-spawning orchestrator that is itself a LLM"
 
 [lib]
 name = "cothink_system"
@@ -37,6 +38,7 @@ litert-lm-sys = "0.2.1"
 litert-rs = "0.1.2"
 litert-sys = "0.2.1"
 litertlm = "0.2.1"
+llm-tokenizer = "1.6.0"
 petgraph = "0.8.3"
 serde_json = "1.0.151"
 sonic-rs = "0.5.8"
@@ -53,4 +55,37 @@ lto = true
 codegen-units = 1
 panic = "abort"
 
+[package.metadata.cothink]
+# Framework API Schema Version compatibility
+schema_version = "1.0.0"
 
+[package.metadata.cothink.agent]
+# Defines the operational role of this specific crate agent
+role = "orchestrator"
+capabilities = ["task-routing", "state-validation", "ipc-bridging"]
+concurrent_execution_limit = 32
+
+[package.metadata.cothink.interop.go]
+# Maps the cross-language interaction boundary with the Go repositories
+bridge_protocol = "grpc"
+protobuf_definitions = ["proto/agent_contract.proto"]
+shared_memory_ipc = true
+
+[package.metadata.cothink.runtime.contracts]
+# Execution guardrails for task orchestration validation
+strict_mode = true
+execution_timeout_ms = 5000
+retry_policy = "exponential-backoff"
+
+[package.metadata.generate-rpm]
+# The primary target binary destination on the host machine
+assets = [
+    { source = "target/release/cothink-system", dest = "/usr/bin/cothink-system", mode = "755" }
+]
+license = "MIT"
+
+# Optional but highly recommended system guardrails for multi-agent framework deployments
+[package.metadata.generate-rpm.requires]
+# Requires standard Linux shell and process execution capabilities
+bash = "*"
+libc = "*"
