@@ -455,15 +455,14 @@ ureq = "3.4.0"
 url = "2.5.8"
 
 [profile.release]
-strip = true
-opt-level = "z"
-lto = true
-codegen-units = 1
+opt-level = 3
+lto = "fat"
+codegen-units = 10
 panic = "abort"
 
 [package.metadata.cothink]
 # Framework API Schema Version compatibility
-schema_version = "1.0.0"
+schema_version = "0.1.1"
 
 [package.metadata.cothink.agent]
 # Defines the operational role of this specific crate agent
@@ -480,18 +479,6 @@ shared_memory_ipc = true
 [package.metadata.cothink.runtime.contracts]
 # Execution guardrails for task orchestration validation
 strict_mode = true
-execution_timeout_ms = 5000
+execution_timeout_ms = 500
 retry_policy = "exponential-backoff"
 
-[package.metadata.generate-rpm]
-# The primary target binary destination on the host machine
-assets = [
-    { source = "target/release/cothink-system", dest = "/usr/bin/cothink-system", mode = "755" }
-]
-license = "MIT"
-
-# Optional but highly recommended system guardrails for multi-agent framework deployments
-[package.metadata.generate-rpm.requires]
-# Requires standard Linux shell and process execution capabilities
-bash = "*"
-libc = "*"
