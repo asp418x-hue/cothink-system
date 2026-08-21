@@ -263,7 +263,7 @@ multimap = "0.10.1"
 nalgebra = "0.35.0"
 nalgebra-macros = "0.3.0"
 ndk-context = "0.1.1"
-nix = { version = "0.28", features = ["full"] }
+nix = { version = "0.28", features = ["*"] }
 nom = "8.0.0"
 notify = "8.2.0"
 notify-debouncer-mini = "0.7.0"
