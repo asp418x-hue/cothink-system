@@ -310,6 +310,13 @@ prost = "0.14.4"
 prost-build = "0.14.4"
 prost-derive = "0.14.4"
 prost-types = "0.14.4"
+pyo3 = "0.29.2"
+pyo3-ffi = "0.29.2"
+pyo3-gated = "0.1.2"
+pyo3-async-runtimes = "0.29.0"
+pyo3-async-runtimes-macros = "0.29.0"
+pyo3-stub-gen-derive = "0.23.0"
+pyo3-stub-gen = "0.23.0"
 quote = "1.0.47"
 rand = "0.10.2"
 rand_chacha = "0.10.0"
@@ -456,12 +463,11 @@ unsafe-libyaml = "0.2.11"
 untrusted = "0.9.0"
 ureq = "3.4.0"
 url = "2.5.8"
-zetacore = "0.1.0"
 
 [profile.release]
-opt-level = 3
+opt-level = 1
 lto = "fat"
-codegen-units = 10
+codegen-units = 1
 panic = "abort"
 
 [package.metadata.cothink]
