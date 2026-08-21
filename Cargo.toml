@@ -263,6 +263,8 @@ multimap = "0.10.1"
 nalgebra = "0.35.0"
 nalgebra-macros = "0.3.0"
 ndk-context = "0.1.1"
+nix = { version = "0.28", features = ["fs", "ioctl", "proce
+ss"] }
 nom = "8.0.0"
 notify = "8.2.0"
 notify-debouncer-mini = "0.7.0"
@@ -405,7 +407,7 @@ tinystr = "0.8.4"
 tinyvec = "1.12.0"
 tinyvec_macros = "0.1.1"
 tokenizers = "0.23.1"
-tokio = { version = "1.40", features = ["macros", "rt-multi-thread", "sync", "time", "process", "io-util", "net"] }
+tokio = { version = "1.40", features = ["full"] }
 tokio-io-timeout = "1.2.1"
 tokio-macros = "2.7.2"
 tokio-rustls = "0.26.4"
