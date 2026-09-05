@@ -3,6 +3,7 @@ import '../services/api_client.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
+import '../services/path_utils.dart';
 
 class InstructionBuilderScreen extends StatefulWidget {
   const InstructionBuilderScreen({super.key});
@@ -50,7 +51,7 @@ class _InstructionBuilderScreenState extends State<InstructionBuilderScreen> {
       });
 
       // 2. Execute natively in Rust for immediate host telemetry
-      String execPath = '/home/asp418x/cothink-system/bin/payload_executor';
+      String execPath = PathUtils.binaryPath('payload_executor');
       if (Platform.isAndroid) {
         final supportDir = await getApplicationSupportDirectory();
         execPath = '${supportDir.path}/payload_executor';
@@ -245,7 +246,7 @@ class _InstructionBuilderScreenState extends State<InstructionBuilderScreen> {
                     borderRadius: BorderRadius.circular(32),
                   ),
                   elevation: 12,
-                  shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                  shadowColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
                 ),
               ),
             ],

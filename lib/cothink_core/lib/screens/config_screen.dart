@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+import '../services/path_utils.dart';
 
 class ConfigScreen extends StatelessWidget {
   const ConfigScreen({super.key});
@@ -42,9 +44,21 @@ class ConfigScreen extends StatelessWidget {
                   ListTile(
                     leading: const Icon(Icons.memory),
                     title: const Text('Resource Monitor'),
+                    subtitle: const Text('Floating btop window'),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () {
-                      Process.run('bash', ['/home/asp418x/cothink-system/pip_btop.sh', 'start']);
+                      if (!Platform.isAndroid) {
+                        Process.run('bash', [PathUtils.scriptPath('pip_btop.sh'), 'start']);
+                      }
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.analytics_outlined),
+                    title: const Text('Task Manager'),
+                    subtitle: const Text('Live agent log and anomaly stream'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      Navigator.pushNamed(context, '/tasks');
                     },
                   ),
                   ListTile(

@@ -9,9 +9,15 @@ class DashboardController extends ChangeNotifier {
   int activeWorkers = 0;
   bool showEditor = false;
 
-  DashboardController() {
+  DashboardController({bool autoStart = true}) {
+    if (autoStart) {
+      start();
+    }
+  }
+
+  void start() {
     RuntimeManager().startRuntimes();
-    _statusTimer = Timer.periodic(const Duration(milliseconds: 500), (_) => fetchStatus());
+    _statusTimer ??= Timer.periodic(const Duration(milliseconds: 500), (_) => fetchStatus());
   }
 
   @override

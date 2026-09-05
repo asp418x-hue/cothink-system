@@ -6,15 +6,15 @@ import 'package:pty/pty.dart';
 class NeovimEditorOverlay extends StatefulWidget {
   final VoidCallback onClose;
   
-  const NeovimEditorOverlay({Key? key, required this.onClose}) : super(key: key);
+  const NeovimEditorOverlay({super.key, required this.onClose});
 
   @override
-  _NeovimEditorOverlayState createState() => _NeovimEditorOverlayState();
+  State<NeovimEditorOverlay> createState() => _NeovimEditorOverlayState();
 }
 
 class _NeovimEditorOverlayState extends State<NeovimEditorOverlay> {
   final terminal = Terminal();
-  late final PseudoTerminal pty;
+  PseudoTerminal? pty;
   final TerminalController terminalController = TerminalController();
 
   @override
@@ -26,26 +26,27 @@ class _NeovimEditorOverlayState extends State<NeovimEditorOverlay> {
   void _startPty() {
     try {
       // Start neovim process
-      pty = PseudoTerminal.start(
+      final newPty = PseudoTerminal.start(
         'nvim',
         [],
         environment: Platform.environment,
       );
+      pty = newPty;
 
-      pty.out.listen((data) {
+      newPty.out.listen((data) {
         terminal.write(data);
       });
 
       terminal.onOutput = (data) {
-        pty.write(data);
+        newPty.write(data);
       };
       
       terminal.onResize = (width, height, pixelWidth, pixelHeight) {
-        pty.resize(width, height);
+        newPty.resize(width, height);
       };
       
       // If the pty exits, close the overlay
-      pty.exitCode.then((_) {
+      newPty.exitCode.then((_) {
         if (mounted) {
           widget.onClose();
         }
@@ -57,14 +58,15 @@ class _NeovimEditorOverlayState extends State<NeovimEditorOverlay> {
 
   @override
   void dispose() {
-    pty.kill();
+    pty?.kill();
+    terminalController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.black.withOpacity(0.9),
+      color: Colors.black.withValues(alpha: 0.9),
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
+import 'path_utils.dart';
 class RuntimeManager {
   Process? _goServerProcess;
   Process? _rustThermalProcess;
@@ -132,22 +133,27 @@ class RuntimeManager {
         return;
       }
 
+      if (_goServerProcess != null) {
+        // Already started
+        return;
+      }
+
       debugPrint('Starting Go json_server...');
       _goServerProcess = await Process.start(
-        '/home/asp418x/cothink-system/bin/json_server',
+        PathUtils.binaryPath('json_server'),
         [],
         runInShell: false,
-        workingDirectory: '/home/asp418x/cothink-system',
+        workingDirectory: PathUtils.projectRoot,
       );
       _goServerProcess?.stdout.listen((data) => debugPrint('Go: ${String.fromCharCodes(data)}'));
       _goServerProcess?.stderr.listen((data) => debugPrint('Go Error: ${String.fromCharCodes(data)}'));
 
       debugPrint('Starting Rust thermal_monitor...');
       _rustThermalProcess = await Process.start(
-        '/home/asp418x/cothink-system/bin/thermal_monitor',
+        PathUtils.binaryPath('thermal_monitor'),
         [],
         runInShell: false,
-        workingDirectory: '/home/asp418x/cothink-system',
+        workingDirectory: PathUtils.projectRoot,
       );
       _rustThermalProcess?.stdout.listen((data) {
         final str = String.fromCharCodes(data);
@@ -158,10 +164,10 @@ class RuntimeManager {
 
       debugPrint('Starting Rust classifier...');
       _rustClassifierProcess = await Process.start(
-        '/home/asp418x/cothink-system/bin/classifier',
+        PathUtils.binaryPath('classifier'),
         [],
         runInShell: false,
-        workingDirectory: '/home/asp418x/cothink-system',
+        workingDirectory: PathUtils.projectRoot,
       );
       _rustClassifierProcess?.stdout.listen((data) {
         final str = String.fromCharCodes(data);
@@ -180,5 +186,8 @@ class RuntimeManager {
     _goServerProcess?.kill();
     _rustThermalProcess?.kill();
     _rustClassifierProcess?.kill();
+    _goServerProcess = null;
+    _rustThermalProcess = null;
+    _rustClassifierProcess = null;
   }
 }

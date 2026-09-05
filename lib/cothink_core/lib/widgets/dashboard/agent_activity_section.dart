@@ -28,7 +28,7 @@ class AgentActivitySection extends StatelessWidget {
             if (activeWorkers > 0)
               Chip(
                 label: Text('$activeWorkers Active', style: const TextStyle(fontSize: 12)),
-                backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                 side: BorderSide.none,
               ),
           ],
@@ -47,11 +47,11 @@ class AgentActivitySection extends StatelessWidget {
             
             Color cardColor;
             if (!isDone) {
-              cardColor = Colors.grey.withOpacity(0.1);
+              cardColor = Colors.grey.withValues(alpha: 0.1);
             } else if (isAnomaly) {
-              cardColor = Colors.red.withOpacity(0.1);
+              cardColor = Colors.red.withValues(alpha: 0.1);
             } else {
-              cardColor = Colors.green.withOpacity(0.1);
+              cardColor = Colors.green.withValues(alpha: 0.1);
             }
             
             Color iconColor;
@@ -70,7 +70,7 @@ class AgentActivitySection extends StatelessWidget {
                 color: cardColor,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isDone ? iconColor.withOpacity(0.3) : Colors.transparent,
+                  color: isDone ? iconColor.withValues(alpha: 0.3) : Colors.transparent,
                 ),
               ),
               child: Column(

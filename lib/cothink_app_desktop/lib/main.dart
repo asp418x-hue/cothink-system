@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:cothink_core/main.dart' as core;
 
 void main() {

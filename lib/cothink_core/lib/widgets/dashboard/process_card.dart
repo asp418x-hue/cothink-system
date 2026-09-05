@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
+import '../../services/path_utils.dart';
 
 class ProcessMonitorCard extends StatelessWidget {
   const ProcessMonitorCard({super.key});
@@ -10,7 +11,10 @@ class ProcessMonitorCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () {
-          Process.run('bash', ['/home/asp418x/cothink-system/pip_btop.sh', 'start']);
+          if (!Platform.isAndroid) {
+            Process.run('bash', [PathUtils.scriptPath('pip_btop.sh'), 'start']);
+          }
+          Navigator.pushNamed(context, '/tasks');
         },
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -21,7 +25,7 @@ class ProcessMonitorCard extends StatelessWidget {
               const SizedBox(height: 16),
               const Text('Process Monitor', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
               const SizedBox(height: 4),
-              const Text('btop snap-in', style: TextStyle(color: Colors.grey, fontSize: 12)),
+              const Text('Task Manager & btop', style: TextStyle(color: Colors.grey, fontSize: 12)),
             ],
           ),
         ),

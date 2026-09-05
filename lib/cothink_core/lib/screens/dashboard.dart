@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'config_screen.dart';
-import 'instruction_builder.dart';
 import '../widgets/editor_overlay.dart';
 import '../widgets/dashboard/thermal_card.dart';
 import '../widgets/dashboard/process_card.dart';
@@ -13,18 +11,33 @@ class ToggleEditorIntent extends Intent {
 }
 
 class CoreDashboard extends StatefulWidget {
-  const CoreDashboard({super.key});
+  final DashboardController? controller;
+  const CoreDashboard({super.key, this.controller});
 
   @override
   State<CoreDashboard> createState() => _CoreDashboardState();
 }
 
 class _CoreDashboardState extends State<CoreDashboard> {
-  final DashboardController _controller = DashboardController();
+  late final DashboardController _controller;
+  bool _ownsController = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.controller != null) {
+      _controller = widget.controller!;
+    } else {
+      _controller = DashboardController();
+      _ownsController = true;
+    }
+  }
 
   @override
   void dispose() {
-    _controller.dispose();
+    if (_ownsController) {
+      _controller.dispose();
+    }
     super.dispose();
   }
 
@@ -49,6 +62,13 @@ class _CoreDashboardState extends State<CoreDashboard> {
                 appBar: AppBar(
                   title: const Text('Cothink Orchestrator', style: TextStyle(fontWeight: FontWeight.w600)),
                   actions: [
+                    IconButton(
+                      icon: const Icon(Icons.analytics_outlined),
+                      tooltip: 'Task Manager',
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/tasks');
+                      },
+                    ),
                     IconButton(
                       icon: const Icon(Icons.settings),
                       tooltip: 'Configuration',

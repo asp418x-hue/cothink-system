@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/runtime_manager.dart';
 
@@ -11,11 +12,12 @@ class ThermalScreen extends StatefulWidget {
 class _ThermalScreenState extends State<ThermalScreen> {
   final List<String> _logs = [];
   final ScrollController _scrollController = ScrollController();
+  StreamSubscription<String>? _streamSub;
 
   @override
   void initState() {
     super.initState();
-    RuntimeManager().thermalStream.stream.listen((log) {
+    _streamSub = RuntimeManager().thermalStream.stream.listen((log) {
       if (!mounted) return;
       setState(() {
         _logs.addAll(log.split('\n').where((s) => s.trim().isNotEmpty));
@@ -31,6 +33,13 @@ class _ThermalScreenState extends State<ThermalScreen> {
         }
       });
     });
+  }
+
+  @override
+  void dispose() {
+    _streamSub?.cancel();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override

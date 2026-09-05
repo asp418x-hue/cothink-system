@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../screens/thermal_screen.dart';
 
 class ThermalMonitorCard extends StatelessWidget {
   const ThermalMonitorCard({super.key});

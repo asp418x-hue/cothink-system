@@ -3,13 +3,16 @@ import 'screens/dashboard.dart';
 import 'screens/config_screen.dart';
 import 'screens/thermal_screen.dart';
 import 'screens/instruction_builder.dart';
+import 'screens/task_manager_screen.dart';
+import 'services/dashboard_controller.dart';
 
 void main() {
   runApp(const CothinkApp());
 }
 
 class CothinkApp extends StatelessWidget {
-  const CothinkApp({super.key});
+  final DashboardController? dashboardController;
+  const CothinkApp({super.key, this.dashboardController});
 
   @override
   Widget build(BuildContext context) {
@@ -40,10 +43,12 @@ class CothinkApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => const CoreDashboard(),
+        '/': (context) => CoreDashboard(controller: dashboardController),
         '/config': (context) => const ConfigScreen(),
         '/thermal': (context) => const ThermalScreen(),
         '/instruction': (context) => const InstructionBuilderScreen(),
+        '/tasks': (context) => const TaskManagerScreen(),
       },
+    );
   }
 }
