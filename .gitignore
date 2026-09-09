@@ -1,41 +1,12 @@
 /target
+/target_local
 /cothink-orchestrator
 
-# Bazel
-/bazel-bin
-/bazel-out
-/bazel-testlogs
-/bazel-webapp
-/bazel-cothink_system
-user.bazelrc
-user.bazelrc.local
+# Ignore Gradle project-specific cache directory
+.gradle
 
-# Android / IDE
-*.apk
-*.ap_
-*.dex
-*.class
-.idea/
-*.iml
-.gradle/
-local.properties
-*.hprof
+# Ignore Gradle build output directory
+build
 
-# Python
-__pycache__/
-*.py[cod]
-*.egg-info/
-
-# OS
-.DS_Store
-Thumbs.db
-# Agent Checkpoint Manager
-.vscode/.agent-checkpoints/
-
-# Database Stack & Environments
-config.toml
-.env
-db_python/venv/
-*.db
-*.sqlite
-
+# Ignore Kotlin plugin data
+.kotlin
