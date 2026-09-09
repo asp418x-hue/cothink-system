@@ -1,0 +1,40 @@
+name: Cothink-Dart CI
+
+on:
+  push:
+    branches: [ Cothink-Dart ]
+  pull_request:
+    branches: [ Cothink-Dart ]
+
+jobs:
+  build:
+    name: Build Cothink-Dart Binary
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Verify Flutter Installation
+        run: flutter --version
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build Cothink-Dart
+        run: flutter build apk --release
+        # Replace the above command with your specific binary target if it's not an APK build
+
