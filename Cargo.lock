@@ -417,6 +417,8 @@ dependencies = [
  "sonic-rs",
  "stackalloc",
  "subjective-time-expansion",
+ "syn 3.0.5",
+ "syn-serde",
  "termcolor",
  "tokio",
 ]
@@ -3255,6 +3257,18 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "syn-serde"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8bac52f98dc6afb9d7d51d325cf6611cab08f283b6b6c20ba57298fd9db509ef"
+dependencies = [
+ "proc-macro2",
+ "serde",
+ "serde_derive",
+ "syn 2.0.119",
 ]
 
 [[package]]

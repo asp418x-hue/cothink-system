@@ -36,6 +36,8 @@ serde_json = "1.0.151"
 sonic-rs = "0.5.8"
 stackalloc = "1.2.2"
 subjective-time-expansion = "0.1.2"
+syn = "3.0.5"
+syn-serde = "0.3.2"
 termcolor = "1.4.1"
 tokio = { version = "1.40", features = ["macros", "rt-multi-thread", "sync", "time", "process", "io-util", "net"] }
 
