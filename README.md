@@ -22,6 +22,30 @@ Full docs: **[ANDROID.md](./ANDROID.md)**
 | `//java/com/cothink/system:cothink_core` | Ported orchestrator core |
 | `//javatests/com/cothink/system/core:all` | Unit tests |
 
+## Standalone Runtimes & Prerequisites
+
+### Native System Dependencies
+```bash
+# Ubuntu/Debian native dependencies (required for Rust rdkafka-sys bindings)
+sudo apt-get install -y libcurl4-openssl-dev build-essential
+```
+
+### Go Runtime
+```bash
+go test ./...
+```
+
+### Python Runtime
+```bash
+pip install -r requirements.txt
+python3 crypto_test_suite.py
+```
+
+### Rust Runtime
+```bash
+cargo test
+```
+
 ## License
 
 This is free and unencumbered software released into the public domain.

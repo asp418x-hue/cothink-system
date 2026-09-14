@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Cothink Orchestrator
+Comment=Manage the Cothink swarm and monitor system telemetry
+Exec=/home/adrian/Documents/GitHub/cothink-system/cothink.desktop
+Icon=utilities-terminal
+Terminal=false
+Categories=Development;System;Utility;
+StartupNotify=true
+Path=

@@ -3,5 +3,12 @@ use strict;
 use warnings;
 
 my $id = $ARGV[0] || 42;
-my $raw_val = $id * 0.07;
-print "$id,$raw_val\n";
+my $payload = "";
+while (<STDIN>) {
+    chomp;
+    $payload .= $_;
+}
+$payload = "none" if $payload eq "";
+
+# Pass ID and the raw payload directly to Lua
+print "$id,$payload\n";

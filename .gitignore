@@ -1,4 +1,5 @@
 /target
+/target_local
 /cothink-orchestrator
 
 # Bazel
@@ -10,7 +11,7 @@
 user.bazelrc
 user.bazelrc.local
 
-# Android / IDE
+# Android / IDE / Gradle
 *.apk
 *.ap_
 *.dex
@@ -18,6 +19,9 @@ user.bazelrc.local
 .idea/
 *.iml
 .gradle/
+.gradle
+build/
+.kotlin/
 local.properties
 *.hprof
 
@@ -29,6 +33,7 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
+
 # Agent Checkpoint Manager
 .vscode/.agent-checkpoints/
 
@@ -38,4 +43,3 @@ config.toml
 db_python/venv/
 *.db
 *.sqlite
-

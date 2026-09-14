@@ -1,0 +1,19 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "cothink",
+    srcs = [
+        "cothink.go",
+        "history.go",
+        "semaphore.go",
+        "spawn.go",
+    ],
+    importpath = "cothink-system/cothink",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "cothink_test",
+    srcs = ["cothink_test.go"],
+    embed = [":cothink"],
+)
