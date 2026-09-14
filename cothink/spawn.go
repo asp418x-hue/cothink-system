@@ -60,7 +60,7 @@ func (orch *Orchestrator) ScalarSpawn(ctx context.Context, root *AgentNode) {
 			// 2. Run Lua classifier binary
 			RecordEvent(orch.ID, id, "subagent_lua_start", true, "")
 			luaCmd := exec.CommandContext(ctx, "/usr/bin/rpmlua", "agent.lua")
-			
+
 			// Pipe Perl's output to Lua's stdin
 			stdinPipe, err := luaCmd.StdinPipe()
 			if err != nil {
@@ -71,10 +71,10 @@ func (orch *Orchestrator) ScalarSpawn(ctx context.Context, root *AgentNode) {
 				RecordEvent(orch.ID, id, "subagent_fail", false, "Lua stdin pipe failed")
 				return
 			}
-			
+
 			var luaOutBuf strings.Builder
 			luaCmd.Stdout = &luaOutBuf
-			
+
 			if err := luaCmd.Start(); err != nil {
 				fmt.Printf("[Orchestrator] Lua agent failed to start: %v\n", err)
 				RecordEvent(orch.ID, id, "subagent_lua_fail", false, "start: "+err.Error())
@@ -83,11 +83,11 @@ func (orch *Orchestrator) ScalarSpawn(ctx context.Context, root *AgentNode) {
 				RecordEvent(orch.ID, id, "subagent_fail", false, "Lua start failed: "+err.Error())
 				return
 			}
-			
+
 			// Write Perl output to Lua and close the pipe
 			stdinPipe.Write(perlOut)
 			stdinPipe.Close()
-			
+
 			if err := luaCmd.Wait(); err != nil {
 				fmt.Printf("[Orchestrator] Lua agent failed to finish: %v\n", err)
 				RecordEvent(orch.ID, id, "subagent_lua_fail", false, "wait: "+err.Error())

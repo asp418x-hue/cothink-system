@@ -156,4 +156,3 @@ func QuerySystemMetrics(device string) (temp float64, freq uint64, diskHealth st
 
 	return temp, freq, diskHealth
 }
-

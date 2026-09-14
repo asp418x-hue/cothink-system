@@ -11,11 +11,11 @@ import (
 
 // DiskStats represents S.M.A.R.T.-like block device stats
 type DiskStats struct {
-	DeviceName       string
-	ReadsCompleted   uint64
-	WritesCompleted  uint64
-	SectorsRead      uint64
-	SectorsWritten   uint64
+	DeviceName        string
+	ReadsCompleted    uint64
+	WritesCompleted   uint64
+	SectorsRead       uint64
+	SectorsWritten    uint64
 	SMARTHealthStatus string
 }
 
@@ -85,13 +85,13 @@ func (cg *CpuGovernor) GetCurrentFrequency(simulatedFreq uint64) uint64 {
 func (cg *CpuGovernor) SetFrequencyLimit(maxFreqMHz uint64) error {
 	fmt.Printf("[Go Governor] Adjusting CPU clock limit to %d MHz...\n", maxFreqMHz)
 	maxPath := strings.Replace(cg.Path, "scaling_cur_freq", "scaling_max_freq", 1)
-	
+
 	// Try writing if file exists
 	if _, err := os.Stat(maxPath); err == nil {
 		freqStr := fmt.Sprintf("%d", maxFreqMHz*1000)
 		return ioutil.WriteFile(maxPath, []byte(freqStr), 0644)
 	}
-	
+
 	// Fallback simulated success
 	fmt.Printf("[Go Governor Simulation] Simulated write to %s: %d MHz\n", filepath.Base(maxPath), maxFreqMHz)
 	return nil

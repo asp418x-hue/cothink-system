@@ -1,9 +1,9 @@
 package main
 
 import (
+	"cothink-system/cothink"
 	"fmt"
 	"time"
-	"cothink-system/cothink"
 )
 
 func main() {
