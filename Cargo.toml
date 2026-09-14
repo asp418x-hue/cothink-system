@@ -20,6 +20,15 @@ name = "thermal_monitor"
 path = "src/bin/thermal_monitor.rs"
 
 [dependencies]
+datum = "1.1.0"
+deep_causality = "0.15.2"
+flutter_rust_bridge = "2.13.0"
+grpc = "0.9.0"
+inference = "0.3.0"
+litert = "0.2.1"
+litert-rs = "0.1.2"
+rdkafka = "0.39.0"
+subjective-time-expansion = "0.1.2"
 tokio = { version = "1.40", features = ["macros", "rt-multi-thread", "sync", "time", "process", "io-util", "net"] }
 
 [profile.release]

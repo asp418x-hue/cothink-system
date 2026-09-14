@@ -6,8 +6,8 @@
 
 set -euo pipefail
 
-PROJ_ROOT="${PROJ_ROOT:-/data/data/com.termux/files/abc/cothink-system}"
-SHELL_PATH="${SHELL_PATH:-/data/data/com.termux/files/abc/cothink-system/cothink-shell}"
+PROJ_ROOT="${PROJ_ROOT:-/home/adrian/Documents/GitHub/cothink-system}"
+SHELL_PATH="${SHELL_PATH:-/home/adrian/Documents/GitHub/cothink-system/cothink-shell}"
 COTHINK_SYSTEM_PATH="${COTHINK_SYSTEM_PATH:-$PROJ_ROOT}"
 
 # Colors

@@ -8,9 +8,9 @@
 set -euo pipefail
 
 # Configuration - Define early, before any functions
-PROJ_ROOT="${PROJ_ROOT:-/data/data/com.termux/files/home/cothink/cothink-system}"
+PROJ_ROOT="${PROJ_ROOT:-/home/adrian/Documents/GitHub/cothink-system}"
 COTHINK_HOME="${COTHINK_HOME:-$PROJ_ROOT}"
-COTHINK_BINARY="${COTHINK_BINARY:-$COTHINK_HOME/target_local/release/cothink-system}"
+COTHINK_BINARY="${COTHINK_BINARY:-$COTHINK_HOME/cothink-system}"
 COTHINK_VERSION="1.0.0"
 
 ################################################################################
