@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #!/bin/bash
 # pip_btop.sh - Setup, start, and stop a Picture-in-Picture btop window for thermal monitoring.
 
@@ -104,17 +105,19 @@ stop_btop() {
         echo "btop_pip not running."
     fi
 }
+=======
+#!/data/data/com.termux/files/usr/bin/bash
+>>>>>>> fc2057f67eda9d9fac54c6cd14e382b96b1de8d9
 
 case "${1:-}" in
-    setup)
-        setup_btop
-        ;;
-    start)
-        setup_btop
-        start_btop
+    setup|start)
+        echo "Launching native htop monitor..."
+        # Runs directly in terminal without X11/root dependencies
+        exec htop
         ;;
     stop)
-        stop_btop
+        echo "Stopping monitor..."
+        pkill htop || true
         ;;
     *)
         echo "Usage: $0 {setup|start|stop}"

@@ -1,16 +1,12 @@
+<<<<<<< HEAD
 /target
 /target_local
 /cothink-orchestrator
 
-# Bazel
-/bazel-bin
-/bazel-out
-/bazel-testlogs
-/bazel-webapp
-/bazel-cothink_system
-user.bazelrc
-user.bazelrc.local
+# Ignore Gradle project-specific cache directory
+.gradle
 
+<<<<<<< HEAD
 # Android / IDE / Gradle
 *.apk
 *.ap_
@@ -43,3 +39,15 @@ config.toml
 db_python/venv/
 *.db
 *.sqlite
+=======
+# Ignore Gradle build output directory
+build
+
+# Ignore Kotlin plugin data
+.kotlin
+=======
+# https://dart.dev/tools/private-files
+# Created by `dart pub`
+.dart_tool/
+>>>>>>> master
+>>>>>>> fc2057f67eda9d9fac54c6cd14e382b96b1de8d9

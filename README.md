@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Cothink System
 
 Multi-runtime thinkspace orchestrator (Rust / Go / Python) packaged as a
@@ -53,3 +54,6 @@ This is free and unencumbered software released into the public domain.
 Anyone is free to copy, modify, publish, use, compile, sell, or
 distribute this software, either in source code form or as a compiled
 binary, for any purpose, commercial or non-commercial, and by any means.
+=======
+A cargo compiled, multilang agentic task orchestration engine with LLM inference, causal reasoning, thermal monitoring, and a companion interactive shell for passing explicit instructions to it.
+>>>>>>> fc2057f67eda9d9fac54c6cd14e382b96b1de8d9

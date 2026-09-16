@@ -1,7 +1,7 @@
 [build]
 target-dir = "target_local"
 
-[target.x86_64-unknown-linux-gnu]
+[target.aarch64-linux-android]
 linker = "gcc"
 
 [target.aarch64-linux-android]
