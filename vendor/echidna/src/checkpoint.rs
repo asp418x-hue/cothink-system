@@ -1,0 +1,959 @@
+//! Compositional gradient checkpointing for iterative computations.
+//!
+//! ```
+//! use echidna::BReverse;
+//! use echidna::checkpoint::grad_checkpointed;
+//!
+//! // State evolves by squaring the entry; the loss reads it out. The
+//! // gradient of loss(step^3(x0)) at x0 = 2 is d(x^8)/dx = 8·x^7 = 1024.
+//! let step = |state: &[BReverse<f64>]| vec![state[0] * state[0]];
+//! let loss = |state: &[BReverse<f64>]| state[0];
+//! let g = grad_checkpointed(step, loss, &[2.0_f64], 3, 2);
+//! assert!((g[0] - 1024.0).abs() < 1e-9);
+//! ```
+//!
+//! Splits the forward sweep into segments bounded by stored checkpoints,
+//! spread evenly so peak backward memory stays at roughly
+//! `num_steps / num_checkpoints` states while each segment is recomputed
+//! exactly once. (The classic binomial Revolve schedule of Griewank &
+//! Walther, 2000 — retained here as a reference implementation — optimizes
+//! recompute count under recursive multi-replay, a different cost model.)
+//!
+//! # Determinism requirement
+//!
+//! The `step` function passed to any `grad_checkpointed*` must be
+//! **bit-deterministic**: re-executing `step` from a checkpoint must
+//! reproduce exactly the state the forward pass observed. The adjoint
+//! seed at the final state is bound to the primal trajectory the
+//! forward pass produced; if re-execution drifts (non-deterministic
+//! parallel reductions, atomic FP adds, rayon folds without a fixed
+//! ordering, GPU kernels with non-deterministic atomics), the gradient
+//! is computed against a trajectory that was never actually run and
+//! silently disagrees with the un-checkpointed reference.
+//!
+//! Symptoms of a non-deterministic `step` in practice: gradient values
+//! that differ across runs, or differ from `grad()` on a small-scale
+//! version of the same computation. If your `step` uses parallelism,
+//! ensure deterministic reduction ordering (e.g. use `rayon::iter`'s
+//! sequential reduce rather than `par_iter().sum()` of floats).
+
+use std::collections::HashSet;
+
+use crate::breverse::BReverse;
+use crate::bytecode_tape::{BtapeGuard, BtapeThreadLocal, BytecodeTape};
+use crate::float::Float;
+
+/// Compute gradients through an iterative computation using checkpointing.
+///
+/// Stores `num_checkpoints` evenly spaced snapshots and replays each
+/// segment exactly once on the backward pass, bounding peak memory at
+/// roughly `num_steps / num_checkpoints` states.
+///
+/// # Arguments
+///
+/// * `step` - A function that advances state by one step: `state_{k+1} = step(state_k)`
+/// * `loss` - A scalar loss function applied to the final state
+/// * `x0` - Initial state
+/// * `num_steps` - Number of times to apply `step`
+/// * `num_checkpoints` - Number of checkpoint slots (affects memory/compute tradeoff)
+///
+/// # Returns
+///
+/// Gradient of `loss(step^num_steps(x0))` with respect to `x0`.
+///
+/// # Panics
+///
+/// Panics if `step` changes the dimension of its input (output length must equal input length).
+pub fn grad_checkpointed<F: Float + BtapeThreadLocal>(
+    step: impl Fn(&[BReverse<F>]) -> Vec<BReverse<F>>,
+    loss: impl FnOnce(&[BReverse<F>]) -> BReverse<F>,
+    x0: &[F],
+    num_steps: usize,
+    num_checkpoints: usize,
+) -> Vec<F> {
+    let dim = x0.len();
+
+    // Handle edge case: 0 steps means gradient of loss(x0) directly.
+    if num_steps == 0 {
+        return loss_gradient(loss, x0);
+    }
+
+    let num_checkpoints = num_checkpoints.clamp(1, num_steps);
+
+    // Stored positions are spread evenly so the largest reverse segment —
+    // and with it peak backward memory, since `backward_from_checkpoints`
+    // materializes a segment's states before its VJP sweep — is bounded by
+    // ~num_steps/(num_checkpoints+1). Total recompute time is one extra
+    // forward pass regardless of placement (each segment replays once).
+    let all_positions = spread_positions(num_steps, num_checkpoints);
+    let checkpoint_positions: HashSet<usize> = all_positions.into_iter().collect();
+
+    // -- Forward pass: run all steps, saving at most num_checkpoints states --
+    let (final_state, checkpoints) =
+        forward_collect(&step, x0, num_steps, dim, &checkpoint_positions);
+
+    backward_from_checkpoints(&step, loss, &final_state, &checkpoints, num_steps)
+}
+
+// ══════════════════════════════════════════════
+//  Online checkpointing
+// ══════════════════════════════════════════════
+
+/// Compute gradients through an iterative computation with unknown step count.
+///
+/// Uses periodic thinning: maintains a buffer of checkpoint slots, and when the
+/// buffer fills, discards every other checkpoint and doubles the spacing. This
+/// guarantees O(log(N)) recomputation overhead for N total steps using only
+/// `num_checkpoints` memory slots.
+///
+/// # Arguments
+///
+/// * `step` - A function that advances state by one step: `state_{k+1} = step(state_k)`
+/// * `stop` - Predicate `stop(state, step_index)` returning `true` to stop iteration.
+///   `stop` is called before the loop with `(x0, 0)` so a caller can short-
+///   circuit iteration entirely; if it returns `false` there, iteration
+///   enters the loop and `stop` is re-evaluated after every step
+///   (`step_index = 1, 2, ...`).
+/// * `loss` - A scalar loss function applied to the final state
+/// * `x0` - Initial state
+/// * `num_checkpoints` - Number of checkpoint slots (must be >= 2)
+///
+/// # Returns
+///
+/// Gradient of `loss(step^N(x0))` with respect to `x0`, where N is determined by `stop`.
+///
+/// # Panics
+///
+/// Panics if `num_checkpoints < 2` or if `step` changes the dimension of its input.
+pub fn grad_checkpointed_online<F: Float + BtapeThreadLocal>(
+    step: impl Fn(&[BReverse<F>]) -> Vec<BReverse<F>>,
+    stop: impl Fn(&[F], usize) -> bool,
+    loss: impl FnOnce(&[BReverse<F>]) -> BReverse<F>,
+    x0: &[F],
+    num_checkpoints: usize,
+) -> Vec<F> {
+    assert!(
+        num_checkpoints >= 2,
+        "online checkpointing requires at least 2 checkpoint slots, got {num_checkpoints}"
+    );
+
+    let dim = x0.len();
+
+    // Edge case: stop at step 0 means gradient of loss(x0) directly.
+    if stop(x0, 0) {
+        return loss_gradient(loss, x0);
+    }
+
+    // Checkpoint buffer: buffer[0] is always (0, x0), pinned during thinning.
+    let mut buffer: Vec<(usize, Vec<F>)> = Vec::with_capacity(num_checkpoints);
+    // SPEC: PinnedOrigin — buffer[0] holds (0, x0) and is preserved across thinning.
+    buffer.push((0, x0.to_vec()));
+
+    let mut spacing = 1usize;
+    let mut current_state = x0.to_vec();
+    let mut step_index = 0usize;
+
+    loop {
+        // Advance one step.
+        current_state = step_forward_primal(&step, &current_state);
+        step_index += 1;
+        assert_eq!(
+            current_state.len(),
+            dim,
+            "step must preserve dimension: expected {}, got {}",
+            dim,
+            current_state.len()
+        );
+
+        // Save checkpoint if on the spacing grid.
+        // SPEC: UniformSpacing — saved steps after buffer[0] are multiples of `spacing`.
+        if step_index.is_multiple_of(spacing) {
+            buffer.push((step_index, current_state.clone()));
+        }
+
+        // Check stop condition.
+        if stop(&current_state, step_index) {
+            break;
+        }
+
+        // Thin when buffer is full.
+        // SPEC: BufferBudget — thinning triggers when buffer.len() >= num_checkpoints,
+        // keeping buffer.len() bounded by num_checkpoints across the loop.
+        if buffer.len() >= num_checkpoints {
+            // Keep buffer[0] (pinned). Among buffer[1..], skip the first (closest to
+            // buffer[0]) and keep every other entry to maintain uniform spacing.
+            let tail: Vec<(usize, Vec<F>)> =
+                buffer[1..].iter().skip(1).step_by(2).cloned().collect();
+            buffer.truncate(1);
+            buffer.extend(tail);
+            // SPEC: SpacingPowerOf2 — `spacing` only ever doubles, so it stays a power of 2.
+            spacing *= 2;
+        }
+    }
+
+    let num_steps = step_index;
+    let final_state = current_state;
+
+    backward_from_checkpoints(&step, loss, &final_state, &buffer, num_steps)
+}
+
+// ══════════════════════════════════════════════
+//  Checkpoint placement hints
+// ══════════════════════════════════════════════
+
+/// Compute gradients with user-specified required checkpoint positions.
+///
+/// Distributes remaining checkpoint slots proportionally across the
+/// sub-intervals defined by the required positions, spreading each
+/// interval's slots evenly within it. Required positions are always
+/// stored as checkpoints; the remaining slots are distributed proportionally to
+/// sub-interval length.
+///
+/// # Arguments
+///
+/// * `step` - A function that advances state by one step
+/// * `loss` - A scalar loss function applied to the final state
+/// * `x0` - Initial state
+/// * `num_steps` - Number of times to apply `step`
+/// * `num_checkpoints` - Total number of checkpoint slots (must be >= required positions count)
+/// * `required_positions` - Step indices that must be checkpointed. Positions outside
+///   `[1, num_steps-1]` are silently ignored.
+///
+/// # Panics
+///
+/// Panics if the number of valid required positions exceeds `num_checkpoints`.
+pub fn grad_checkpointed_with_hints<F: Float + BtapeThreadLocal>(
+    step: impl Fn(&[BReverse<F>]) -> Vec<BReverse<F>>,
+    loss: impl FnOnce(&[BReverse<F>]) -> BReverse<F>,
+    x0: &[F],
+    num_steps: usize,
+    num_checkpoints: usize,
+    required_positions: &[usize],
+) -> Vec<F> {
+    let dim = x0.len();
+
+    if num_steps == 0 {
+        return loss_gradient(loss, x0);
+    }
+
+    let num_checkpoints = num_checkpoints.clamp(1, num_steps);
+
+    // Filter, sort, dedup required positions to valid range [1, num_steps-1].
+    let mut required: Vec<usize> = required_positions
+        .iter()
+        .copied()
+        .filter(|&p| p >= 1 && p < num_steps)
+        .collect();
+    required.sort_unstable();
+    required.dedup();
+    // SPEC: RequiredIncluded — every valid required position ends up in `all_positions`.
+
+    assert!(
+        required.len() <= num_checkpoints,
+        "required positions ({}) exceed available checkpoint slots ({})",
+        required.len(),
+        num_checkpoints,
+    );
+
+    // Free slots after allocating required positions.
+    let free = num_checkpoints.saturating_sub(required.len());
+
+    // Build sub-intervals: boundaries are [0, r1, r2, ..., rk, num_steps].
+    let mut boundaries = Vec::with_capacity(required.len() + 2);
+    boundaries.push(0);
+    boundaries.extend_from_slice(&required);
+    boundaries.push(num_steps);
+    boundaries.dedup(); // In case required contains 0 or num_steps somehow.
+
+    // Compute sub-interval lengths.
+    let intervals: Vec<(usize, usize)> = boundaries.windows(2).map(|w| (w[0], w[1])).collect();
+    let interval_lengths: Vec<usize> = intervals.iter().map(|(s, e)| e - s).collect();
+    let total_len: usize = interval_lengths.iter().sum();
+
+    // Distribute free slots proportionally using largest-remainder method.
+    // SPEC: AllocationExact — `slot_alloc` sums to `free`.
+    let slot_alloc = largest_remainder_alloc(free, &interval_lengths, total_len);
+
+    // Run Revolve on each sub-interval and merge all positions.
+    let mut all_positions: HashSet<usize> = required.iter().copied().collect();
+    for (i, &(start, end)) in intervals.iter().enumerate() {
+        let sub_steps = end - start;
+        let sub_slots = slot_alloc[i];
+        if sub_steps > 1 && sub_slots > 0 {
+            let sub_positions = spread_positions(sub_steps, sub_slots);
+            // Shift positions to global coordinates.
+            all_positions.extend(sub_positions.iter().map(|&p| p + start));
+        }
+    }
+
+    // Forward pass using the merged position set.
+    let (final_state, checkpoints) = forward_collect(&step, x0, num_steps, dim, &all_positions);
+    backward_from_checkpoints(&step, loss, &final_state, &checkpoints, num_steps)
+}
+
+/// Distribute `total` items across buckets proportionally to `weights`,
+/// using the largest-remainder method for rounding.
+fn largest_remainder_alloc(total: usize, weights: &[usize], weight_sum: usize) -> Vec<usize> {
+    if weight_sum == 0 || weights.is_empty() {
+        return vec![0; weights.len()];
+    }
+
+    // Integer quotients.
+    let mut alloc: Vec<usize> = weights.iter().map(|&w| (w * total) / weight_sum).collect();
+    let allocated: usize = alloc.iter().sum();
+    let mut remaining = total - allocated;
+
+    if remaining > 0 {
+        // Compute remainders and sort by descending remainder.
+        let mut remainders: Vec<(usize, f64)> = weights
+            .iter()
+            .enumerate()
+            .map(|(i, &w)| {
+                let exact = (w as f64 * total as f64) / weight_sum as f64;
+                (i, exact - alloc[i] as f64)
+            })
+            .collect();
+        // Descending remainder; finite by construction (weight_sum > 0).
+        remainders.sort_by(|a, b| b.1.total_cmp(&a.1));
+
+        for (idx, _) in remainders {
+            if remaining == 0 {
+                break;
+            }
+            alloc[idx] += 1;
+            remaining -= 1;
+        }
+    }
+
+    alloc
+}
+
+// ══════════════════════════════════════════════
+//  Disk-backed checkpointing
+// ══════════════════════════════════════════════
+
+/// Compute gradients using disk-backed checkpointing for large state vectors.
+///
+/// Stores checkpoint states as raw binary files on disk instead of in memory.
+/// Uses the same Revolve schedule as [`grad_checkpointed`]. Checkpoint files
+/// are cleaned up on completion and on panic (via a Drop guard).
+///
+/// # Arguments
+///
+/// * `step` - A function that advances state by one step
+/// * `loss` - A scalar loss function applied to the final state
+/// * `x0` - Initial state
+/// * `num_steps` - Number of times to apply `step`
+/// * `num_checkpoints` - Number of checkpoint slots
+/// * `dir` - Directory in which checkpoint files are stored. Must exist.
+///   Each invocation creates — and removes on completion or panic — its own
+///   uniquely-named subdirectory, so a single scratch directory can be
+///   shared by concurrent or nested gradient computations.
+///
+/// # Safety considerations
+///
+/// Uses raw byte transmutation for serialization. This is safe for all `Float` types
+/// (which are `Copy + Sized` and never contain pointers). The checkpoint files are
+/// platform-specific binary and not portable.
+///
+/// # Panics
+///
+/// Panics if `dir` doesn't exist, if the per-invocation subdirectory cannot
+/// be created, on I/O errors, or if `step` changes dimension.
+pub fn grad_checkpointed_disk<F: Float + BtapeThreadLocal>(
+    step: impl Fn(&[BReverse<F>]) -> Vec<BReverse<F>>,
+    loss: impl FnOnce(&[BReverse<F>]) -> BReverse<F>,
+    x0: &[F],
+    num_steps: usize,
+    num_checkpoints: usize,
+    dir: &std::path::Path,
+) -> Vec<F> {
+    assert!(
+        dir.is_dir(),
+        "checkpoint directory does not exist: {}",
+        dir.display()
+    );
+
+    let dim = x0.len();
+
+    if num_steps == 0 {
+        return loss_gradient(loss, x0);
+    }
+
+    let num_checkpoints = num_checkpoints.clamp(1, num_steps);
+
+    // Evenly spread positions bound the largest reverse segment — see
+    // `grad_checkpointed`.
+    let all_positions = spread_positions(num_steps, num_checkpoints);
+    let checkpoint_positions: HashSet<usize> = all_positions.into_iter().collect();
+
+    // Isolate this invocation in a uniquely-named subdirectory: concurrent
+    // or nested computations may share `dir`, and fixed filenames would let
+    // one run overwrite — or delete during cleanup — checkpoints another
+    // run still needs, silently corrupting its recomputed segments.
+    let run_dir = unique_run_dir(dir);
+
+    // Drop guard ensures cleanup even on panic (files, then the run dir).
+    let mut guard = DiskCheckpointGuard {
+        files: Vec::new(),
+        run_dir: Some(run_dir.clone()),
+    };
+
+    // Write initial state (step 0). Paths are registered with the guard
+    // BEFORE writing, so a panic mid-write cannot leak a partial file.
+    let path_0 = run_dir.join("ckpt_0.bin");
+    guard.files.push(path_0.clone());
+    write_checkpoint(x0, &path_0);
+
+    // Forward pass: run all steps, saving checkpoints to disk.
+    let mut current_state = x0.to_vec();
+    for s in 0..num_steps {
+        current_state = step_forward_primal(&step, &current_state);
+        assert_eq!(
+            current_state.len(),
+            dim,
+            "step must preserve dimension: expected {}, got {}",
+            dim,
+            current_state.len()
+        );
+
+        let next_step = s + 1;
+        if next_step < num_steps && checkpoint_positions.contains(&next_step) {
+            let path = run_dir.join(format!("ckpt_{next_step}.bin"));
+            guard.files.push(path.clone());
+            write_checkpoint(&current_state, &path);
+        }
+    }
+
+    let final_state = current_state;
+
+    // Build checkpoint index: sorted list of stored steps for reading back.
+    // Step 0 is always first.
+    let mut ckpt_steps: Vec<usize> = vec![0];
+    ckpt_steps.extend(checkpoint_positions.iter().filter(|&p| *p < num_steps));
+    ckpt_steps.sort_unstable();
+    ckpt_steps.dedup();
+
+    // Backward pass, fetching each segment's checkpoint from disk as the
+    // walk reaches it — only one checkpoint is in memory at a time.
+    let adjoint = backward_from_checkpoint_source(
+        &step,
+        loss,
+        &final_state,
+        &ckpt_steps,
+        |seg| read_checkpoint::<F>(&run_dir.join(format!("ckpt_{}.bin", ckpt_steps[seg])), dim),
+        num_steps,
+    );
+
+    // Explicit cleanup (guard.drop will also attempt it).
+    guard.cleanup();
+
+    adjoint
+}
+
+fn write_checkpoint<F: Float>(state: &[F], path: &std::path::Path) {
+    // SAFETY: `F: Float` is `Copy + Sized` with no padding or pointers, so its
+    // raw byte representation is well-defined. The pointer comes from a valid
+    // slice, and the length is exactly `size_of_val(state)` bytes.
+    let bytes: &[u8] = unsafe {
+        std::slice::from_raw_parts(state.as_ptr().cast::<u8>(), std::mem::size_of_val(state))
+    };
+    std::fs::write(path, bytes).expect("checkpoint write failed");
+}
+
+fn read_checkpoint<F: Float>(path: &std::path::Path, dim: usize) -> Vec<F> {
+    let bytes = std::fs::read(path).expect("checkpoint read failed");
+    assert_eq!(
+        bytes.len(),
+        dim * std::mem::size_of::<F>(),
+        "checkpoint file size mismatch: expected {}, got {}",
+        dim * std::mem::size_of::<F>(),
+        bytes.len()
+    );
+    let mut state = vec![F::zero(); dim];
+    // SAFETY: `F: Float` is `Copy + Sized` with no padding or pointers. The
+    // byte length was validated by the assert above to equal `dim * size_of::<F>()`,
+    // so the copy stays within bounds of both the source and destination buffers.
+    unsafe {
+        std::ptr::copy_nonoverlapping(bytes.as_ptr(), state.as_mut_ptr().cast::<u8>(), bytes.len());
+    }
+    state
+}
+
+/// Create a uniquely-named subdirectory of `dir` for one invocation's
+/// checkpoint files. The name combines the process id, wall-clock
+/// nanoseconds, and a process-wide counter, so concurrent processes,
+/// nested calls, and rapid sequential calls all get distinct directories.
+fn unique_run_dir(dir: &std::path::Path) -> std::path::PathBuf {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static COUNTER: AtomicU64 = AtomicU64::new(0);
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos() as u64)
+        .unwrap_or(0);
+    let run_dir = dir.join(format!(
+        "ckpt-{}-{:x}-{}",
+        std::process::id(),
+        nanos,
+        COUNTER.fetch_add(1, Ordering::Relaxed)
+    ));
+    std::fs::create_dir(&run_dir).expect("failed to create checkpoint subdirectory");
+    run_dir
+}
+
+struct DiskCheckpointGuard {
+    files: Vec<std::path::PathBuf>,
+    /// The per-invocation subdirectory, removed after the files. Every
+    /// created file is registered in `files` before it is written, so the
+    /// directory is empty by the time it is removed.
+    run_dir: Option<std::path::PathBuf>,
+}
+
+impl DiskCheckpointGuard {
+    fn cleanup(&mut self) {
+        for f in self.files.drain(..) {
+            let _ = std::fs::remove_file(f);
+        }
+        if let Some(d) = self.run_dir.take() {
+            let _ = std::fs::remove_dir(d);
+        }
+    }
+}
+
+impl Drop for DiskCheckpointGuard {
+    fn drop(&mut self) {
+        self.cleanup();
+    }
+}
+
+// ══════════════════════════════════════════════
+//  Shared backward pass
+// ══════════════════════════════════════════════
+
+/// Record `loss` at `point` and return its gradient.
+///
+/// The seed of every backward pass, and the whole gradient when there are
+/// no steps to reverse.
+fn loss_gradient<F: Float + BtapeThreadLocal>(
+    loss: impl FnOnce(&[BReverse<F>]) -> BReverse<F>,
+    point: &[F],
+) -> Vec<F> {
+    let (mut tape, _) = crate::api::record(loss, point);
+    tape.gradient(point)
+}
+
+/// Run all forward steps from `x0`, snapshotting the states whose step
+/// index is in `positions`. Returns the final state and the stored
+/// checkpoints, sorted by step index.
+fn forward_collect<F: Float + BtapeThreadLocal>(
+    step: &impl Fn(&[BReverse<F>]) -> Vec<BReverse<F>>,
+    x0: &[F],
+    num_steps: usize,
+    dim: usize,
+    positions: &HashSet<usize>,
+) -> (Vec<F>, Vec<(usize, Vec<F>)>) {
+    let mut checkpoints: Vec<(usize, Vec<F>)> = Vec::with_capacity(positions.len() + 1);
+    // SPEC: InitialStateStored — (step 0, x0) is always the first stored checkpoint.
+    checkpoints.push((0, x0.to_vec()));
+
+    let mut current_state = x0.to_vec();
+    for s in 0..num_steps {
+        current_state = step_forward_primal(step, &current_state);
+        assert_eq!(
+            current_state.len(),
+            dim,
+            "step must preserve dimension: expected {}, got {}",
+            dim,
+            current_state.len()
+        );
+
+        let next_step = s + 1;
+        // SPEC: PositionRangeInvariant — only step indices in `[1, num_steps)` are stored.
+        if next_step < num_steps && positions.contains(&next_step) {
+            checkpoints.push((next_step, current_state.clone()));
+        }
+    }
+
+    (current_state, checkpoints)
+}
+
+/// Compute gradients by seeding the loss and VJP-ing backward through checkpoint segments.
+///
+/// Shared by the in-memory checkpointing variants. Each variant implements
+/// its own forward pass to produce `(final_state, checkpoints)`, then calls
+/// this function for the backward pass; the disk variant goes through
+/// [`backward_from_checkpoint_source`] directly with an on-demand fetch.
+///
+/// `checkpoints` must be sorted by step index and include step 0 (the initial state).
+fn backward_from_checkpoints<F: Float + BtapeThreadLocal>(
+    step: &impl Fn(&[BReverse<F>]) -> Vec<BReverse<F>>,
+    loss: impl FnOnce(&[BReverse<F>]) -> BReverse<F>,
+    final_state: &[F],
+    checkpoints: &[(usize, Vec<F>)],
+    num_steps: usize,
+) -> Vec<F> {
+    let steps: Vec<usize> = checkpoints.iter().map(|&(s, _)| s).collect();
+    backward_from_checkpoint_source(
+        step,
+        loss,
+        final_state,
+        &steps,
+        |seg| checkpoints[seg].1.clone(),
+        num_steps,
+    )
+}
+
+/// Backward pass over checkpoint segments with a caller-supplied state source.
+///
+/// `ckpt_steps` holds the stored step indices, sorted and starting with 0;
+/// `fetch(seg)` materializes the state stored for `ckpt_steps[seg]`. The
+/// fetch runs inside the segment loop, so a disk-backed source holds only
+/// one checkpoint in memory at a time.
+fn backward_from_checkpoint_source<F: Float + BtapeThreadLocal>(
+    step: &impl Fn(&[BReverse<F>]) -> Vec<BReverse<F>>,
+    loss: impl FnOnce(&[BReverse<F>]) -> BReverse<F>,
+    final_state: &[F],
+    ckpt_steps: &[usize],
+    mut fetch: impl FnMut(usize) -> Vec<F>,
+    num_steps: usize,
+) -> Vec<F> {
+    // Loss gradient (seeds the backward pass).
+    let mut adjoint = loss_gradient(loss, final_state);
+
+    // Backward pass: VJP through each segment from checkpoints.
+    // SPEC: CompletenessProperty — every forward step is covered by the
+    // reverse segment walk `(0..num_segments).rev()` (the invariant asserts
+    // set coverage; the at-most-once half follows structurally from the
+    // segments being contiguous and non-overlapping).
+    let num_segments = ckpt_steps.len();
+    for seg in (0..num_segments).rev() {
+        let ckpt_step = ckpt_steps[seg];
+        let seg_end = if seg + 1 < num_segments {
+            ckpt_steps[seg + 1]
+        } else {
+            num_steps
+        };
+
+        let seg_len = seg_end - ckpt_step;
+
+        // Recompute states in this segment from the checkpoint.
+        let mut states: Vec<Vec<F>> = Vec::with_capacity(seg_len + 1);
+        states.push(fetch(seg));
+        let mut s = states[0].clone();
+        for _ in 0..seg_len {
+            s = step_forward_primal(step, &s);
+            states.push(s.clone());
+        }
+
+        // VJP backward through this segment.
+        for i in (0..seg_len).rev() {
+            adjoint = vjp_step(step, &states[i], &adjoint);
+        }
+    }
+
+    adjoint
+}
+
+// ══════════════════════════════════════════════
+//  Revolve schedule computation
+// ══════════════════════════════════════════════
+
+/// Choose the stored checkpoint positions for `num_steps` forward steps
+/// under a budget of `num_checkpoints` slots.
+///
+/// Positions are spread evenly across `(0, num_steps)` — `⌊j·N/(C+1)⌋` for
+/// `j = 1..=C` — so the largest reverse segment is at most `⌈N/(C+1)⌉`
+/// steps. Peak backward memory is `O(max_segment · dim)` because each
+/// reverse segment re-materializes its forward states before its VJP
+/// sweep, and each segment is recomputed exactly once, so segment length —
+/// not recompute count — is the binding cost. Keeping the smallest
+/// schedule positions instead would cluster every checkpoint at the front
+/// and leave one `O(num_steps)` tail segment.
+// SPEC: BudgetInvariant — stored checkpoint count never exceeds num_checkpoints.
+fn spread_positions(num_steps: usize, num_checkpoints: usize) -> Vec<usize> {
+    if num_checkpoints >= num_steps {
+        // Store-everything: identical to the reference schedule's fast path.
+        return revolve_schedule(num_steps, num_checkpoints);
+    }
+    // C < N ⇒ consecutive targets differ by at least ⌊N/(C+1)⌋ ≥ 1, so the
+    // positions are strictly increasing (sorted and deduplicated) and lie
+    // in [1, N).
+    (1..=num_checkpoints)
+        .map(|j| j * num_steps / (num_checkpoints + 1))
+        .collect()
+}
+
+/// Compute checkpoint positions using the classic Revolve algorithm.
+///
+/// Given `num_steps` forward steps and `num_checkpoints` available slots,
+/// returns the set of step indices the binomial schedule visits. Step 0
+/// (initial state) is always stored implicitly.
+///
+/// Retained as the reference algorithm (modeled by `specs/revolve/`);
+/// production placement uses [`spread_positions`] because this
+/// implementation's backward pass replays each segment exactly once, making
+/// segment length rather than recompute count the binding cost.
+fn revolve_schedule(num_steps: usize, num_checkpoints: usize) -> Vec<usize> {
+    if num_checkpoints >= num_steps {
+        // Store everything
+        return (1..num_steps).collect();
+    }
+
+    let mut positions = Vec::new();
+    schedule_recursive(0, num_steps, num_checkpoints, &mut positions);
+    // SPEC: SortedCheckpoints — revolve_schedule returns positions sorted and deduplicated.
+    positions.sort_unstable();
+    positions.dedup();
+    positions
+}
+
+/// Recursively determine checkpoint positions for the interval [start, end).
+///
+/// Places one checkpoint optimally (using the binomial formula), then
+/// recurses on the two resulting sub-intervals.
+fn schedule_recursive(start: usize, end: usize, checkpoints: usize, positions: &mut Vec<usize>) {
+    let steps = end - start;
+    if steps <= 1 || checkpoints == 0 {
+        return;
+    }
+
+    // Find optimal split point: advance by `optimal_advance` steps
+    let advance = optimal_advance(steps, checkpoints);
+    let split = start + advance;
+
+    if split < end && split > start {
+        positions.push(split);
+
+        // First sub-interval: [start, split) with (checkpoints - 1) remaining slots
+        // (we used one slot for the checkpoint at `split`)
+        schedule_recursive(start, split, checkpoints - 1, positions);
+
+        // Second sub-interval: [split, end) with all checkpoint slots
+        // (the checkpoint at `split` has been consumed by the backward pass
+        //  before we process the first sub-interval)
+        schedule_recursive(split, end, checkpoints, positions);
+    }
+}
+
+/// Compute the optimal advance distance before placing a checkpoint.
+///
+/// For `steps` remaining forward steps and `c` checkpoint slots, finds
+/// the advance distance that minimizes total recomputation using the
+/// binomial formula from Griewank & Walther.
+fn optimal_advance(steps: usize, c: usize) -> usize {
+    if c == 0 || steps <= 1 {
+        return steps;
+    }
+
+    // Find smallest t where beta(t, c) >= steps
+    let mut t = 1usize;
+    while beta(t, c) < steps {
+        t += 1;
+    }
+
+    // Optimal advance = beta(t-1, c-1)
+    if t > 0 && c > 0 {
+        beta(t - 1, c - 1).max(1).min(steps - 1)
+    } else {
+        1
+    }
+}
+
+/// Binomial coefficient function for the Revolve checkpointing schedule.
+///
+/// For c >= 1: beta(s, c) = C(s+c, c), the standard binomial coefficient.
+/// For c = 0:  beta(s, 0) = s + 1 (linear scan — with no checkpoints,
+/// `s` recomputations from the start can reverse `s + 1` steps).
+///
+/// Represents the maximum number of steps that can be reversed with
+/// `s` forward recomputations and `c` checkpoint slots.
+///
+/// Returns `usize::MAX` on overflow rather than using `saturating_mul` followed
+/// by division (which can produce incorrect intermediate results when the
+/// multiplication saturates but the final result would fit in a `usize`).
+fn beta(s: usize, c: usize) -> usize {
+    if c == 0 {
+        return s + 1;
+    }
+    if s == 0 {
+        return 1;
+    }
+    // C(s+c, c) via multiplicative formula, with overflow detection.
+    // Interleave multiply/divide to keep intermediates small.
+    let mut result = 1usize;
+    for i in 0..c {
+        // Check for overflow before multiplying
+        let factor = s + c - i;
+        let divisor = i + 1;
+        match result.checked_mul(factor) {
+            Some(v) => result = v / divisor,
+            None => return usize::MAX, // overflow → certainly >= any practical step count
+        }
+    }
+    result
+}
+
+/// Build a fresh tape sized for `state` and register the state as inputs.
+///
+/// Shared by `step_forward_primal` and `vjp_step`, so their tape-capacity
+/// heuristic for one `step` invocation cannot drift apart.
+fn tape_with_inputs<F: Float + BtapeThreadLocal>(
+    state: &[F],
+) -> (BytecodeTape<F>, Vec<BReverse<F>>) {
+    let mut tape = BytecodeTape::with_capacity(state.len() * 10);
+    let inputs = tape.new_inputs(state);
+    (tape, inputs)
+}
+
+/// Run one step forward (primal only, no gradient needed for the output).
+///
+/// Creates a temporary tape because `step` takes `&[BReverse<F>]`.
+fn step_forward_primal<F: Float + BtapeThreadLocal>(
+    step: &impl Fn(&[BReverse<F>]) -> Vec<BReverse<F>>,
+    state: &[F],
+) -> Vec<F> {
+    let (mut tape, inputs) = tape_with_inputs(state);
+
+    {
+        let _guard = BtapeGuard::new(&mut tape);
+        let outputs = step(&inputs);
+        outputs.iter().map(|r| r.value).collect()
+    }
+}
+
+/// Compute VJP: J^T * w for a single step via the scalar trick.
+///
+/// Records `sum_i w[i] * step(x)[i]` and takes its gradient.
+/// Since w[i] are `BReverse::constant`, they don't participate in the tape,
+/// and the gradient is exactly J^T * w.
+fn vjp_step<F: Float + BtapeThreadLocal>(
+    step: &impl Fn(&[BReverse<F>]) -> Vec<BReverse<F>>,
+    state: &[F],
+    w: &[F],
+) -> Vec<F> {
+    let dim = state.len();
+    let (mut tape, inputs) = tape_with_inputs(state);
+
+    let scalar_index = {
+        let _guard = BtapeGuard::new(&mut tape);
+        let outputs = step(&inputs);
+
+        assert_eq!(
+            outputs.len(),
+            dim,
+            "step must preserve dimension: expected {}, got {}",
+            dim,
+            outputs.len()
+        );
+
+        // Compute scalar: sum_i w[i] * output[i]
+        // Use BReverse::constant for w[i] so they don't affect the tape's gradient.
+        let mut scalar = BReverse::constant(F::zero());
+        for i in 0..dim {
+            scalar += BReverse::constant(w[i]) * outputs[i];
+        }
+
+        scalar.index
+    };
+    tape.set_output(scalar_index);
+
+    tape.gradient(state)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn spread_positions_bounds_max_segment() {
+        for &(n, c) in &[
+            (10usize, 1usize),
+            (10, 2),
+            (100, 5),
+            (1000, 10),
+            (10000, 20),
+            (5, 4),
+        ] {
+            let pos = spread_positions(n, c);
+            assert!(pos.len() <= c, "(n={n}, c={c}): budget exceeded");
+            assert!(
+                pos.windows(2).all(|w| w[0] < w[1]),
+                "(n={n}, c={c}): not sorted/deduped"
+            );
+            assert!(pos.iter().all(|&p| p >= 1 && p < n));
+            let mut prev = 0usize;
+            let mut max_seg = 0usize;
+            for &p in &pos {
+                max_seg = max_seg.max(p - prev);
+                prev = p;
+            }
+            max_seg = max_seg.max(n - prev);
+            // ⌈N/(C+1)⌉ — the even-spacing bound, including both end segments.
+            let bound = n.div_ceil(c + 1);
+            assert!(
+                max_seg <= bound,
+                "(n={n}, c={c}): max segment {max_seg} exceeds bound {bound}"
+            );
+        }
+    }
+
+    #[test]
+    fn spread_positions_single_checkpoint_centers() {
+        // One slot must land mid-trajectory, halving peak memory — not at
+        // either end.
+        assert_eq!(spread_positions(100, 1), vec![50]);
+        assert_eq!(spread_positions(10, 1), vec![5]);
+    }
+
+    #[test]
+    fn spread_positions_store_all_matches_reference() {
+        assert_eq!(spread_positions(5, 5), revolve_schedule(5, 5));
+        assert_eq!(spread_positions(5, 9), (1..5).collect::<Vec<_>>());
+    }
+
+    #[test]
+    fn beta_base_cases() {
+        // beta(s, 0) = s + 1
+        assert_eq!(beta(0, 0), 1);
+        assert_eq!(beta(1, 0), 2);
+        assert_eq!(beta(5, 0), 6);
+
+        // beta(0, c) = 1
+        assert_eq!(beta(0, 1), 1);
+        assert_eq!(beta(0, 5), 1);
+
+        // beta(1, 1) = C(2,1) = 2
+        assert_eq!(beta(1, 1), 2);
+
+        // beta(2, 2) = C(4,2) = 6
+        assert_eq!(beta(2, 2), 6);
+
+        // beta(3, 2) = C(5,2) = 10
+        assert_eq!(beta(3, 2), 10);
+    }
+
+    #[test]
+    fn revolve_schedule_store_all() {
+        let positions = revolve_schedule(5, 5);
+        assert_eq!(positions, vec![1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn revolve_schedule_one_checkpoint() {
+        let positions = revolve_schedule(4, 1);
+        // With 1 checkpoint, should place it somewhere in [1, 3]
+        assert!(!positions.is_empty());
+        for &p in &positions {
+            assert!(p > 0 && p < 4);
+        }
+    }
+
+    #[test]
+    fn revolve_schedule_two_checkpoints() {
+        let positions = revolve_schedule(10, 2);
+        assert!(!positions.is_empty());
+        for &p in &positions {
+            assert!(p > 0 && p < 10);
+        }
+    }
+}

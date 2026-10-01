@@ -1,0 +1,73 @@
+/*
+ * SPDX-License-Identifier: MIT
+ * Copyright (c) "2025" . The DeepCausality Authors and Contributors. All Rights Reserved.
+ */
+
+use alloc::vec;
+
+use crate::CausalTensor;
+use deep_causality_algebra::AddGroup;
+
+/// Element-wise `zero`, `add`, `sub` and `neg`.
+///
+/// The tower memberships come from elsewhere. The operator impls live in `arithmetic/` and the
+/// additive markers in `algebra/ring.rs`; `AddGroup` and `AbelianGroup` follow from those through
+/// the blanket impls in `deep_causality_algebra`.
+impl<T> CausalTensor<T>
+where
+    T: AddGroup + Copy,
+{
+    /// Creates a zero tensor with the specified shape.
+    pub fn zero(shape: &[usize]) -> Self {
+        let size: usize = shape.iter().product();
+        let data = vec![T::zero(); size];
+        // We use the unchecked constructor because we know the data matches the shape
+        Self::from_vec_and_shape_unchecked(data, shape)
+    }
+
+    /// Element-wise addition.
+    pub fn add(&self, rhs: &Self) -> Self {
+        if self.shape() != rhs.shape() {
+            panic!(
+                "Shape mismatch in addition: {:?} vs {:?}",
+                self.shape(),
+                rhs.shape()
+            );
+        }
+
+        let data = self
+            .data
+            .iter()
+            .zip(rhs.data.iter())
+            .map(|(a, b)| *a + *b)
+            .collect();
+
+        Self::from_vec_and_shape_unchecked(data, self.shape())
+    }
+
+    /// Element-wise subtraction.
+    pub fn sub(&self, rhs: &Self) -> Self {
+        if self.shape() != rhs.shape() {
+            panic!(
+                "Shape mismatch in subtraction: {:?} vs {:?}",
+                self.shape(),
+                rhs.shape()
+            );
+        }
+
+        let data = self
+            .data
+            .iter()
+            .zip(rhs.data.iter())
+            .map(|(a, b)| *a - *b)
+            .collect();
+
+        Self::from_vec_and_shape_unchecked(data, self.shape())
+    }
+
+    /// Element-wise negation.
+    pub fn neg(&self) -> Self {
+        let data = self.data.iter().map(|a| -*a).collect();
+        Self::from_vec_and_shape_unchecked(data, self.shape())
+    }
+}

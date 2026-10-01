@@ -1,0 +1,149 @@
+//! Nonsmooth extensions: branch tracking, kink detection, and Clarke subdifferential.
+//!
+//! ```
+//! # #[cfg(feature = "bytecode")] {
+//! use num_traits::Float;
+//!
+//! // |x| at its kink: the Clarke subdifferential is the interval [-1, 1],
+//! // enumerated here as the two limiting Jacobians.
+//! let (mut tape, _) = echidna::record(|x| x[0].abs(), &[0.0_f64]);
+//! let (info, jacobians) = tape.clarke_jacobian(&[0.0], 1e-8, None).unwrap();
+//! assert_eq!(info.kinks.len(), 1);
+//! assert_eq!(jacobians.len(), 2);
+//! # }
+//! ```
+//!
+//! Implements Griewank & Walther, Chapter 14. Provides data structures for
+//! tracking which branch of nonsmooth operations was taken during forward
+//! evaluation, and for computing the Clarke generalized Jacobian via
+//! enumeration of limiting Jacobians with forced branch choices.
+//!
+//! Nine nonsmooth operations are tracked:
+//! - **`Abs`, `Min`, `Max`** — kinks with nontrivial subdifferentials (the two
+//!   sides of the kink have different derivatives). These contribute distinct
+//!   limiting Jacobians in Clarke enumeration.
+//! - **`Signum`, `Floor`, `Ceil`, `Round`, `Trunc`** — step-function
+//!   discontinuities where both sides have zero derivative. These are tracked
+//!   for proximity detection (via [`NonsmoothInfo::active_kinks`]) but are
+//!   filtered out of Clarke enumeration since their forced branches produce
+//!   identical partials.
+//! - **`Fract`** — value discontinuity at integers with identical unit
+//!   derivative on both sides (a jump, not a derivative kink). Tracked for
+//!   proximity detection and, like the step functions, filtered out of
+//!   Clarke enumeration.
+
+use std::fmt;
+
+use num_traits::Float;
+
+use crate::opcode::OpCode;
+
+/// A single kink encountered during forward evaluation.
+///
+/// Records which nonsmooth operation was executed, where in the tape it lives,
+/// the switching value (distance from the kink), and which branch was taken.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug)]
+pub struct KinkEntry<F: Float> {
+    /// Index into the tape's opcode/value arrays.
+    pub tape_index: u32,
+    /// The nonsmooth opcode.
+    pub opcode: OpCode,
+    /// Distance from the kink point:
+    /// - `Abs`, `Signum`: `x` (kink at `x = 0`)
+    /// - `Min`, `Max`: `a - b` (kink at `a = b`)
+    /// - `Floor`, `Ceil`, `Trunc`, `Fract`: `x - round(x)` (kink at integers)
+    /// - `Round`: `(x + 0.5) - round(x + 0.5)` (kink at half-integers)
+    pub switching_value: F,
+    /// Which branch was taken:
+    /// - `Abs`, `Signum`: `+1` if `x >= 0`, `-1` if `x < 0`
+    /// - `Max`: `+1` if `a >= b` (first wins), `-1` if `b > a`
+    /// - `Min`: `+1` if `a <= b` (first wins), `-1` if `b < a`
+    /// - `Floor`, `Ceil`, `Round`, `Trunc`: `+1` if `fract(x) < 0.5`, `-1` otherwise
+    /// - `Fract`: `+1` if `fract(x) >= 0`, `-1` otherwise — nominal, since
+    ///   `fract'` is side-independent (a value jump, not a derivative kink)
+    pub branch: i8,
+}
+
+/// Summary of all nonsmooth operations encountered during a forward sweep.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug)]
+pub struct NonsmoothInfo<F: Float> {
+    /// All kink entries, in tape order.
+    pub kinks: Vec<KinkEntry<F>>,
+}
+
+impl<F: Float> NonsmoothInfo<F> {
+    /// The activeness predicate shared by [`active_kinks`](Self::active_kinks)
+    /// and [`is_smooth`](Self::is_smooth), so proximity detection and the
+    /// smoothness verdict can never disagree.
+    ///
+    /// A non-finite switching value indicates an upstream numerical blow-up
+    /// where the branch can no longer be decided — the kink is
+    /// conservatively reported as active so callers who enumerate the
+    /// Clarke subdifferential don't silently miss a potentially active
+    /// branch. Regression test `regression_24_nan_switching_value_is_not_smooth`
+    /// pins this contract.
+    fn is_active(k: &KinkEntry<F>, tol: F) -> bool {
+        k.switching_value.abs() < tol || !k.switching_value.is_finite()
+    }
+
+    /// Return kink entries whose switching value is within `tol` of zero,
+    /// or whose switching value is non-finite (NaN / ±Inf) — see
+    /// `is_active` for the rationale.
+    pub fn active_kinks(&self, tol: F) -> Vec<&KinkEntry<F>> {
+        self.kinks
+            .iter()
+            .filter(|k| Self::is_active(k, tol))
+            .collect()
+    }
+
+    /// True if no kinks are active within the given tolerance.
+    pub fn is_smooth(&self, tol: F) -> bool {
+        !self.kinks.iter().any(|k| Self::is_active(k, tol))
+    }
+
+    /// Branch signature: `(tape_index, branch)` pairs for all kinks.
+    ///
+    /// Two evaluations at the same input produce the same signature.
+    #[must_use]
+    pub fn signature(&self) -> Vec<(u32, i8)> {
+        self.kinks
+            .iter()
+            .map(|k| (k.tape_index, k.branch))
+            .collect()
+    }
+}
+
+/// Errors that can occur during Clarke Jacobian computation.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug)]
+pub enum ClarkeError {
+    /// Too many active kinks for enumeration.
+    ///
+    /// The Clarke Jacobian requires 2^k limiting Jacobians where k is the
+    /// number of active kinks. This error is returned when k exceeds the limit.
+    TooManyKinks {
+        /// Number of active kinks found.
+        count: usize,
+        /// Maximum allowed.
+        limit: usize,
+    },
+}
+
+impl fmt::Display for ClarkeError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ClarkeError::TooManyKinks { count, limit } => {
+                write!(
+                    f,
+                    "too many active kinks for Clarke enumeration: {count} (limit {limit})"
+                )
+            }
+        }
+    }
+}
+
+impl std::error::Error for ClarkeError {}
+
+crate::assert_send_sync!(ClarkeError);

@@ -1,0 +1,91 @@
+/*
+ * SPDX-License-Identifier: MIT
+ * Copyright (c) "2025" . The DeepCausality Authors and Contributors. All Rights Reserved.
+ */
+
+use alloc::vec;
+use deep_causality_algebra::{Additive, Multiplicative};
+
+use crate::CausalTensor;
+use deep_causality_algebra::{Annihilating, Associative, Commutative, Distributive, Ring};
+
+// Implement Associative marker trait
+impl<T> Associative<Multiplicative> for CausalTensor<T> where T: Associative<Multiplicative> + Copy {}
+
+// Multiplication is element-wise — `broadcast_op(rhs, |a, b| Ok(a * b))` — so the tensor commutes
+// exactly when its elements do, and the marker is conditioned on `T` rather than asserted flatly.
+// Corresponding shapes multiply pairwise and broadcasting is symmetric in the two operands, so
+// nothing in the layout can reorder a product. This mirrors `CausalTensorTrain`, which carries the
+// same marker for the same reason.
+impl<T> Commutative<Multiplicative> for CausalTensor<T> where T: Commutative<Multiplicative> + Copy {}
+// Addition is element-wise too, so the additive laws also come from the element type.
+impl<T> Associative<Additive> for CausalTensor<T> where T: Associative<Additive> + Copy {}
+impl<T> Commutative<Additive> for CausalTensor<T> where T: Commutative<Additive> + Copy {}
+
+// Implement Distributive marker trait
+impl<T> Distributive for CausalTensor<T> where T: Distributive + Copy {}
+// Zero annihilates: the law is derivable here, but the marker is stated because `Semiring`
+// requires it and cannot derive it (see `Annihilating`).
+impl<T> Annihilating for CausalTensor<T> where T: Annihilating + Copy {}
+
+// Ring is automatically implemented by blanket impl in deep_causality_num
+// because CausalTensor implements AbelianGroup, MulMonoid (via One+Associative+Mul), Distributive.
+
+// Module is automatically implemented by blanket impl in deep_causality_num
+// because CausalTensor implements AbelianGroup and Mul<S>.
+
+impl<T> CausalTensor<T>
+where
+    T: Ring + Copy,
+{
+    /// Element-wise multiplication (Hadamard product).
+    pub fn mul(&self, rhs: &Self) -> Self {
+        if self.shape() != rhs.shape() {
+            panic!(
+                "Shape mismatch in multiplication: {:?} vs {:?}",
+                self.shape(),
+                rhs.shape()
+            );
+        }
+
+        let data = self
+            .data
+            .iter()
+            .zip(rhs.data.iter())
+            .map(|(a, b)| *a * *b)
+            .collect();
+
+        Self::from_vec_and_shape_unchecked(data, self.shape())
+    }
+
+    /// Creates a tensor of ones with the specified shape.
+    pub fn one(shape: &[usize]) -> Self {
+        let size: usize = shape.iter().product();
+        let data = vec![T::one(); size];
+        Self::from_vec_and_shape_unchecked(data, shape)
+    }
+
+    /// Alias for `one`. Creates a tensor of ones with the specified shape.
+    pub fn ones(shape: &[usize]) -> Self {
+        Self::one(shape)
+    }
+
+    /// Creates an identity matrix (square tensor with 1s on diagonal).
+    /// Typically 2D, but can be higher dim (generalized).
+    /// For 2D: (N, N)
+    pub fn identity(shape: &[usize]) -> Result<Self, crate::CausalTensorError> {
+        if shape.len() != 2 {
+            // For now support only 2D identity
+            return Err(crate::CausalTensorError::DimensionMismatch);
+        }
+        if shape[0] != shape[1] {
+            return Err(crate::CausalTensorError::ShapeMismatch);
+        }
+        let n = shape[0];
+        let mut data = vec![T::zero(); n * n];
+        for i in 0..n {
+            data[i * n + i] = T::one();
+        }
+        Ok(Self::from_vec_and_shape_unchecked(data, shape))
+    }
+}

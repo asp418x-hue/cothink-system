@@ -1,0 +1,5 @@
+error: duplicate `pyo3_crate` entry
+ --> tests/ui/fail/duplicate_module_pyo3_crate.rs:5:5
+  |
+5 |     pyo3_crate = "::pyo3";
+  |     ^^^^^^^^^^

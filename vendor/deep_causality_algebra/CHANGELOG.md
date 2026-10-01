@@ -1,0 +1,70 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.4.7](https://github.com/deepcausality-rs/deep_causality/compare/deep_causality_algebra-v0.4.6...deep_causality_algebra-v0.4.7) - 2026-09-29
+
+### Other
+
+- link-check the core-level crates; README_NO_STD for 11 core crates
+
+## [0.4.6](https://github.com/deepcausality-rs/deep_causality/compare/deep_causality_algebra-v0.4.5...deep_causality_algebra-v0.4.6) - 2026-09-25
+
+### Other
+
+- Merge remote-tracking branch 'origin/main'
+- Commit message for the exclude change:
+
+## [0.4.5](https://github.com/deepcausality-rs/deep_causality/compare/deep_causality_algebra-v0.4.4...deep_causality_algebra-v0.4.5) - 2026-09-23
+
+### Other
+
+- *(deep_causality_context)* restore builds stored extras directly; scope the local-extra rule to container events
+- align READMEs, rustdoc and example comments with the code
+- edit all READMEs for clarity, concision and correctness
+- *(deep_causality_unified_math)* regenerated SBOM.
+
+## [0.4.4](https://github.com/marvin-hansen/deep_causality/compare/deep_causality_algebra-v0.4.3...deep_causality_algebra-v0.4.4) - 2026-09-08
+
+### Added
+
+- *(deep_causality_algebra)* put BFloat16 in the algebra tower
+- *(num,algebra)* add Real::cbrt and RealField: ToPrimitive, and replace the
+
+### Fixed
+
+- *(Bazel)* align crate features with cargo's resolution and recover 161 unrun tests
+
+### Other
+
+- *(Cargo)* Updated metadata in all crates.
+- Fixed multiple issues raised by raview
+- Added BFloat16
+
+## [0.2.0](https://github.com/deepcausality-rs/deep_causality/compare/deep_causality_algebra-v0.1.1...deep_causality_algebra-v0.2.0) - 2026-07-14
+
+### Added
+
+- *(deep_causality)* the graph algebra — schedule-invariant ∇∘(Λ⊗Λ) joins + freeze checks (roadmap Stage 4)
+- *(deep_causality_haft)* add Category + Kleisli (named category, compose = bind) — H2
+
+### Fixed
+
+- *(deep_causality_algebra)* CommutativeMonoid requires the Commutative marker
+
+### Other
+
+- *(miri)* ignore compute-heavy FFT/multivector tests; fix nextest period
+- Improved test coverage.
+- *(openspec)* close out formalize-main-crate — main-crate Lean status note, sync + archive
+
+## [0.1.1](https://github.com/deepcausality-rs/deep_causality/compare/deep_causality_algebra-v0.1.0...deep_causality_algebra-v0.1.1) - 2026-07-08
+
+### Other
+
+- updated the following local packages: deep_causality_num

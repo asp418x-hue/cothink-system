@@ -1,0 +1,419 @@
+//! Closure-based API for automatic differentiation.
+//!
+//! Provides top-level functions ([`grad`], [`jvp`], [`vjp`], [`jacobian`]) that handle
+//! tape setup, variable creation, and derivative extraction. With the `bytecode` feature,
+//! adds [`record`], [`hessian`], [`hvp`], [`sparse_jacobian`], [`sparse_hessian`], and more.
+
+use crate::dual::Dual;
+use crate::float::Float;
+use crate::reverse::Reverse;
+use crate::tape::{Tape, TapeGuard, TapeThreadLocal};
+
+#[cfg(feature = "bytecode")]
+use crate::breverse::BReverse;
+#[cfg(feature = "bytecode")]
+use crate::bytecode_tape::{BtapeGuard, BtapeThreadLocal, BytecodeTape};
+
+/// Compute the gradient of a scalar function `f : R^n → R` using reverse mode.
+///
+/// ```
+/// let g = echidna::grad(|x: &[echidna::Reverse<f64>]| {
+///     x[0] * x[0] + x[1] * x[1]
+/// }, &[3.0, 4.0]);
+/// assert!((g[0] - 6.0).abs() < 1e-10);
+/// assert!((g[1] - 8.0).abs() < 1e-10);
+/// ```
+pub fn grad<F: Float + TapeThreadLocal>(
+    f: impl FnOnce(&[Reverse<F>]) -> Reverse<F>,
+    x: &[F],
+) -> Vec<F> {
+    let n = x.len();
+    let mut tape = Tape::take_pooled(n * 10);
+    let inputs = tape.new_variables(x);
+
+    let guard = TapeGuard::new(&mut tape);
+    let output = f(&inputs);
+    drop(guard);
+
+    // If the output is a constant (independent of all inputs), the gradient is zero.
+    if output.index == crate::tape::CONSTANT {
+        Tape::return_to_pool(tape);
+        return vec![F::zero(); n];
+    }
+
+    let adjoints = tape.reverse(output.index);
+
+    // Extract gradients for input variables (indices 0..n).
+    let result = adjoints[..n].to_vec();
+    Tape::return_to_pool(tape);
+    result
+}
+
+/// Jacobian-vector product (forward mode): `(f(x), J·v)`.
+///
+/// Evaluates `f` at `x` and computes the directional derivative in direction `v`.
+///
+/// # Panics
+///
+/// Panics if `v.len()` does not match `x.len()`.
+pub fn jvp<F: Float>(f: impl Fn(&[Dual<F>]) -> Vec<Dual<F>>, x: &[F], v: &[F]) -> (Vec<F>, Vec<F>) {
+    assert_eq!(x.len(), v.len(), "x and v must have the same length");
+    let inputs: Vec<Dual<F>> = x
+        .iter()
+        .zip(v.iter())
+        .map(|(&xi, &vi)| Dual::new(xi, vi))
+        .collect();
+    let outputs = f(&inputs);
+    let values = outputs.iter().map(|d| d.re).collect();
+    let tangents = outputs.iter().map(|d| d.eps).collect();
+    (values, tangents)
+}
+
+/// Vector-Jacobian product (reverse mode): `(f(x), wᵀ·J)`.
+///
+/// Evaluates `f` at `x` and computes the adjoint product with weights `w`.
+///
+/// # Panics
+///
+/// Panics if `w.len()` does not match the number of outputs `f` produced.
+pub fn vjp<F: Float + TapeThreadLocal>(
+    f: impl FnOnce(&[Reverse<F>]) -> Vec<Reverse<F>>,
+    x: &[F],
+    w: &[F],
+) -> (Vec<F>, Vec<F>) {
+    let n = x.len();
+    let mut tape = Tape::take_pooled(n * 10);
+    let inputs = tape.new_variables(x);
+
+    let guard = TapeGuard::new(&mut tape);
+    let outputs = f(&inputs);
+    drop(guard);
+
+    assert_eq!(
+        outputs.len(),
+        w.len(),
+        "output length must match weight vector length"
+    );
+
+    let values: Vec<F> = outputs.iter().map(|r| r.value).collect();
+
+    // Seed adjoints with weights.
+    let seeds: Vec<(u32, F)> = outputs
+        .iter()
+        .zip(w.iter())
+        .filter(|(r, _)| r.index != crate::tape::CONSTANT)
+        .map(|(r, &wi)| (r.index, wi))
+        .collect();
+    let adjoints = tape.reverse_seeded(&seeds);
+
+    let grad: Vec<F> = adjoints[..n].to_vec();
+    let result = (values, grad);
+    Tape::return_to_pool(tape);
+    result
+}
+
+/// Compute the full Jacobian of `f : R^n → R^m` using forward mode.
+///
+/// Returns `(f(x), J)` where `J[i][j] = ∂f_i/∂x_j`.
+///
+/// # Panics
+///
+/// Panics if `f` produces a different number of outputs across passes
+/// (each column is recorded with its own evaluation of `f`).
+pub fn jacobian<F: Float>(
+    f: impl Fn(&[Dual<F>]) -> Vec<Dual<F>>,
+    x: &[F],
+) -> (Vec<F>, Vec<Vec<F>>) {
+    let n = x.len();
+
+    // First pass to get output dimension and values.
+    let const_inputs: Vec<Dual<F>> = x.iter().map(|&xi| Dual::constant(xi)).collect();
+    let const_outputs = f(&const_inputs);
+    let m = const_outputs.len();
+    let values: Vec<F> = const_outputs.iter().map(|d| d.re).collect();
+
+    // One forward pass per input variable.
+    let mut jac = vec![vec![F::zero(); n]; m];
+    for j in 0..n {
+        let inputs: Vec<Dual<F>> = x
+            .iter()
+            .enumerate()
+            .map(|(k, &xi)| {
+                if k == j {
+                    Dual::variable(xi)
+                } else {
+                    Dual::constant(xi)
+                }
+            })
+            .collect();
+        let outputs = f(&inputs);
+        assert_eq!(
+            outputs.len(),
+            jac.len(),
+            "function produced {} outputs but the Jacobian was sized for {} — \
+             a `zip` here would silently drop the mismatch",
+            outputs.len(),
+            jac.len()
+        );
+        for (row, out) in jac.iter_mut().zip(outputs.iter()) {
+            row[j] = out.eps;
+        }
+    }
+
+    (values, jac)
+}
+
+/// Record a function into a [`BytecodeTape`] that can be re-evaluated at
+/// different inputs without re-recording.
+///
+/// Returns the tape and the output value from the recording pass.
+///
+/// # Limitations
+///
+/// The tape records one execution path. If `f` contains branches
+/// (`if x > 0 { ... } else { ... }`), re-evaluating at inputs that take a
+/// different branch produces **incorrect results**.
+///
+/// `BReverse` values are bound to the recording that produced them: do not
+/// capture them in a nested `record`, stash them for use in a later
+/// recording, or move them across recording threads — their tape indices
+/// are only meaningful on their own tape. Debug builds panic on such
+/// cross-tape use; release builds do not check.
+///
+/// # Example
+///
+/// ```ignore
+/// let (mut tape, val) = echidna::record(
+///     |x| x[0] * x[0] + x[1] * x[1],
+///     &[3.0, 4.0],
+/// );
+/// assert!((val - 25.0).abs() < 1e-10);
+///
+/// let g = tape.gradient(&[3.0, 4.0]);
+/// assert!((g[0] - 6.0).abs() < 1e-10);
+/// assert!((g[1] - 8.0).abs() < 1e-10);
+/// ```
+#[cfg(feature = "bytecode")]
+pub fn record<F: Float + BtapeThreadLocal>(
+    f: impl FnOnce(&[BReverse<F>]) -> BReverse<F>,
+    x: &[F],
+) -> (BytecodeTape<F>, F) {
+    let n = x.len();
+    let mut tape = BytecodeTape::with_capacity(n * 10);
+    let inputs = tape.new_inputs(x);
+
+    let output = {
+        let _guard = BtapeGuard::new(&mut tape);
+        f(&inputs)
+    };
+
+    // Promote constant outputs (index == CONSTANT) to a tape entry so
+    // set_output has a valid index. The gradient will correctly be zero.
+    let output_index = crate::breverse::ensure_on_tape(&output, &mut tape);
+    tape.set_output(output_index);
+    let value = output.value;
+    (tape, value)
+}
+
+/// Record a multi-output function into a [`BytecodeTape`].
+///
+/// Like [`record`] but for vector-valued functions `f : R^n → R^m`.
+/// The returned tape supports [`jacobian`](BytecodeTape::jacobian),
+/// [`vjp_multi`](BytecodeTape::vjp_multi), and [`reverse_seeded`](BytecodeTape::reverse_seeded).
+///
+/// Returns the tape and the output values from the recording pass.
+///
+/// # Panics
+///
+/// Panics if `f` returns no outputs (a multi-output tape must have at
+/// least one).
+#[cfg(feature = "bytecode")]
+pub fn record_multi<F: Float + BtapeThreadLocal>(
+    f: impl FnOnce(&[BReverse<F>]) -> Vec<BReverse<F>>,
+    x: &[F],
+) -> (BytecodeTape<F>, Vec<F>) {
+    let n = x.len();
+    let mut tape = BytecodeTape::with_capacity(n * 10);
+    let inputs = tape.new_inputs(x);
+
+    let outputs = {
+        let _guard = BtapeGuard::new(&mut tape);
+        f(&inputs)
+    };
+
+    // A zero-output tape degenerates silently: `set_outputs(&[])` leaves
+    // `output_index` at its default (0 — typically the first input), and
+    // `num_outputs()` would still report 1, so later calls like `jacobian`
+    // or `output_values` return values unrelated to anything the closure
+    // produced. Reject the degenerate case up front.
+    assert!(
+        !outputs.is_empty(),
+        "record_multi: closure returned zero outputs; record_multi is for \
+         vector-valued f : R^n -> R^m with m >= 1"
+    );
+
+    let values: Vec<F> = outputs.iter().map(|o| o.value).collect();
+    // Promote constant outputs to tape entries (see record() for rationale).
+    let indices: Vec<u32> = outputs
+        .iter()
+        .map(|o| crate::breverse::ensure_on_tape(o, &mut tape))
+        .collect();
+
+    tape.set_outputs(&indices);
+    // Also set single output_index for backward compat
+    if let Some(&first) = indices.first() {
+        tape.set_output(first);
+    }
+
+    (tape, values)
+}
+
+/// Hessian-vector product via forward-over-reverse on a bytecode tape.
+///
+/// Records `f` into a [`BytecodeTape`], then computes the gradient and
+/// Hessian-vector product at `x` in direction `v`.
+///
+/// Returns `(gradient, H·v)` where both are `Vec<F>` of length `x.len()`.
+#[cfg(feature = "bytecode")]
+pub fn hvp<F: Float + BtapeThreadLocal>(
+    f: impl FnOnce(&[BReverse<F>]) -> BReverse<F>,
+    x: &[F],
+    v: &[F],
+) -> (Vec<F>, Vec<F>) {
+    let (tape, _) = record(f, x);
+    tape.hvp(x, v)
+}
+
+/// Full Hessian matrix via forward-over-reverse on a bytecode tape.
+///
+/// Records `f` into a [`BytecodeTape`], then computes the function value,
+/// gradient, and full Hessian at `x`.
+///
+/// Returns `(value, gradient, hessian)` where `hessian[i][j] = ∂²f/∂x_i∂x_j`.
+#[cfg(feature = "bytecode")]
+pub fn hessian<F: Float + BtapeThreadLocal>(
+    f: impl FnOnce(&[BReverse<F>]) -> BReverse<F>,
+    x: &[F],
+) -> (F, Vec<F>, Vec<Vec<F>>) {
+    let (tape, _) = record(f, x);
+    tape.hessian(x)
+}
+
+/// Full Hessian matrix via batched forward-over-reverse.
+///
+/// Like [`hessian`] but processes N tangent directions simultaneously,
+/// reducing the number of tape traversals from 2n to 2·ceil(n/N).
+#[cfg(feature = "bytecode")]
+pub fn hessian_vec<F: Float + BtapeThreadLocal, const N: usize>(
+    f: impl FnOnce(&[BReverse<F>]) -> BReverse<F>,
+    x: &[F],
+) -> (F, Vec<F>, Vec<Vec<F>>) {
+    let (tape, _) = record(f, x);
+    tape.hessian_vec::<N>(x)
+}
+
+/// Sparse Hessian via structural sparsity detection and graph coloring.
+///
+/// Returns `(value, gradient, pattern, hessian_values)`.
+/// For sparse problems, this is dramatically faster than [`hessian`].
+#[cfg(feature = "bytecode")]
+pub fn sparse_hessian<F: Float + BtapeThreadLocal>(
+    f: impl FnOnce(&[BReverse<F>]) -> BReverse<F>,
+    x: &[F],
+) -> (F, Vec<F>, crate::sparse::SparsityPattern, Vec<F>) {
+    let (tape, _) = record(f, x);
+    tape.sparse_hessian(x)
+}
+
+/// Batched sparse Hessian: packs N colors per sweep using DualVec.
+///
+/// Like [`sparse_hessian`] but reduces sweeps from `num_colors` to
+/// `ceil(num_colors / N)`.
+#[cfg(feature = "bytecode")]
+pub fn sparse_hessian_vec<F: Float + BtapeThreadLocal, const N: usize>(
+    f: impl FnOnce(&[BReverse<F>]) -> BReverse<F>,
+    x: &[F],
+) -> (F, Vec<F>, crate::sparse::SparsityPattern, Vec<F>) {
+    let (tape, _) = record(f, x);
+    tape.sparse_hessian_vec::<N>(x)
+}
+
+/// Sparse Jacobian of a multi-output function via sparsity detection and coloring.
+///
+/// Records `f` and auto-selects forward or reverse mode based on which requires fewer sweeps.
+///
+/// Returns `(output_values, pattern, jacobian_values)`.
+#[cfg(feature = "bytecode")]
+pub fn sparse_jacobian<F: Float + BtapeThreadLocal>(
+    f: impl FnOnce(&[BReverse<F>]) -> Vec<BReverse<F>>,
+    x: &[F],
+) -> (Vec<F>, crate::sparse::JacobianSparsityPattern, Vec<F>) {
+    let (mut tape, _) = record_multi(f, x);
+    tape.sparse_jacobian(x)
+}
+
+/// Forward-over-reverse HVP via type-level composition.
+///
+/// Records `f` with `Dual<BReverse<F>>` inputs (tangent direction `v` baked in
+/// as constants), then runs two reverse sweeps — one from the primal output
+/// (gradient) and one from the tangent output (HVP).
+///
+/// Returns `(f(x), gradient, H·v)`.
+///
+/// For repeated HVP with different `v`, prefer [`record`] + [`BytecodeTape::hvp`].
+/// This function re-records each call.
+///
+/// # Panics
+///
+/// Panics if `v.len()` does not match `x.len()`.
+#[cfg(feature = "bytecode")]
+pub fn composed_hvp<F, Func>(f: Func, x: &[F], v: &[F]) -> (F, Vec<F>, Vec<F>)
+where
+    F: Float + BtapeThreadLocal,
+    Func: FnOnce(&[Dual<BReverse<F>>]) -> Dual<BReverse<F>>,
+{
+    let n = x.len();
+    assert_eq!(x.len(), v.len(), "x and v must have the same length");
+
+    let mut tape = BytecodeTape::with_capacity(n * 30);
+
+    // Register n input slots for primal x values.
+    // Tangent direction v is baked in as BReverse constants (not tracked on tape).
+    let inputs: Vec<Dual<BReverse<F>>> = x
+        .iter()
+        .zip(v.iter())
+        .map(|(&xi, &vi)| {
+            let idx = tape.new_input(xi);
+            let re = BReverse::from_tape_of(&tape, xi, idx);
+            let eps = BReverse::constant(vi);
+            Dual::new(re, eps)
+        })
+        .collect();
+
+    let output = {
+        let _guard = BtapeGuard::new(&mut tape);
+        f(&inputs)
+    };
+
+    let value = output.re.value;
+    let primal_index = output.re.index;
+    let tangent_index = output.eps.index;
+
+    // Reverse from primal output → gradient.
+    let gradient = if primal_index != crate::bytecode_tape::CONSTANT {
+        let adjoints = tape.reverse(primal_index);
+        adjoints[..n].to_vec()
+    } else {
+        vec![F::zero(); n]
+    };
+
+    // Reverse from tangent output → HVP.
+    let hvp = if tangent_index != crate::bytecode_tape::CONSTANT {
+        let adjoints = tape.reverse(tangent_index);
+        adjoints[..n].to_vec()
+    } else {
+        vec![F::zero(); n]
+    };
+
+    (value, gradient, hvp)
+}

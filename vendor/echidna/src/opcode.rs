@@ -1,0 +1,561 @@
+//! Bytecode opcodes for the bytecode tape.
+//!
+//! Each opcode represents an elementary operation. The [`eval_forward`] and
+//! [`reverse_partials`] functions evaluate / differentiate a single opcode.
+
+use num_traits::Float;
+
+use crate::kernels;
+
+/// Sentinel used in `arg_indices[1]` for unary ops (the second argument slot is unused).
+pub const UNUSED: u32 = u32::MAX;
+
+/// Elementary operation codes for the bytecode tape.
+///
+/// Fits in a `u8` (44 variants). Binary ops use both `arg_indices` slots;
+/// unary ops use slot 0 only (slot 1 = [`UNUSED`]). Two exceptions store
+/// metadata in slot 1: [`OpCode::Powi`] keeps the `i32` exponent
+/// reinterpreted as `u32` there, and [`OpCode::Custom`] keeps the callback
+/// index there (a binary custom op's second operand lives in the
+/// `custom_second_args` side table).
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum OpCode {
+    // ── Structural ──
+    /// Input variable (leaf node).
+    Input,
+    /// Scalar constant.
+    Const,
+
+    // ── Binary arithmetic ──
+    /// Addition.
+    Add,
+    /// Subtraction.
+    Sub,
+    /// Multiplication.
+    Mul,
+    /// Division.
+    Div,
+    /// Remainder.
+    Rem,
+    /// Floating-point power.
+    Powf,
+    /// Two-argument arctangent.
+    Atan2,
+    /// Euclidean distance.
+    Hypot,
+    /// Maximum of two values.
+    Max,
+    /// Minimum of two values.
+    Min,
+
+    // ── Unary ──
+    /// Negation.
+    Neg,
+    /// Reciprocal (1/x).
+    Recip,
+    /// Square root.
+    Sqrt,
+    /// Cube root.
+    Cbrt,
+    /// Integer power. Exponent stored in `arg_indices[1]` as `exp as u32`.
+    Powi,
+
+    // ── Exp / Log ──
+    /// Natural exponential (e^x).
+    Exp,
+    /// Base-2 exponential (2^x).
+    Exp2,
+    /// e^x - 1, accurate near zero.
+    ExpM1,
+    /// Natural logarithm.
+    Ln,
+    /// Base-2 logarithm.
+    Log2,
+    /// Base-10 logarithm.
+    Log10,
+    /// ln(1+x), accurate near zero.
+    Ln1p,
+
+    // ── Trig ──
+    /// Sine.
+    Sin,
+    /// Cosine.
+    Cos,
+    /// Tangent.
+    Tan,
+    /// Arcsine.
+    Asin,
+    /// Arccosine.
+    Acos,
+    /// Arctangent.
+    Atan,
+
+    // ── Hyperbolic ──
+    /// Hyperbolic sine.
+    Sinh,
+    /// Hyperbolic cosine.
+    Cosh,
+    /// Hyperbolic tangent.
+    Tanh,
+    /// Inverse hyperbolic sine.
+    Asinh,
+    /// Inverse hyperbolic cosine.
+    Acosh,
+    /// Inverse hyperbolic tangent.
+    Atanh,
+
+    // ── Misc ──
+    /// Absolute value.
+    Abs,
+    /// Zero derivative but needed for re-evaluation.
+    Signum,
+    /// Zero derivative but needed for re-evaluation.
+    Floor,
+    /// Zero derivative but needed for re-evaluation.
+    Ceil,
+    /// Zero derivative but needed for re-evaluation.
+    Round,
+    /// Zero derivative but needed for re-evaluation.
+    Trunc,
+    /// Fractional part.
+    Fract,
+
+    // ── Custom ──
+    /// User-registered custom operation. `arg_indices[1]` holds the callback
+    /// index for both arities; a binary custom op's second *operand* lives in
+    /// the tape's `custom_second_args` side table.
+    Custom,
+}
+
+/// Returns true if this opcode is a nonsmooth operation.
+///
+/// Includes both operations with nontrivial subdifferentials (`Abs`, `Min`,
+/// `Max` — where the two sides of the kink have different derivatives) and
+/// step-function operations (`Signum`, `Floor`, `Ceil`, `Round`, `Trunc`,
+/// `Fract` — where both sides have zero derivative, or in `Fract`'s case
+/// identical derivative, but the value is discontinuous).
+///
+/// All nine ops are tracked for kink proximity detection via
+/// [`NonsmoothInfo::active_kinks`](crate::nonsmooth::NonsmoothInfo::active_kinks).
+/// Use [`has_nontrivial_subdifferential`] to distinguish the subset that
+/// contributes distinct limiting Jacobians for Clarke enumeration.
+#[inline]
+#[must_use]
+pub fn is_nonsmooth(op: OpCode) -> bool {
+    matches!(
+        op,
+        OpCode::Abs
+            | OpCode::Min
+            | OpCode::Max
+            | OpCode::Signum
+            | OpCode::Floor
+            | OpCode::Ceil
+            | OpCode::Round
+            | OpCode::Trunc
+            | OpCode::Fract
+    )
+}
+
+/// Returns true if forced branch choices produce distinct partial derivatives.
+///
+/// For `Abs`, `Min`, `Max`, the two sides of the kink have different derivatives
+/// (e.g., `abs` has slope +1 vs −1). For step functions (`Signum`, `Floor`, `Ceil`,
+/// `Round`, `Trunc`), both sides have zero derivative — forced branches produce
+/// identical partials, so enumerating them in Clarke Jacobian adds cost with no
+/// information.
+#[inline]
+#[must_use]
+pub fn has_nontrivial_subdifferential(op: OpCode) -> bool {
+    matches!(op, OpCode::Abs | OpCode::Min | OpCode::Max)
+}
+
+/// Compute reverse-mode partials with a forced branch choice for nonsmooth ops.
+///
+/// For nonsmooth ops, uses the given `sign` to select which branch's derivative
+/// to return, regardless of the actual operand values. For all other ops,
+/// delegates to [`reverse_partials`].
+///
+/// - `Abs`: `sign >= 0` → `(+1, 0)`, `sign < 0` → `(-1, 0)`
+/// - `Max`: `sign >= 0` → `(1, 0)` (first arg wins), `sign < 0` → `(0, 1)`
+/// - `Min`: `sign >= 0` → `(1, 0)` (first arg wins), `sign < 0` → `(0, 1)`
+/// - `Signum`, `Floor`, `Ceil`, `Round`, `Trunc`: `(0, 0)` regardless of sign
+/// - `Fract`: `(1, 0)` regardless of sign (derivative is 1 on both sides)
+#[inline]
+pub fn forced_reverse_partials<T: Float>(op: OpCode, a: T, b: T, r: T, sign: i8) -> (T, T) {
+    let zero = T::zero();
+    let one = T::one();
+    match op {
+        OpCode::Abs => {
+            if sign >= 0 {
+                (one, zero)
+            } else {
+                (-one, zero)
+            }
+        }
+        OpCode::Max | OpCode::Min => {
+            if sign >= 0 {
+                (one, zero)
+            } else {
+                (zero, one)
+            }
+        }
+        OpCode::Signum | OpCode::Floor | OpCode::Ceil | OpCode::Round | OpCode::Trunc => {
+            (zero, zero)
+        }
+        OpCode::Fract => {
+            // fract(x) = x - floor(x); derivative is 1 on both sides of the
+            // integer discontinuity.
+            (one, zero)
+        }
+        // A new nonsmooth op must get an explicit arm above (and an
+        // `is_nonsmooth`/`has_nontrivial_subdifferential` entry) — this
+        // catch-all silently hands it the smooth partials.
+        _ => reverse_partials(op, a, b, r),
+    }
+}
+
+/// Evaluate a single opcode in the forward direction.
+///
+/// Generic over `T: Float` so the tangent sweeps can evaluate it with
+/// `Dual<F>` and nested duals (forward-over-reverse).
+///
+/// For binary ops, `a` and `b` are the two operand values.
+/// For unary ops, `a` is the operand value and `b` is ignored
+/// (except [`OpCode::Powi`] where `b` bits encode the `i32` exponent).
+#[inline]
+pub fn eval_forward<T: Float>(op: OpCode, a: T, b: T) -> T {
+    match op {
+        OpCode::Input | OpCode::Const => {
+            // values are already set during tape setup
+            unreachable!("Input/Const should not be re-evaluated via eval_forward")
+        }
+
+        // Binary arithmetic
+        OpCode::Add => a + b,
+        OpCode::Sub => a - b,
+        OpCode::Mul => a * b,
+        OpCode::Div => a / b,
+        OpCode::Rem => a % b,
+        OpCode::Powf => a.powf(b),
+        OpCode::Atan2 => a.atan2(b),
+        OpCode::Hypot => a.hypot(b),
+        OpCode::Max => {
+            if a >= b || b.is_nan() {
+                a
+            } else {
+                b
+            }
+        }
+        OpCode::Min => {
+            if a <= b || b.is_nan() {
+                a
+            } else {
+                b
+            }
+        }
+
+        // Unary
+        OpCode::Neg => -a,
+        OpCode::Recip => a.recip(),
+        OpCode::Sqrt => a.sqrt(),
+        OpCode::Cbrt => a.cbrt(),
+        OpCode::Powi => {
+            // `b` carries the exponent's u32 encoding as a float (see
+            // `powi_exp_encode`). `to_u32()` recovers it exactly for f64, but
+            // for f32 a negative exponent's encoding exceeds 2^24 and cannot
+            // round-trip. Tape sweeps decode from the raw u32 arg via
+            // `powi_exp_decode_raw` and never reach here for Powi; this generic
+            // path is used by direct callers, where the assert flags an f32
+            // misuse loudly instead of silently computing x^0.
+            let raw = b.to_u32();
+            debug_assert!(
+                raw.is_some(),
+                "Powi exponent did not round-trip to u32 (f32 tape with a \
+                 negative exponent?) — decode from the raw u32 arg via \
+                 powi_exp_decode_raw"
+            );
+            a.powi(powi_exp_decode_raw(raw.unwrap_or(0)))
+        }
+
+        // Exp/Log
+        OpCode::Exp => a.exp(),
+        OpCode::Exp2 => a.exp2(),
+        OpCode::ExpM1 => a.exp_m1(),
+        OpCode::Ln => a.ln(),
+        OpCode::Log2 => a.log2(),
+        OpCode::Log10 => a.log10(),
+        OpCode::Ln1p => a.ln_1p(),
+
+        // Trig
+        OpCode::Sin => a.sin(),
+        OpCode::Cos => a.cos(),
+        OpCode::Tan => a.tan(),
+        OpCode::Asin => a.asin(),
+        OpCode::Acos => a.acos(),
+        OpCode::Atan => a.atan(),
+
+        // Hyperbolic
+        OpCode::Sinh => a.sinh(),
+        OpCode::Cosh => a.cosh(),
+        OpCode::Tanh => a.tanh(),
+        OpCode::Asinh => a.asinh(),
+        OpCode::Acosh => a.acosh(),
+        OpCode::Atanh => a.atanh(),
+
+        // Misc
+        OpCode::Abs => a.abs(),
+        OpCode::Signum => a.signum(),
+        OpCode::Floor => a.floor(),
+        OpCode::Ceil => a.ceil(),
+        OpCode::Round => a.round(),
+        OpCode::Trunc => a.trunc(),
+        OpCode::Fract => a.fract(),
+
+        OpCode::Custom => unreachable!("Custom ops are dispatched separately in the tape"),
+    }
+}
+
+/// Compute reverse-mode partial derivatives for a single opcode.
+///
+/// Returns `(∂result/∂arg0, ∂result/∂arg1)`.
+/// For unary ops the second partial is `T::zero()`.
+///
+/// `a`, `b` are the operand values (at recording or re-evaluation time).
+/// `r` is the result value.
+///
+/// Generic over `T: Float` so tangent-carrying reverse sweeps can call it
+/// with `Dual<F>` for forward-over-reverse.
+#[inline]
+pub fn reverse_partials<T: Float>(op: OpCode, a: T, b: T, r: T) -> (T, T) {
+    let zero = T::zero();
+    let one = T::one();
+    match op {
+        OpCode::Input | OpCode::Const => (zero, zero),
+
+        // Binary
+        OpCode::Add => (one, one),
+        OpCode::Sub => (one, -one),
+        OpCode::Mul => (b, a),
+        OpCode::Div => {
+            // d/da(a/b) = 1/b, d/db(a/b) = -a/b² = -(a/b)/b = -r/b
+            // Using -r/b avoids squaring 1/b which overflows when |b| < ~1e-154
+            let inv = one / b;
+            (inv, -r * inv)
+        }
+        // a % b = a - b*trunc(a/b). Treating trunc as piecewise-constant (zero derivative a.e.):
+        // d/da = 1, d/db = -trunc(a/b). Matches Rust's truncation-based remainder.
+        OpCode::Rem => (one, -(a / b).trunc()),
+        OpCode::Powf => {
+            // d/da a^b = b * a^(b-1)
+            // d/db a^b = a^b * ln(a)  (→ 0 when a^b = 0, since lim_{a→0+} a^b*ln(a) = 0 for b>0)
+            if b == zero {
+                // d/da(a^0) = 0, d/db(a^b)|_{b=0} = a^0 * ln(a) = ln(a) for a > 0
+                let db = if a > zero { a.ln() } else { zero };
+                (zero, db)
+            } else {
+                let da = if a == zero || r == zero || !a.is_finite() || !r.is_finite() {
+                    // Direct powf avoids 0/0 when a=0, catches underflow when
+                    // r=a^b underflows to 0 but a!=0, and avoids Inf/Inf = NaN
+                    // when either a or r is infinite (e.g., Inf^2 = Inf, whose
+                    // true derivative at Inf is Inf, not NaN).
+                    b * a.powf(b - one)
+                } else {
+                    b * r / a
+                };
+                // For `a <= 0`, `a.ln()` is NaN (stdlib real-valued). A finite
+                // `r` at `a < 0` means `b` was integer (else `r = NaN`); the
+                // derivative w.r.t. `b` at an integer `b` is not classically
+                // defined, and the convention here is 0 — matching the
+                // forward-mode `Dual::powf` constant-integer fast path. This
+                // also prevents NaN from contaminating a live tape slot for
+                // `b` on reverse sweep.
+                let db = if r == zero || a <= zero {
+                    zero
+                } else {
+                    r * a.ln()
+                };
+                (da, db)
+            }
+        }
+        // Atan2 and Hypot delegate to `kernels` so the overflow-safe factoring
+        // (a/h)/h pattern stays the single source of truth across the AD types.
+        OpCode::Atan2 => kernels::atan2_partials(a, b),
+        OpCode::Hypot => kernels::hypot_partials(a, b, r),
+        OpCode::Max => {
+            if a >= b || b.is_nan() {
+                (one, zero)
+            } else {
+                (zero, one)
+            }
+        }
+        OpCode::Min => {
+            if a <= b || b.is_nan() {
+                (one, zero)
+            } else {
+                (zero, one)
+            }
+        }
+
+        // Unary
+        OpCode::Neg => (-one, zero),
+        OpCode::Recip => {
+            // d/da (1/a) = -1/a². Deliberately recomputes 1/a instead of
+            // reading the stored primal r: on the plain-float sweep the two
+            // are bit-identical, but at T = Dual (HVP sweeps) the eps of
+            // `one / a` and of the forward-stored r take different rounding
+            // routes (Dual Div vs chain-mul), so reusing r would shift HVP
+            // results by ~1 ULP.
+            let inv = one / a;
+            (-inv * inv, zero)
+        }
+        // sqrt'(x) = 1/(2√x) and cbrt'(x) = 1/(3x^{2/3}) are mathematically
+        // singular at x=0, producing IEEE inf. This is the correct answer.
+        OpCode::Sqrt => {
+            let two = one + one;
+            (one / (two * r), zero)
+        }
+        OpCode::Cbrt => {
+            let three = T::from(3.0).unwrap();
+            (one / (three * r * r), zero)
+        }
+        OpCode::Powi => {
+            // See the `Powi` arm in `eval_forward`: `b` is the exponent's u32
+            // encoding as a float; the raw-u32 decode is exact for f64 but
+            // lossy for f32 negative exponents, which the tape sweeps avoid.
+            let raw = b.to_u32();
+            debug_assert!(
+                raw.is_some(),
+                "Powi exponent did not round-trip to u32 (f32 tape with a \
+                 negative exponent?) — decode from the raw u32 arg via \
+                 powi_exp_decode_raw"
+            );
+            let exp = powi_exp_decode_raw(raw.unwrap_or(0));
+            (powi_reverse_partial(exp, a, r), zero)
+        }
+
+        // Exp/Log. Domain-restricted logs delegate to the guarded `kernels`
+        // helpers, which emit a NaN partial strictly outside the valid interval
+        // and keep the IEEE ±Inf one-sided limit at the boundary — one source of
+        // truth shared with the CPU AD types.
+        OpCode::Exp => (r, zero), // d/da e^a = e^a = r
+        OpCode::Exp2 => (r * T::from(std::f64::consts::LN_2).unwrap(), zero),
+        OpCode::ExpM1 => (r + one, zero), // d/da (e^a - 1) = e^a = r+1
+        OpCode::Ln => (kernels::ln_deriv(a), zero),
+        OpCode::Log2 => (kernels::log2_deriv(a), zero),
+        OpCode::Log10 => (kernels::log10_deriv(a), zero),
+        OpCode::Ln1p => (kernels::ln_1p_deriv(a), zero),
+
+        // Trig
+        OpCode::Sin => (a.cos(), zero),
+        OpCode::Cos => (-a.sin(), zero),
+        OpCode::Tan => {
+            let c = a.cos();
+            (one / (c * c), zero)
+        }
+        OpCode::Asin => (one / ((one - a) * (one + a)).sqrt(), zero),
+        OpCode::Acos => (-one / ((one - a) * (one + a)).sqrt(), zero),
+        OpCode::Atan => (kernels::atan_deriv(a), zero),
+
+        // Hyperbolic
+        OpCode::Sinh => (a.cosh(), zero),
+        OpCode::Cosh => (a.sinh(), zero),
+        OpCode::Tanh => {
+            let c = a.cosh();
+            (one / (c * c), zero)
+        }
+        OpCode::Asinh => (kernels::asinh_deriv(a), zero),
+        OpCode::Acosh => (kernels::acosh_deriv(a), zero),
+        OpCode::Atanh => (kernels::atanh_deriv(a), zero),
+
+        // `Abs` delegates to `kernels::abs_deriv`: 0 at the kink (value-based, so
+        // `±0` agree and the sign bit of a produced zero can't leak into the
+        // subgradient); see its doc for the full rationale.
+        OpCode::Abs => (kernels::abs_deriv(a), zero),
+        OpCode::Signum | OpCode::Floor | OpCode::Ceil | OpCode::Round | OpCode::Trunc => {
+            (zero, zero)
+        }
+        OpCode::Fract => (one, zero),
+
+        OpCode::Custom => unreachable!("Custom ops are dispatched separately in the tape"),
+    }
+}
+
+/// Decode a `powi` exponent directly from the raw `u32` in `arg_indices[1]`.
+///
+/// Avoids the float round-trip of `powi_exp_decode`, which silently fails
+/// for f32 when the u32 encoding exceeds 2^24 (any negative exponent).
+#[inline]
+#[must_use]
+pub fn powi_exp_decode_raw(b_idx: u32) -> i32 {
+    b_idx as i32
+}
+
+/// Reverse partial `d(a^exp)/da` for a decoded `Powi` exponent.
+///
+/// The single home for the branch structure shared by [`reverse_partials`]
+/// and the reverse/tangent/cross-country sweeps: `exp == 0` has zero
+/// derivative; `exp == i32::MIN` uses the `n * r / a` rewrite because
+/// `exp - 1` would overflow `i32` (valid for `a != 0`; at `a == 0` both
+/// forms land in the same 0/Inf/NaN family); otherwise `n * a^(exp - 1)`.
+#[inline]
+pub(crate) fn powi_reverse_partial<T: Float>(exp: i32, a: T, r: T) -> T {
+    if exp == 0 {
+        T::zero()
+    } else if exp == i32::MIN {
+        T::from(exp).unwrap() * r / a
+    } else {
+        T::from(exp).unwrap() * a.powi(exp - 1)
+    }
+}
+
+/// Encode a `powi` exponent as a value that can be stored in `arg_indices[1]`.
+///
+/// This is a bit-preserving reinterpretation (`i32 as u32`), NOT a numeric
+/// conversion. The round-trip `powi_exp_decode_raw(powi_exp_encode(n)) == n`
+/// holds for all i32 values including negatives and `i32::MIN`.
+#[inline]
+#[must_use]
+pub fn powi_exp_encode(exp: i32) -> u32 {
+    exp as u32
+}
+
+/// True when `arg_indices[1]` holds a real tape index for `op`.
+///
+/// Two opcodes repurpose the slot for metadata — [`OpCode::Powi`] stores the
+/// encoded exponent and [`OpCode::Custom`] the callback index — so index
+/// remapping (DCE compaction, CSE canonicalization) must leave it untouched
+/// for them: remapping a callback index as if it were a tape slot silently
+/// corrupts the tape.
+#[inline]
+#[must_use]
+pub(crate) fn arg1_is_index(op: OpCode, b: u32) -> bool {
+    b != UNUSED && op != OpCode::Powi && op != OpCode::Custom
+}
+
+#[cfg(test)]
+mod tests {
+    use super::powi_reverse_partial;
+
+    #[test]
+    fn powi_reverse_partial_closed_forms() {
+        assert_eq!(powi_reverse_partial(0, 2.0_f64, 1.0), 0.0);
+        assert_eq!(powi_reverse_partial(1, 2.0_f64, 2.0), 1.0);
+        assert_eq!(powi_reverse_partial(3, 2.0_f64, 8.0), 12.0);
+        assert_eq!(powi_reverse_partial(-1, 2.0_f64, 0.5), -0.25);
+        assert_eq!(powi_reverse_partial(2, 0.0_f64, 0.0), 0.0);
+    }
+
+    #[test]
+    fn powi_reverse_partial_i32_min_avoids_overflow() {
+        // exp - 1 would wrap at i32::MIN; the n * r / a form must not.
+        // |a| > 1: r = a^MIN underflows to 0, so da = n * 0 / a = ±0.
+        assert_eq!(powi_reverse_partial(i32::MIN, 2.0_f64, 0.0), 0.0);
+        // |a| < 1: r overflows to +Inf, so da = n * Inf / a = -Inf.
+        let da = powi_reverse_partial(i32::MIN, 0.5_f64, f64::INFINITY);
+        assert!(da.is_infinite() && da.is_sign_negative());
+        // a = 0: lands in the Inf/NaN family rather than panicking.
+        assert!(!powi_reverse_partial(i32::MIN, 0.0_f64, f64::INFINITY).is_finite());
+    }
+}

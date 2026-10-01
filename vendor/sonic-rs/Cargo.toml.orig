@@ -1,0 +1,63 @@
+[package]
+authors       = ["Volo Team <volo@cloudwego.io>"]
+categories    = ["encoding", "parser-implementations"]
+description   = "Sonic-rs is a fast Rust JSON library based on SIMD"
+documentation = "https://docs.rs/sonic-rs"
+edition       = "2021"
+exclude       = ["benchmarks", "assets", "bindings"]
+keywords      = ["json", "simd", "serde", "serialization"]
+license       = "Apache-2.0"
+name          = "sonic-rs"
+readme        = "README.md"
+repository    = "https://github.com/cloudwego/sonic-rs"
+version       = "0.5.10"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ahash        = "0.8"
+bumpalo      = "3.19"
+bytes        = "1.10"
+cfg-if       = "1.0"
+faststr      = { version = "0.2", features = ["serde"] }
+itoa         = "1.0"
+ref-cast     = "1.0"
+serde        = { version = "1.0", features = ["rc", "derive"] }
+simdutf8     = "0.1"
+sonic-number = { path = "./sonic-number", version = "0.1" }
+sonic-simd   = { path = "./sonic-simd", version = "0.1" }
+thiserror    = "2.0"
+zmij         = "1.0"
+
+[dev-dependencies]
+bytes        = { version = "1.4", features = ["serde"] }
+chrono       = { version = "0.4", features = ["serde"] }
+encoding_rs  = "0.8"
+paste        = "1.0"
+schema       = { path = "./benchmarks/benches/schema" }
+serde_bytes  = "0.11"
+serde_derive = "1.0"
+serde_json   = { version = "1.0", features = ["float_roundtrip", "raw_value"] }
+
+[features]
+default = []
+
+# Use an arbitrary precision number type representation when parsing JSON into `sonic_rs::Value`.
+# This allows the JSON numbers will be serialized without loss of precision.
+arbitrary_precision = []
+
+# Sort the keys when serializing `sonic_rs::Value`.
+sort_keys = []
+
+# Allow to parse JSON with invalid UTF-8 and UTF-16 characters. Will replace them with `\uFFFD` (displayed as �).
+utf8_lossy = []
+
+# Enable sanitize, maybe cause 30% performance-loss in serialize.
+sanitize = []
+
+# Serialize floating point numbers without trailing zeros if the float can be represented as an integer without loss of precision.
+# For example, `18.0` will be serialized as `18` instead of `18.0`.
+non_trailing_zero = []
+
+# Enable avx512, requires Rust 1.89 or later, and also enable `avx512f` target feature
+avx512 = ["sonic-simd/avx512"]

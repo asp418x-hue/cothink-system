@@ -1,0 +1,5 @@
+error: `pyclass_args` applies only to structs/enums
+ --> tests/ui/fail/pyclass_args_on_methods.rs:6:21
+  |
+6 | #[py_compat_methods(pyclass_args(module = "bad"))]
+  |                     ^^^^^^^^^^^^

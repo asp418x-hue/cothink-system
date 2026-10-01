@@ -1,0 +1,5 @@
+error: `stub_gen` feature must not be empty
+ --> tests/ui/fail/empty_stub_gen_feature.rs:3:20
+  |
+3 | #[py_compat_struct(stub_gen = "")]
+  |                    ^^^^^^^^

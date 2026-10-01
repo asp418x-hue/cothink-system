@@ -1,0 +1,210 @@
+#![allow(clippy::needless_range_loop)] // idiomatic for parallel-indexed scientific code
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
+use echidna::{grad, record};
+use nalgebra::DVector;
+use num_dual::DualNum;
+use std::hint::black_box;
+
+use ad_trait::differentiable_function::{DifferentiableFunctionTrait, ForwardAD, ReverseAD};
+use ad_trait::function_engine::FunctionEngine;
+use ad_trait::AD;
+
+#[path = "common/mod.rs"]
+mod common;
+use common::*;
+
+// ─── num-dual implementations ──────────────────────────────────────────────
+// num-dual requires functions generic over DualNum<f64>, using nalgebra vectors.
+
+fn rosenbrock_nd<D: DualNum<f64> + Clone>(x: &[D]) -> D {
+    let mut sum = D::from(0.0);
+    for i in 0..x.len() - 1 {
+        let t1 = D::from(1.0) - x[i].clone();
+        let t2 = x[i + 1].clone() - x[i].clone() * x[i].clone();
+        sum = sum + t1.clone() * t1 + D::from(100.0) * t2.clone() * t2;
+    }
+    sum
+}
+
+fn two_output_nd<D: DualNum<f64> + Clone>(x: &[D]) -> [D; 2] {
+    let mut s1 = D::from(0.0);
+    let mut s2 = D::from(0.0);
+    for i in 0..x.len() {
+        s1 += x[i].clone() * x[i].clone();
+        s2 += x[i].clone().sin();
+    }
+    [s1, s2]
+}
+
+// ─── ad-trait implementations ─────────────────────────────────────────────
+// ad-trait requires implementing DifferentiableFunctionTrait for a struct,
+// generic over AD types.
+
+fn rosenbrock_ad<T: AD>(x: &[T]) -> T {
+    let one = T::constant(1.0);
+    let hundred = T::constant(100.0);
+    let mut sum = T::constant(0.0);
+    for i in 0..x.len() - 1 {
+        let t1 = one - x[i];
+        let t2 = x[i + 1] - x[i] * x[i];
+        sum = sum + t1 * t1 + hundred * t2 * t2;
+    }
+    sum
+}
+
+#[derive(Clone)]
+struct RosenbrockAD {
+    n: usize,
+}
+
+impl<T: AD> DifferentiableFunctionTrait<T> for RosenbrockAD {
+    const NAME: &'static str = "Rosenbrock";
+
+    fn call(&self, inputs: &[T], _freeze: bool) -> Vec<T> {
+        vec![rosenbrock_ad(inputs)]
+    }
+
+    fn num_inputs(&self) -> usize {
+        self.n
+    }
+
+    fn num_outputs(&self) -> usize {
+        1
+    }
+}
+
+// ─── echidna 2-output function ─────────────────────────────────────────────
+
+fn two_output_echidna<T: echidna::Scalar>(x: &[T]) -> Vec<T> {
+    let mut s1 = T::zero();
+    let mut s2 = T::zero();
+    for &xi in x {
+        s1 = s1 + xi * xi;
+        s2 = s2 + xi.sin();
+    }
+    vec![s1, s2]
+}
+
+// ─── Gradient comparison ───────────────────────────────────────────────────
+
+fn bench_gradient_comparison(c: &mut Criterion) {
+    let mut group = c.benchmark_group("gradient_comparison");
+    for n in [2, 10, 100] {
+        let x = make_input(n);
+
+        // echidna reverse-mode gradient
+        group.bench_with_input(BenchmarkId::new("echidna_grad", n), &x, |b, x| {
+            b.iter(|| black_box(grad(rosenbrock, black_box(x))))
+        });
+
+        // echidna bytecode gradient
+        group.bench_with_input(BenchmarkId::new("echidna_bytecode", n), &x, |b, x| {
+            b.iter(|| {
+                let (mut tape, _) = record(rosenbrock, black_box(x));
+                black_box(tape.gradient(x))
+            })
+        });
+
+        // num-dual gradient (dynamic)
+        let x_dv = DVector::from_column_slice(&x);
+        group.bench_with_input(BenchmarkId::new("num_dual_grad", n), &x_dv, |b, x_dv| {
+            b.iter(|| {
+                let (f, g) = num_dual::gradient(
+                    |v: DVector<num_dual::DualDVec64>| rosenbrock_nd(v.as_slice()),
+                    black_box(x_dv),
+                );
+                black_box((f, g))
+            })
+        });
+
+        // ad-trait forward-mode gradient (column-by-column via ForwardAD)
+        let rosen_std = RosenbrockAD { n };
+        let rosen_fwd = rosen_std.clone();
+        let engine_fwd = FunctionEngine::new(rosen_std.clone(), rosen_fwd, ForwardAD::new());
+        group.bench_with_input(BenchmarkId::new("ad_trait_fwd", n), &x, |b, x| {
+            b.iter(|| black_box(engine_fwd.derivative(black_box(x))))
+        });
+
+        // ad-trait reverse-mode gradient
+        let rosen_rev = rosen_std.clone();
+        let engine_rev = FunctionEngine::new(rosen_std, rosen_rev, ReverseAD::new());
+        group.bench_with_input(BenchmarkId::new("ad_trait_rev", n), &x, |b, x| {
+            b.iter(|| black_box(engine_rev.derivative(black_box(x))))
+        });
+    }
+    group.finish();
+}
+
+// ─── Jacobian comparison ───────────────────────────────────────────────────
+
+fn bench_jacobian_comparison(c: &mut Criterion) {
+    let mut group = c.benchmark_group("jacobian_comparison");
+    for n in [2, 5, 10] {
+        let x = make_input(n);
+
+        // echidna forward-mode Jacobian
+        group.bench_with_input(BenchmarkId::new("echidna_fwd", n), &x, |b, x| {
+            b.iter(|| black_box(echidna::jacobian(two_output_echidna, black_box(x))))
+        });
+
+        // echidna bytecode Jacobian (reverse)
+        group.bench_with_input(BenchmarkId::new("echidna_rev", n), &x, |b, x| {
+            b.iter(|| {
+                let (mut tape, _) = echidna::record_multi(two_output_echidna, black_box(x));
+                black_box(tape.jacobian(x))
+            })
+        });
+
+        // num-dual Jacobian (dynamic)
+        let x_dv = DVector::from_column_slice(&x);
+        group.bench_with_input(BenchmarkId::new("num_dual_jac", n), &x_dv, |b, x_dv| {
+            b.iter(|| {
+                let (f, jac) = num_dual::jacobian(
+                    |v: DVector<num_dual::DualDVec64>| {
+                        let out = two_output_nd(v.as_slice());
+                        DVector::from_column_slice(&out)
+                    },
+                    black_box(x_dv),
+                );
+                black_box((f, jac))
+            })
+        });
+    }
+    group.finish();
+}
+
+// ─── Hessian comparison ────────────────────────────────────────────────────
+
+fn bench_hessian_comparison(c: &mut Criterion) {
+    let mut group = c.benchmark_group("hessian_comparison");
+    for n in [2, 10] {
+        let x = make_input(n);
+
+        // echidna fwd-over-rev Hessian
+        let (tape, _) = record(rosenbrock, &x);
+        group.bench_with_input(BenchmarkId::new("echidna_hessian", n), &x, |b, x| {
+            b.iter(|| black_box(tape.hessian(black_box(x))))
+        });
+
+        // num-dual hyper-dual Hessian (dynamic)
+        let x_dv = DVector::from_column_slice(&x);
+        group.bench_with_input(BenchmarkId::new("num_dual_hessian", n), &x_dv, |b, x_dv| {
+            b.iter(|| {
+                let (f, g, h) = num_dual::hessian(
+                    |v: DVector<num_dual::Dual2DVec64>| rosenbrock_nd(v.as_slice()),
+                    black_box(x_dv),
+                );
+                black_box((f, g, h))
+            })
+        });
+    }
+    group.finish();
+}
+
+criterion_group!(
+    benches,
+    bench_gradient_comparison,
+    bench_jacobian_comparison,
+    bench_hessian_comparison
+);
+criterion_main!(benches);

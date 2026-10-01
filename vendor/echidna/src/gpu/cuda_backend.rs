@@ -1,0 +1,953 @@
+//! CUDA GPU backend for echidna.
+//!
+//! Provides `CudaContext` — the NVIDIA-specific GPU backend that supports both
+//! f32 and f64 precision. Requires the `gpu-cuda` feature and a CUDA toolkit.
+//!
+//! # Usage
+//!
+//! ```no_run
+//! use echidna::gpu::{CudaContext, GpuBackend, GpuTapeData};
+//! use echidna::{record, Scalar};
+//!
+//! let ctx = CudaContext::new().expect("CUDA device required");
+//! let (tape, _) = record(|v| v[0] * v[0] + v[1], &[1.0_f32, 2.0]);
+//! let gpu_data = GpuTapeData::from_tape(&tape).unwrap();
+//! let tape_bufs = ctx.upload_tape(&gpu_data);
+//! let results = ctx.forward_batch(&tape_bufs, &[1.0f32, 2.0, 3.0, 4.0], 2).unwrap();
+//! ```
+
+use std::sync::Arc;
+#[cfg(feature = "stde")]
+use std::sync::Mutex;
+
+use cudarc::driver::{
+    CudaContext as CudarContext, CudaFunction, CudaSlice, CudaStream, LaunchConfig, PushKernelArg,
+};
+use cudarc::nvrtc::{compile_ptx_with_opts, CompileOptions};
+
+use super::{GpuBackend, GpuError, GpuTapeData};
+
+const KERNEL_SRC: &str = include_str!("kernels/tape_eval.cu");
+// Taylor kernels are generated at runtime by taylor_codegen.rs (K = 1..5),
+// so tape_eval.cu is the only bundled kernel source.
+const BLOCK_SIZE: u32 = 256;
+
+// ── Macros to deduplicate f32/f64 CUDA dispatch methods ──
+//
+// Each macro expands to a block expression returning the method's result type.
+// Parameters are: self, tape buffer, kernel field, constants field, and float type.
+
+macro_rules! cuda_taylor_kth_body {
+    ($self:expr, $tape:expr, $primals:expr, $seeds:expr, $batch_size:expr, $order:expr,
+     $F:ty, $constants:ident, $f32_mode:literal) => {{
+        if !(1..=5).contains(&$order) {
+            return Err(GpuError::Other(format!(
+                "unsupported Taylor order {}, must be 1..=5",
+                $order
+            )));
+        }
+        crate::gpu::validate_batch_args($tape.num_inputs, $batch_size)?;
+        let k = $order as u32;
+        let s = &$self.stream;
+        let ni = $tape.num_inputs;
+        let nv = $tape.num_variables;
+        let no = $tape.num_outputs;
+        let total_in = ($batch_size as usize) * (ni as usize);
+
+        assert_eq!($primals.len(), total_in, "primal_inputs length mismatch");
+        assert_eq!($seeds.len(), total_in, "direction_seeds length mismatch");
+
+        let kernel = $self.get_taylor_kth_kernel($order, $f32_mode)?;
+
+        let d_primals = s.clone_htod($primals).map_err(cuda_err)?;
+        let d_seeds = s.clone_htod($seeds).map_err(cuda_err)?;
+        let mut d_jets = s
+            .alloc_zeros::<$F>(($batch_size as usize) * (nv as usize) * (k as usize))
+            .map_err(cuda_err)?;
+        let mut d_jet_out = s
+            .alloc_zeros::<$F>(($batch_size as usize) * (no as usize) * (k as usize))
+            .map_err(cuda_err)?;
+
+        let cfg = LaunchConfig {
+            grid_dim: CudaContext::grid_dim($batch_size),
+            block_dim: CudaContext::block_dim(),
+            shared_mem_bytes: 0,
+        };
+
+        let mut builder = s.launch_builder(&kernel);
+        builder.arg(&$tape.opcodes);
+        builder.arg(&$tape.arg0);
+        builder.arg(&$tape.arg1);
+        builder.arg(&$tape.$constants);
+        builder.arg(&d_primals);
+        builder.arg(&d_seeds);
+        builder.arg(&mut d_jets);
+        builder.arg(&mut d_jet_out);
+        builder.arg(&$tape.output_indices);
+        builder.arg(&$tape.num_ops);
+        builder.arg(&ni);
+        builder.arg(&nv);
+        builder.arg(&no);
+        builder.arg(&$batch_size);
+        // SAFETY: All device buffers are correctly sized, kernel compiled from our
+        // codegen source, grid/block dimensions match batch size.
+        unsafe { builder.launch(cfg) }.map_err(cuda_err)?;
+
+        s.synchronize().map_err(cuda_err)?;
+        let raw = s.clone_dtoh(&d_jet_out).map_err(cuda_err)?;
+
+        let total_out = ($batch_size as usize) * (no as usize);
+        let coefficients = crate::gpu::deinterleave_coefficients(&raw, total_out, $order);
+
+        Ok(super::TaylorKthBatchResult {
+            coefficients,
+            order: $order,
+        })
+    }};
+}
+
+macro_rules! cuda_forward_batch_body {
+    ($self:expr, $tape:expr, $inputs:expr, $batch_size:expr, $F:ty, $constants:ident, $kernel:ident) => {{
+        crate::gpu::validate_batch_args($tape.num_inputs, $batch_size)?;
+        let s = &$self.stream;
+        let ni = $tape.num_inputs;
+        let nv = $tape.num_variables;
+        let no = $tape.num_outputs;
+
+        assert_eq!($inputs.len(), ($batch_size as usize) * (ni as usize));
+
+        let d_inputs = s.clone_htod($inputs).map_err(cuda_err)?;
+        let mut d_values = s
+            .alloc_zeros::<$F>(($batch_size as usize) * (nv as usize))
+            .map_err(cuda_err)?;
+        let mut d_outputs = s
+            .alloc_zeros::<$F>(($batch_size as usize) * (no as usize))
+            .map_err(cuda_err)?;
+
+        let cfg = LaunchConfig {
+            grid_dim: CudaContext::grid_dim($batch_size),
+            block_dim: CudaContext::block_dim(),
+            shared_mem_bytes: 0,
+        };
+
+        let mut builder = s.launch_builder(&$self.$kernel);
+        builder.arg(&$tape.opcodes);
+        builder.arg(&$tape.arg0);
+        builder.arg(&$tape.arg1);
+        builder.arg(&$tape.$constants);
+        builder.arg(&d_inputs);
+        builder.arg(&mut d_values);
+        builder.arg(&mut d_outputs);
+        builder.arg(&$tape.output_indices);
+        builder.arg(&$tape.num_ops);
+        builder.arg(&ni);
+        builder.arg(&nv);
+        builder.arg(&no);
+        builder.arg(&$batch_size);
+        // SAFETY: All device buffers are correctly sized for `batch_size` elements,
+        // the kernel was compiled from our bundled source, and the launch config
+        // grid/block dimensions match the batch size.
+        unsafe { builder.launch(cfg) }.map_err(cuda_err)?;
+
+        s.synchronize().map_err(cuda_err)?;
+        let results = s.clone_dtoh(&d_outputs).map_err(cuda_err)?;
+        Ok(results)
+    }};
+}
+
+macro_rules! cuda_gradient_batch_body {
+    ($self:expr, $tape:expr, $inputs:expr, $batch_size:expr, $F:ty, $constants:ident, $fwd_kernel:ident, $rev_kernel:ident) => {{
+        crate::gpu::validate_batch_args($tape.num_inputs, $batch_size)?;
+        let s = &$self.stream;
+        let ni = $tape.num_inputs;
+        let nv = $tape.num_variables;
+        let no = $tape.num_outputs;
+
+        assert_eq!($inputs.len(), ($batch_size as usize) * (ni as usize));
+
+        let d_inputs = s.clone_htod($inputs).map_err(cuda_err)?;
+        let mut d_values = s
+            .alloc_zeros::<$F>(($batch_size as usize) * (nv as usize))
+            .map_err(cuda_err)?;
+        let mut d_outputs = s
+            .alloc_zeros::<$F>(($batch_size as usize) * (no as usize))
+            .map_err(cuda_err)?;
+
+        let cfg = LaunchConfig {
+            grid_dim: CudaContext::grid_dim($batch_size),
+            block_dim: CudaContext::block_dim(),
+            shared_mem_bytes: 0,
+        };
+
+        // Forward pass
+        let mut builder = s.launch_builder(&$self.$fwd_kernel);
+        builder.arg(&$tape.opcodes);
+        builder.arg(&$tape.arg0);
+        builder.arg(&$tape.arg1);
+        builder.arg(&$tape.$constants);
+        builder.arg(&d_inputs);
+        builder.arg(&mut d_values);
+        builder.arg(&mut d_outputs);
+        builder.arg(&$tape.output_indices);
+        builder.arg(&$tape.num_ops);
+        builder.arg(&ni);
+        builder.arg(&nv);
+        builder.arg(&no);
+        builder.arg(&$batch_size);
+        // SAFETY: All device buffers are correctly sized for `batch_size` elements,
+        // the kernel was compiled from our bundled source, and the launch config
+        // grid/block dimensions match the batch size.
+        unsafe { builder.launch(cfg) }.map_err(cuda_err)?;
+
+        // Reverse pass
+        let mut d_adjoints = s
+            .alloc_zeros::<$F>(($batch_size as usize) * (nv as usize))
+            .map_err(cuda_err)?;
+        let mut d_grads = s
+            .alloc_zeros::<$F>(($batch_size as usize) * (ni as usize))
+            .map_err(cuda_err)?;
+
+        let mut builder = s.launch_builder(&$self.$rev_kernel);
+        builder.arg(&$tape.opcodes);
+        builder.arg(&$tape.arg0);
+        builder.arg(&$tape.arg1);
+        builder.arg(&d_values);
+        builder.arg(&mut d_adjoints);
+        builder.arg(&mut d_grads);
+        builder.arg(&$tape.output_indices);
+        builder.arg(&$tape.num_ops);
+        builder.arg(&ni);
+        builder.arg(&nv);
+        builder.arg(&$batch_size);
+        // SAFETY: All device buffers are correctly sized for `batch_size` elements,
+        // the kernel was compiled from our bundled source, and the launch config
+        // grid/block dimensions match the batch size.
+        unsafe { builder.launch(cfg) }.map_err(cuda_err)?;
+
+        s.synchronize().map_err(cuda_err)?;
+        let output_vals = s.clone_dtoh(&d_outputs).map_err(cuda_err)?;
+        let grads = s.clone_dtoh(&d_grads).map_err(cuda_err)?;
+        Ok((output_vals, grads))
+    }};
+}
+
+macro_rules! cuda_hvp_batch_body {
+    ($self:expr, $tape:expr, $x:expr, $tangent_dirs:expr, $batch_size:expr, $F:ty, $constants:ident, $kernel:ident) => {{
+        crate::gpu::validate_batch_args($tape.num_inputs, $batch_size)?;
+        let s = &$self.stream;
+        let ni = $tape.num_inputs;
+        let nv = $tape.num_variables;
+
+        assert_eq!($x.len(), ni as usize);
+        assert_eq!($tangent_dirs.len(), ($batch_size as usize) * (ni as usize));
+
+        let mut primal_inputs = Vec::with_capacity(($batch_size as usize) * (ni as usize));
+        for _ in 0..$batch_size {
+            primal_inputs.extend_from_slice($x);
+        }
+
+        let d_primal_in = s.clone_htod(&primal_inputs).map_err(cuda_err)?;
+        let d_seeds = s.clone_htod($tangent_dirs).map_err(cuda_err)?;
+        let mut d_primals = s
+            .alloc_zeros::<$F>(($batch_size as usize) * (nv as usize))
+            .map_err(cuda_err)?;
+        let mut d_tans = s
+            .alloc_zeros::<$F>(($batch_size as usize) * (nv as usize))
+            .map_err(cuda_err)?;
+        let mut d_adj_re = s
+            .alloc_zeros::<$F>(($batch_size as usize) * (nv as usize))
+            .map_err(cuda_err)?;
+        let mut d_adj_eps = s
+            .alloc_zeros::<$F>(($batch_size as usize) * (nv as usize))
+            .map_err(cuda_err)?;
+        let mut d_grads = s
+            .alloc_zeros::<$F>(($batch_size as usize) * (ni as usize))
+            .map_err(cuda_err)?;
+        let mut d_hvps = s
+            .alloc_zeros::<$F>(($batch_size as usize) * (ni as usize))
+            .map_err(cuda_err)?;
+
+        let cfg = LaunchConfig {
+            grid_dim: CudaContext::grid_dim($batch_size),
+            block_dim: CudaContext::block_dim(),
+            shared_mem_bytes: 0,
+        };
+
+        let mut builder = s.launch_builder(&$self.$kernel);
+        builder.arg(&$tape.opcodes);
+        builder.arg(&$tape.arg0);
+        builder.arg(&$tape.arg1);
+        builder.arg(&$tape.$constants);
+        builder.arg(&d_primal_in);
+        builder.arg(&d_seeds);
+        builder.arg(&mut d_primals);
+        builder.arg(&mut d_tans);
+        builder.arg(&mut d_adj_re);
+        builder.arg(&mut d_adj_eps);
+        builder.arg(&mut d_grads);
+        builder.arg(&mut d_hvps);
+        builder.arg(&$tape.output_indices);
+        builder.arg(&$tape.num_ops);
+        builder.arg(&ni);
+        builder.arg(&nv);
+        builder.arg(&$batch_size);
+        // SAFETY: All device buffers are correctly sized for `batch_size` elements,
+        // the kernel was compiled from our bundled source, and the launch config
+        // grid/block dimensions match the batch size.
+        unsafe { builder.launch(cfg) }.map_err(cuda_err)?;
+
+        s.synchronize().map_err(cuda_err)?;
+        let grads = s.clone_dtoh(&d_grads).map_err(cuda_err)?;
+        let hvps = s.clone_dtoh(&d_hvps).map_err(cuda_err)?;
+        Ok((grads, hvps))
+    }};
+}
+
+macro_rules! cuda_sparse_jacobian_body {
+    ($self:expr, $tape:expr, $tape_cpu:expr, $x:expr, $F:ty, $constants:ident, $tangent_fwd_kernel:ident) => {{
+        let ni = $tape.num_inputs as usize;
+        let no = $tape.num_outputs as usize;
+
+        let pattern = $tape_cpu.detect_jacobian_sparsity();
+        let (colors, num_colors) = crate::sparse::column_coloring(&pattern);
+
+        if num_colors == 0 {
+            $tape_cpu.forward($x);
+            let vals = $tape_cpu.output_values();
+            return Ok((vals, pattern, vec![]));
+        }
+
+        // SAFETY(u32 cast): num_colors is bounded by num_inputs, which fits in u32 (tape metadata).
+        let batch = num_colors as u32;
+        let mut seeds = Vec::with_capacity(batch as usize * ni);
+        for c in 0..num_colors {
+            for i in 0..ni {
+                seeds.push(if colors[i] == c as u32 {
+                    (1.0 as $F)
+                } else {
+                    (0.0 as $F)
+                });
+            }
+        }
+
+        let s = &$self.stream;
+        let nv = $tape.num_variables;
+
+        let d_primals_in = {
+            let mut replicated = Vec::with_capacity(batch as usize * ni);
+            for _ in 0..batch {
+                replicated.extend_from_slice($x);
+            }
+            s.clone_htod(&replicated).map_err(cuda_err)?
+        };
+        let d_seeds = s.clone_htod(&seeds).map_err(cuda_err)?;
+        let mut d_primals = s
+            .alloc_zeros::<$F>((batch as usize) * (nv as usize))
+            .map_err(cuda_err)?;
+        let mut d_tangents = s
+            .alloc_zeros::<$F>((batch as usize) * (nv as usize))
+            .map_err(cuda_err)?;
+        let mut d_tangent_out = s
+            .alloc_zeros::<$F>((batch as usize) * ($tape.num_outputs as usize))
+            .map_err(cuda_err)?;
+
+        let cfg = LaunchConfig {
+            grid_dim: CudaContext::grid_dim(batch),
+            block_dim: CudaContext::block_dim(),
+            shared_mem_bytes: 0,
+        };
+
+        let mut builder = s.launch_builder(&$self.$tangent_fwd_kernel);
+        builder.arg(&$tape.opcodes);
+        builder.arg(&$tape.arg0);
+        builder.arg(&$tape.arg1);
+        builder.arg(&$tape.$constants);
+        builder.arg(&d_primals_in);
+        builder.arg(&d_seeds);
+        builder.arg(&mut d_primals);
+        builder.arg(&mut d_tangents);
+        builder.arg(&mut d_tangent_out);
+        builder.arg(&$tape.output_indices);
+        builder.arg(&$tape.num_ops);
+        builder.arg(&$tape.num_inputs);
+        builder.arg(&nv);
+        builder.arg(&$tape.num_outputs);
+        builder.arg(&batch);
+        // SAFETY: All device buffers are correctly sized for `batch` elements,
+        // the kernel was compiled from our bundled source, and the launch config
+        // grid/block dimensions match the batch size.
+        unsafe { builder.launch(cfg) }.map_err(cuda_err)?;
+
+        s.synchronize().map_err(cuda_err)?;
+        let tangent_outs = s.clone_dtoh(&d_tangent_out).map_err(cuda_err)?;
+
+        $tape_cpu.forward($x);
+        let output_values = $tape_cpu.output_values();
+
+        let nnz = pattern.nnz();
+        let mut jac_values = vec![(0.0 as $F); nnz];
+        for (k, (&row, &col)) in pattern.rows.iter().zip(pattern.cols.iter()).enumerate() {
+            let c = colors[col as usize] as usize;
+            jac_values[k] = tangent_outs[c * no + row as usize];
+        }
+
+        Ok((output_values, pattern, jac_values))
+    }};
+}
+
+macro_rules! cuda_sparse_hessian_body {
+    ($self:expr, $tape:expr, $tape_cpu:expr, $x:expr, $F:ty, $hvp_method:ident) => {{
+        let ni = $tape.num_inputs as usize;
+
+        let pattern = $tape_cpu.detect_sparsity();
+        let (colors, num_colors) = crate::sparse::greedy_coloring(&pattern);
+
+        if num_colors == 0 {
+            $tape_cpu.forward($x);
+            let val = $tape_cpu.output_value();
+            let grad = $tape_cpu.gradient($x);
+            return Ok((val, grad, pattern, vec![]));
+        }
+
+        // SAFETY(u32 cast): num_colors is bounded by num_inputs, which fits in u32 (tape metadata).
+        let batch = num_colors as u32;
+        let mut tangent_dirs = Vec::with_capacity(batch as usize * ni);
+        for c in 0..num_colors {
+            for i in 0..ni {
+                tangent_dirs.push(if colors[i] == c as u32 {
+                    (1.0 as $F)
+                } else {
+                    (0.0 as $F)
+                });
+            }
+        }
+
+        let (grads, hvps) = $self.$hvp_method($tape, $x, &tangent_dirs, batch)?;
+
+        let gradient: Vec<$F> = grads[..ni].to_vec();
+
+        let nnz = pattern.nnz();
+        let mut hess_values = vec![(0.0 as $F); nnz];
+        for (k, (&row, &col)) in pattern.rows.iter().zip(pattern.cols.iter()).enumerate() {
+            let c = colors[col as usize] as usize;
+            hess_values[k] = hvps[c * ni + row as usize];
+        }
+
+        $tape_cpu.forward($x);
+        let value = $tape_cpu.output_value();
+
+        Ok((value, gradient, pattern, hess_values))
+    }};
+}
+
+/// Convert any `Display` error into `GpuError::Other`.
+fn cuda_err(e: impl std::fmt::Display) -> GpuError {
+    GpuError::Other(format!("{e}"))
+}
+
+/// Uploaded tape data on CUDA device.
+pub struct CudaTapeBuffers {
+    pub(crate) opcodes: CudaSlice<u32>,
+    pub(crate) arg0: CudaSlice<u32>,
+    pub(crate) arg1: CudaSlice<u32>,
+    pub(crate) constants_f32: CudaSlice<f32>,
+    pub(crate) output_indices: CudaSlice<u32>,
+    pub(crate) num_ops: u32,
+    pub(crate) num_inputs: u32,
+    pub(crate) num_variables: u32,
+    pub(crate) num_outputs: u32,
+}
+
+/// Uploaded tape data with f64 constants for native f64 operations.
+pub struct CudaTapeBuffersF64 {
+    pub(crate) opcodes: CudaSlice<u32>,
+    pub(crate) arg0: CudaSlice<u32>,
+    pub(crate) arg1: CudaSlice<u32>,
+    pub(crate) constants_f64: CudaSlice<f64>,
+    pub(crate) output_indices: CudaSlice<u32>,
+    pub(crate) num_ops: u32,
+    pub(crate) num_inputs: u32,
+    pub(crate) num_variables: u32,
+    pub(crate) num_outputs: u32,
+}
+
+/// CUDA GPU context for echidna.
+///
+/// Compiles and caches PTX kernels on first creation. Supports both f32 and f64.
+pub struct CudaContext {
+    ctx: Arc<CudarContext>,
+    stream: Arc<CudaStream>,
+    // f32 kernels
+    forward_f32: CudaFunction,
+    reverse_f32: CudaFunction,
+    tangent_fwd_f32: CudaFunction,
+    tangent_rev_f32: CudaFunction,
+    // f64 kernels
+    forward_f64: CudaFunction,
+    reverse_f64: CudaFunction,
+    tangent_fwd_f64: CudaFunction,
+    tangent_rev_f64: CudaFunction,
+    // K-specialized Taylor forward kernels, compiled lazily on first use.
+    // Index 0 = K=1, index 4 = K=5. Uses Mutex for interior mutability
+    // since taylor_forward_kth_batch takes &self.
+    #[cfg(feature = "stde")]
+    taylor_fwd_kth_f32: Mutex<[Option<CudaFunction>; 5]>,
+    #[cfg(feature = "stde")]
+    taylor_fwd_kth_f64: Mutex<[Option<CudaFunction>; 5]>,
+}
+
+impl CudaContext {
+    /// Create a new CUDA context on device 0.
+    ///
+    /// Returns `None` if no CUDA device is available or compilation fails.
+    pub fn new() -> Option<Self> {
+        let ctx = CudarContext::new(0).ok()?;
+        let stream = ctx.default_stream();
+
+        // Compile f32 kernels. `--fmad=false` disables NVRTC's automatic
+        // fuse-multiply-add contraction so mul+add pairs produce results
+        // that match the CPU's unfused arithmetic bit-for-bit. The tiny
+        // perf cost (1-2% on A100 in our kernel mix) is worth it for
+        // CPU-GPU parity guarantees; callers chasing raw throughput can
+        // rebuild with the default by reverting this option.
+        let nvrtc_opts = || CompileOptions {
+            fmad: Some(false),
+            ..Default::default()
+        };
+        let src_f32 = format!("#define FLOAT_TYPE float\n{}", KERNEL_SRC);
+        let ptx_f32 = compile_ptx_with_opts(&src_f32, nvrtc_opts()).ok()?;
+        let module_f32 = ctx.load_module(ptx_f32).ok()?;
+
+        let forward_f32 = module_f32.load_function("forward_eval").ok()?;
+        let reverse_f32 = module_f32.load_function("reverse_sweep").ok()?;
+        let tangent_fwd_f32 = module_f32.load_function("tangent_forward").ok()?;
+        let tangent_rev_f32 = module_f32.load_function("tangent_reverse").ok()?;
+
+        // Compile f64 kernels (same `--fmad=false` policy as f32 above).
+        let src_f64 = format!("#define FLOAT_TYPE double\n{}", KERNEL_SRC);
+        let ptx_f64 = compile_ptx_with_opts(&src_f64, nvrtc_opts()).ok()?;
+        let module_f64 = ctx.load_module(ptx_f64).ok()?;
+
+        let forward_f64 = module_f64.load_function("forward_eval").ok()?;
+        let reverse_f64 = module_f64.load_function("reverse_sweep").ok()?;
+        let tangent_fwd_f64 = module_f64.load_function("tangent_forward").ok()?;
+        let tangent_rev_f64 = module_f64.load_function("tangent_reverse").ok()?;
+
+        Some(CudaContext {
+            ctx,
+            stream,
+            forward_f32,
+            reverse_f32,
+            tangent_fwd_f32,
+            tangent_rev_f32,
+            forward_f64,
+            reverse_f64,
+            tangent_fwd_f64,
+            tangent_rev_f64,
+            #[cfg(feature = "stde")]
+            taylor_fwd_kth_f32: Mutex::new([None, None, None, None, None]),
+            #[cfg(feature = "stde")]
+            taylor_fwd_kth_f64: Mutex::new([None, None, None, None, None]),
+        })
+    }
+
+    fn grid_dim(batch_size: u32) -> (u32, u32, u32) {
+        // div_ceil (not `(n + BLOCK - 1) / BLOCK`): the manual form overflows
+        // u32 for batch_size > u32::MAX - BLOCK_SIZE + 1, silently
+        // under-dispatching in release builds.
+        (batch_size.div_ceil(BLOCK_SIZE), 1, 1)
+    }
+
+    fn block_dim() -> (u32, u32, u32) {
+        (BLOCK_SIZE, 1, 1)
+    }
+
+    /// Upload an f64 tape to the GPU for native f64 operations.
+    pub fn upload_tape_f64(
+        &self,
+        tape: &crate::BytecodeTape<f64>,
+    ) -> Result<CudaTapeBuffersF64, GpuError> {
+        if tape.has_custom_ops() {
+            return Err(GpuError::CustomOpsNotSupported);
+        }
+        // The f64 kernels index device memory with the tape's operand and
+        // output indices, so a structurally-invalid tape (e.g. one
+        // deserialized from tampered bytes) must be rejected before upload.
+        tape.validate()
+            .map_err(|e| GpuError::Other(format!("refusing to upload invalid tape: {e}")))?;
+        let s = &self.stream;
+        // SAFETY(u32 cast): OpCode is #[repr(u8)], so *op as u32 is lossless.
+        let opcodes: Vec<u32> = tape.opcodes_slice().iter().map(|op| *op as u32).collect();
+        let args = tape.arg_indices_slice();
+        let arg0: Vec<u32> = args.iter().map(|a| a[0]).collect();
+        let arg1: Vec<u32> = args.iter().map(|a| a[1]).collect();
+        let constants: Vec<f64> = tape.values_slice().to_vec();
+        let output_indices_raw = tape.all_output_indices().to_vec();
+        // Same defensive fallback as `upload_tape` — empty output_indices
+        // crashes `clone_htod`, so synthesise a single-output vector from
+        // the tape's scalar output_index.
+        let (output_indices, num_outputs) = if output_indices_raw.is_empty() {
+            (vec![tape.output_index() as u32], 1u32)
+        } else {
+            let n = output_indices_raw.len() as u32;
+            (output_indices_raw, n)
+        };
+
+        Ok(CudaTapeBuffersF64 {
+            opcodes: s.clone_htod(&opcodes).map_err(cuda_err)?,
+            arg0: s.clone_htod(&arg0).map_err(cuda_err)?,
+            arg1: s.clone_htod(&arg1).map_err(cuda_err)?,
+            constants_f64: s.clone_htod(&constants).map_err(cuda_err)?,
+            output_indices: s.clone_htod(&output_indices).map_err(cuda_err)?,
+            // SAFETY(u32 cast): tape length cannot practically exceed u32::MAX (~4.3B opcodes
+            // ≈ 17 GB of opcode storage alone).
+            num_ops: tape.opcodes_slice().len() as u32,
+            // SAFETY(u32 cast): these counts are bounded by tape size (same order as num_ops),
+            // which cannot practically reach u32::MAX (~4.3B opcodes = ~17 GB).
+            num_inputs: tape.num_inputs() as u32,
+            num_variables: tape.num_variables_count() as u32,
+            num_outputs,
+        })
+    }
+}
+
+impl GpuBackend for CudaContext {
+    type TapeBuffers = CudaTapeBuffers;
+
+    /// Number of outputs the tape produces.
+    fn num_outputs(&self, tape: &CudaTapeBuffers) -> u32 {
+        tape.num_outputs
+    }
+
+    /// # Panics
+    ///
+    /// Panics if `data` fails validation, or if CUDA device memory allocation
+    /// fails (e.g. OOM). The `GpuBackend` trait returns `Self::TapeBuffers`
+    /// (not `Result`), preventing graceful error handling — use
+    /// `upload_tape_f64` for the `Result`-returning f64 variant.
+    fn upload_tape(&self, data: &GpuTapeData) -> CudaTapeBuffers {
+        if let Err(e) = data.validate() {
+            panic!("refusing to upload invalid GpuTapeData: {e}");
+        }
+        let s = &self.stream;
+        // Defensive fallback matching wgpu: single-output tapes set
+        // `output_indices = []` and only populate `output_index`, but
+        // `clone_htod(&[])` panics on CUDA. Synthesise a one-element
+        // vector so the single-output path works uniformly across
+        // backends.
+        let (output_indices_src, num_outputs) = if data.output_indices.is_empty() {
+            (vec![data.output_index], 1u32)
+        } else {
+            // SAFETY(u32 cast): output_indices.len() is bounded by tape
+            // outputs count, which is at most num_variables (already u32).
+            (
+                data.output_indices.clone(),
+                data.output_indices.len() as u32,
+            )
+        };
+        CudaTapeBuffers {
+            opcodes: s.clone_htod(&data.opcodes).unwrap(),
+            arg0: s.clone_htod(&data.arg0).unwrap(),
+            arg1: s.clone_htod(&data.arg1).unwrap(),
+            constants_f32: s.clone_htod(&data.constants).unwrap(),
+            output_indices: s.clone_htod(&output_indices_src).unwrap(),
+            num_ops: data.num_ops,
+            num_inputs: data.num_inputs,
+            num_variables: data.num_variables,
+            num_outputs,
+        }
+    }
+
+    fn forward_batch(
+        &self,
+        tape: &CudaTapeBuffers,
+        inputs: &[f32],
+        batch_size: u32,
+    ) -> Result<Vec<f32>, GpuError> {
+        cuda_forward_batch_body!(
+            self,
+            tape,
+            inputs,
+            batch_size,
+            f32,
+            constants_f32,
+            forward_f32
+        )
+    }
+
+    fn gradient_batch(
+        &self,
+        tape: &CudaTapeBuffers,
+        inputs: &[f32],
+        batch_size: u32,
+    ) -> Result<(Vec<f32>, Vec<f32>), GpuError> {
+        cuda_gradient_batch_body!(
+            self,
+            tape,
+            inputs,
+            batch_size,
+            f32,
+            constants_f32,
+            forward_f32,
+            reverse_f32
+        )
+    }
+
+    fn sparse_jacobian(
+        &self,
+        tape: &CudaTapeBuffers,
+        tape_cpu: &mut crate::BytecodeTape<f32>,
+        x: &[f32],
+    ) -> Result<(Vec<f32>, crate::sparse::JacobianSparsityPattern, Vec<f32>), GpuError> {
+        cuda_sparse_jacobian_body!(self, tape, tape_cpu, x, f32, constants_f32, tangent_fwd_f32)
+    }
+
+    fn hvp_batch(
+        &self,
+        tape: &CudaTapeBuffers,
+        x: &[f32],
+        tangent_dirs: &[f32],
+        batch_size: u32,
+    ) -> Result<(Vec<f32>, Vec<f32>), GpuError> {
+        cuda_hvp_batch_body!(
+            self,
+            tape,
+            x,
+            tangent_dirs,
+            batch_size,
+            f32,
+            constants_f32,
+            tangent_rev_f32
+        )
+    }
+
+    fn sparse_hessian(
+        &self,
+        tape: &CudaTapeBuffers,
+        tape_cpu: &mut crate::BytecodeTape<f32>,
+        x: &[f32],
+    ) -> Result<(f32, Vec<f32>, crate::sparse::SparsityPattern, Vec<f32>), GpuError> {
+        cuda_sparse_hessian_body!(self, tape, tape_cpu, x, f32, hvp_batch)
+    }
+
+    // taylor_forward_2nd_batch: uses default trait impl (delegates to kth_batch(order=3))
+
+    #[cfg(feature = "stde")]
+    fn taylor_forward_kth_batch(
+        &self,
+        tape: &CudaTapeBuffers,
+        primal_inputs: &[f32],
+        direction_seeds: &[f32],
+        batch_size: u32,
+        order: usize,
+    ) -> Result<super::TaylorKthBatchResult<f32>, GpuError> {
+        // Delegate to inherent method
+        self.taylor_forward_kth_batch(tape, primal_inputs, direction_seeds, batch_size, order)
+    }
+}
+
+impl CudaContext {
+    /// Batched second-order Taylor forward propagation (f64, CUDA only).
+    #[cfg(feature = "stde")]
+    pub fn taylor_forward_2nd_batch_f64(
+        &self,
+        tape: &CudaTapeBuffersF64,
+        primal_inputs: &[f64],
+        direction_seeds: &[f64],
+        batch_size: u32,
+    ) -> Result<super::TaylorBatchResult<f64>, GpuError> {
+        let kth =
+            self.taylor_forward_kth_batch_f64(tape, primal_inputs, direction_seeds, batch_size, 3)?;
+        let mut coeffs = kth.coefficients.into_iter();
+        Ok(super::TaylorBatchResult {
+            values: coeffs.next().unwrap(),
+            c1s: coeffs.next().unwrap(),
+            c2s: coeffs.next().unwrap(),
+        })
+    }
+
+    // ── K-th order Taylor forward (lazy-compiled codegen kernels) ──
+
+    /// Lazily compile and cache the K-specialized Taylor forward kernel.
+    ///
+    /// Uses double-checked locking: the mutex is released during PTX
+    /// compilation to avoid blocking concurrent callers.
+    #[cfg(feature = "stde")]
+    fn get_taylor_kth_kernel(
+        &self,
+        order: usize,
+        f32_mode: bool,
+    ) -> Result<CudaFunction, GpuError> {
+        let mutex = if f32_mode {
+            &self.taylor_fwd_kth_f32
+        } else {
+            &self.taylor_fwd_kth_f64
+        };
+
+        // Fast path: already compiled
+        {
+            let kernels = mutex.lock().map_err(|e| GpuError::Other(e.to_string()))?;
+            if let Some(ref func) = kernels[order - 1] {
+                return Ok(func.clone());
+            }
+        } // lock released before compilation
+
+        // Slow path: compile outside the lock
+        let float_type = if f32_mode { "float" } else { "double" };
+        let src = format!(
+            "#define FLOAT_TYPE {float_type}\n{}",
+            super::taylor_codegen::generate_taylor_cuda(order)
+        );
+        // Taylor codegen inherits the same `--fmad=false` policy so
+        // generated jet arithmetic matches the hand-written CPU Taylor
+        // routines bit-for-bit (FMA would otherwise fold mul+add pairs
+        // and shift results by a fraction of a ULP).
+        let opts = CompileOptions {
+            fmad: Some(false),
+            ..Default::default()
+        };
+        let ptx = compile_ptx_with_opts(&src, opts).map_err(cuda_err)?;
+        let module = self.ctx.load_module(ptx).map_err(cuda_err)?;
+        let func = module
+            .load_function("taylor_forward_kth")
+            .map_err(cuda_err)?;
+
+        // Re-acquire lock and cache (another thread may have beaten us)
+        let mut kernels = mutex.lock().map_err(|e| GpuError::Other(e.to_string()))?;
+        if kernels[order - 1].is_none() {
+            kernels[order - 1] = Some(func.clone());
+        }
+        Ok(kernels[order - 1].as_ref().unwrap().clone())
+    }
+
+    /// Batched K-th order Taylor forward propagation (f32).
+    ///
+    /// Supports `order` in 1..=5. Kernels are compiled lazily on first use.
+    /// Returns K coefficient vectors, where `coefficients[k]` has
+    /// `batch_size * num_outputs` elements.
+    #[cfg(feature = "stde")]
+    pub fn taylor_forward_kth_batch(
+        &self,
+        tape: &CudaTapeBuffers,
+        primal_inputs: &[f32],
+        direction_seeds: &[f32],
+        batch_size: u32,
+        order: usize,
+    ) -> Result<super::TaylorKthBatchResult<f32>, GpuError> {
+        cuda_taylor_kth_body!(
+            self,
+            tape,
+            primal_inputs,
+            direction_seeds,
+            batch_size,
+            order,
+            f32,
+            constants_f32,
+            true
+        )
+    }
+
+    /// Batched K-th order Taylor forward propagation (f64, CUDA only).
+    ///
+    /// Supports `order` in 1..=5. Kernels are compiled lazily on first use.
+    #[cfg(feature = "stde")]
+    pub fn taylor_forward_kth_batch_f64(
+        &self,
+        tape: &CudaTapeBuffersF64,
+        primal_inputs: &[f64],
+        direction_seeds: &[f64],
+        batch_size: u32,
+        order: usize,
+    ) -> Result<super::TaylorKthBatchResult<f64>, GpuError> {
+        cuda_taylor_kth_body!(
+            self,
+            tape,
+            primal_inputs,
+            direction_seeds,
+            batch_size,
+            order,
+            f64,
+            constants_f64,
+            false
+        )
+    }
+
+    // ── f64 operations ──
+
+    /// Batched forward evaluation (f64, CUDA only).
+    pub fn forward_batch_f64(
+        &self,
+        tape: &CudaTapeBuffersF64,
+        inputs: &[f64],
+        batch_size: u32,
+    ) -> Result<Vec<f64>, GpuError> {
+        cuda_forward_batch_body!(
+            self,
+            tape,
+            inputs,
+            batch_size,
+            f64,
+            constants_f64,
+            forward_f64
+        )
+    }
+
+    /// Batched gradient (f64, CUDA only).
+    pub fn gradient_batch_f64(
+        &self,
+        tape: &CudaTapeBuffersF64,
+        inputs: &[f64],
+        batch_size: u32,
+    ) -> Result<(Vec<f64>, Vec<f64>), GpuError> {
+        cuda_gradient_batch_body!(
+            self,
+            tape,
+            inputs,
+            batch_size,
+            f64,
+            constants_f64,
+            forward_f64,
+            reverse_f64
+        )
+    }
+
+    /// Sparse Jacobian (f64, CUDA only).
+    pub fn sparse_jacobian_f64(
+        &self,
+        tape: &CudaTapeBuffersF64,
+        tape_cpu: &mut crate::BytecodeTape<f64>,
+        x: &[f64],
+    ) -> Result<(Vec<f64>, crate::sparse::JacobianSparsityPattern, Vec<f64>), GpuError> {
+        cuda_sparse_jacobian_body!(self, tape, tape_cpu, x, f64, constants_f64, tangent_fwd_f64)
+    }
+
+    /// Sparse Hessian (f64, CUDA only).
+    pub fn sparse_hessian_f64(
+        &self,
+        tape: &CudaTapeBuffersF64,
+        tape_cpu: &mut crate::BytecodeTape<f64>,
+        x: &[f64],
+    ) -> Result<(f64, Vec<f64>, crate::sparse::SparsityPattern, Vec<f64>), GpuError> {
+        cuda_sparse_hessian_body!(self, tape, tape_cpu, x, f64, hvp_batch_f64)
+    }
+
+    /// HVP batch (f64, CUDA only).
+    pub fn hvp_batch_f64(
+        &self,
+        tape: &CudaTapeBuffersF64,
+        x: &[f64],
+        tangent_dirs: &[f64],
+        batch_size: u32,
+    ) -> Result<(Vec<f64>, Vec<f64>), GpuError> {
+        cuda_hvp_batch_body!(
+            self,
+            tape,
+            x,
+            tangent_dirs,
+            batch_size,
+            f64,
+            constants_f64,
+            tangent_rev_f64
+        )
+    }
+}

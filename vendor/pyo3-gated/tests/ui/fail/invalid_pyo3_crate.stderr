@@ -1,0 +1,5 @@
+error: `pyo3_crate` must be a valid Rust path
+ --> tests/ui/fail/invalid_pyo3_crate.rs:3:20
+  |
+3 | #[py_compat_struct(pyo3_crate = "not a path")]
+  |                    ^^^^^^^^^^

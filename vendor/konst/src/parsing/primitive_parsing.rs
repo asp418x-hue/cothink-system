@@ -1,0 +1,396 @@
+use crate::string;
+
+use super::{ErrorKind, ParseDirection, ParseError, Parser};
+
+impl<'a> Parser<'a> {
+    /// Parses a `u128` until a non-digit is reached.
+    ///
+    /// This method mutates the parser in place on success, leaving it unmodified on error.
+    ///
+    /// To parse an integer from an entire string (erroring on non-digit bytes),
+    /// you can use [`u128::from_str_radix`]
+    ///
+    /// You also can use the [`parse_type`](crate::parsing::parse_type)
+    /// macro to parse a `u128`, and other [`HasParser`](crate::parsing::HasParser) types.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use konst::{
+    ///     parsing::{Parser, ParseError},
+    ///     result, try_,
+    /// };
+    ///
+    /// {
+    ///     let mut parser = Parser::new("12345");
+    ///     let num = result::unwrap!(parser.parse_u128());
+    ///     assert_eq!(num, 12345);
+    ///     assert!(parser.is_empty());
+    /// }
+    ///
+    /// /// Parses a `[u128; 2]` from a parser starting with `"<number>;<number>", eg: `"100;400"`.
+    /// const fn parse_pair<'a>(parser: &mut Parser<'a>) -> Result<[u128; 2], ParseError<'a>> {
+    ///     let mut ret = [0; 2];
+    ///     
+    ///     ret[0] = try_!(parser.parse_u128());
+    ///     
+    ///     // parsing the `;``between the integers.
+    ///     //
+    ///     // Note that because we don't use `.trim_start()` afterwards,
+    ///     // this can't be followed by spaces.
+    ///     try_!(parser.strip_prefix(";"));
+    ///     
+    ///     ret[1] = try_!(parser.parse_u128());
+    ///     
+    ///     Ok(ret)
+    /// }
+    /// const PAIR: [u128; 2] = {
+    ///     let parser = &mut Parser::new("1365;6789");
+    ///     result::unwrap!(parse_pair(parser))
+    /// };
+    ///
+    /// assert_eq!(PAIR[0], 1365);
+    /// assert_eq!(PAIR[1], 6789);
+    ///
+    ///
+    /// ```
+    ///
+    pub const fn parse_u128(&mut self) -> Result<u128, ParseError<'a>> {
+        parse_integer! {unsigned, (u128, u128), self}
+    }
+    /// Parses a `i128` until a non-digit is reached.
+    ///
+    /// This method mutates the parser in place on success, leaving it unmodified on error.
+    ///
+    /// To parse an integer from an entire string (erroring on non-digit bytes),
+    /// you can use [`i128::from_str_radix`]
+    ///
+    /// You also can use the [`parse_type`](crate::parsing::parse_type)
+    /// macro to parse a `i128`, and other [`HasParser`](crate::parsing::HasParser) types.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use konst::{Parser, result};
+    ///
+    /// {
+    ///     let mut parser = Parser::new("12345");
+    ///     let num = result::unwrap!(parser.parse_i128());
+    ///     assert_eq!(num, 12345);
+    ///     assert!(parser.is_empty());
+    /// }
+    /// {
+    ///     let mut parser = Parser::new("-54321;6789");
+    ///     
+    ///     assert_eq!(result::unwrap!(parser.parse_i128()), -54321);
+    ///     assert_eq!(parser.remainder(), ";6789");
+    ///
+    ///     _ = parser.strip_prefix(";");
+    ///     assert_eq!(parser.remainder(), "6789");
+    ///
+    ///     assert_eq!(result::unwrap!(parser.parse_i128()), 6789);
+    ///     assert!(parser.is_empty());
+    /// }
+    ///
+    /// ```
+    ///
+    pub const fn parse_i128(&mut self) -> Result<i128, ParseError<'a>> {
+        parse_integer! {signed, (i128, u128), self}
+    }
+    /// Parses a `u64` until a non-digit is reached.
+    ///
+    /// This method mutates the parser in place on success, leaving it unmodified on error.
+    ///
+    /// To parse an integer from an entire string (erroring on non-digit bytes),
+    /// you can use [`u64::from_str_radix`]
+    ///
+    /// You also can use the [`parse_type`](crate::parsing::parse_type)
+    /// macro to parse a `u64`, and other [`HasParser`](crate::parsing::HasParser) types.
+    ///
+    /// # Example
+    ///
+    /// For an example for how to use this method,
+    /// you can look at the docs for the [`Parser::parse_u128`](#method.parse_u128) method.
+    ///
+    pub const fn parse_u64(&mut self) -> Result<u64, ParseError<'a>> {
+        parse_integer! {unsigned, (u64, u64), self}
+    }
+    /// Parses a `i64` until a non-digit is reached.
+    ///
+    /// This method mutates the parser in place on success, leaving it unmodified on error.
+    ///
+    /// To parse an integer from an entire string (erroring on non-digit bytes),
+    /// you can use [`i64::from_str_radix`]
+    ///
+    /// You also can use the [`parse_type`](crate::parsing::parse_type)
+    /// macro to parse a `i64`, and other [`HasParser`](crate::parsing::HasParser) types.
+    ///
+    /// # Example
+    ///
+    /// For an example for how to use this method,
+    /// you can look at the docs for the [`Parser::parse_i128`](#method.parse_i128) method.
+    ///
+    pub const fn parse_i64(&mut self) -> Result<i64, ParseError<'a>> {
+        parse_integer! {signed, (i64, u64), self}
+    }
+    /// Parses a `u32` until a non-digit is reached.
+    ///
+    /// This method mutates the parser in place on success, leaving it unmodified on error.
+    ///
+    /// To parse an integer from an entire string (erroring on non-digit bytes),
+    /// you can use [`u32::from_str_radix`]
+    ///
+    /// You also can use the [`parse_type`](crate::parsing::parse_type)
+    /// macro to parse a `u32`, and other [`HasParser`](crate::parsing::HasParser) types.
+    ///
+    /// # Example
+    ///
+    /// For an example for how to use this method,
+    /// you can look at the docs for the [`Parser::parse_u128`](#method.parse_u128) method.
+    ///
+    pub const fn parse_u32(&mut self) -> Result<u32, ParseError<'a>> {
+        parse_integer! {unsigned, (u32, u32), self}
+    }
+    /// Parses a `i32` until a non-digit is reached.
+    ///
+    /// This method mutates the parser in place on success, leaving it unmodified on error.
+    ///
+    /// To parse an integer from an entire string (erroring on non-digit bytes),
+    /// you can use [`i32::from_str_radix`]
+    ///
+    /// You also can use the [`parse_type`](crate::parsing::parse_type)
+    /// macro to parse a `i32`, and other [`HasParser`](crate::parsing::HasParser) types.
+    ///
+    /// # Example
+    ///
+    /// For an example for how to use this method,
+    /// you can look at the docs for the [`Parser::parse_i128`](#method.parse_i128) method.
+    ///
+    pub const fn parse_i32(&mut self) -> Result<i32, ParseError<'a>> {
+        parse_integer! {signed, (i32, u32), self}
+    }
+    /// Parses a `u16` until a non-digit is reached.
+    ///
+    /// This method mutates the parser in place on success, leaving it unmodified on error.
+    ///
+    /// To parse an integer from an entire string (erroring on non-digit bytes),
+    /// you can use [`u16::from_str_radix`]
+    ///
+    /// You also can use the [`parse_type`](crate::parsing::parse_type)
+    /// macro to parse a `u16`, and other [`HasParser`](crate::parsing::HasParser) types.
+    ///
+    /// # Example
+    ///
+    /// For an example for how to use this method,
+    /// you can look at the docs for the [`Parser::parse_u128`](#method.parse_u128) method.
+    ///
+    pub const fn parse_u16(&mut self) -> Result<u16, ParseError<'a>> {
+        parse_integer! {unsigned, (u16, u16), self}
+    }
+    /// Parses a `i16` until a non-digit is reached.
+    ///
+    /// This method mutates the parser in place on success, leaving it unmodified on error.
+    ///
+    /// To parse an integer from an entire string (erroring on non-digit bytes),
+    /// you can use [`i16::from_str_radix`]
+    ///
+    /// You also can use the [`parse_type`](crate::parsing::parse_type)
+    /// macro to parse a `i16`, and other [`HasParser`](crate::parsing::HasParser) types.
+    ///
+    /// # Example
+    ///
+    /// For an example for how to use this method,
+    /// you can look at the docs for the [`Parser::parse_i128`](#method.parse_i128) method.
+    ///
+    pub const fn parse_i16(&mut self) -> Result<i16, ParseError<'a>> {
+        parse_integer! {signed, (i16, u16), self}
+    }
+    /// Parses a `u8` until a non-digit is reached.
+    ///
+    /// This method mutates the parser in place on success, leaving it unmodified on error.
+    ///
+    /// To parse an integer from an entire string (erroring on non-digit bytes),
+    /// you can use [`u8::from_str_radix`]
+    ///
+    /// You also can use the [`parse_type`](crate::parsing::parse_type)
+    /// macro to parse a `u8`, and other [`HasParser`](crate::parsing::HasParser) types.
+    ///
+    /// # Example
+    ///
+    /// For an example for how to use this method,
+    /// you can look at the docs for the [`Parser::parse_u128`](#method.parse_u128) method.
+    ///
+    pub const fn parse_u8(&mut self) -> Result<u8, ParseError<'a>> {
+        parse_integer! {unsigned, (u8, u8), self}
+    }
+    /// Parses a `i8` until a non-digit is reached.
+    ///
+    /// This method mutates the parser in place on success, leaving it unmodified on error.
+    ///
+    /// To parse an integer from an entire string (erroring on non-digit bytes),
+    /// you can use [`i8::from_str_radix`]
+    ///
+    /// You also can use the [`parse_type`](crate::parsing::parse_type)
+    /// macro to parse a `i8`, and other [`HasParser`](crate::parsing::HasParser) types.
+    ///
+    /// # Example
+    ///
+    /// For an example for how to use this method,
+    /// you can look at the docs for the [`Parser::parse_i128`](#method.parse_i128) method.
+    ///
+    pub const fn parse_i8(&mut self) -> Result<i8, ParseError<'a>> {
+        parse_integer! {signed, (i8, u8), self}
+    }
+    /// Parses a `usize` until a non-digit is reached.
+    ///
+    /// This method mutates the parser in place on success, leaving it unmodified on error.
+    ///
+    /// To parse an integer from an entire string (erroring on non-digit bytes),
+    /// you can use [`usize::from_str_radix`]
+    ///
+    /// You also can use the [`parse_type`](crate::parsing::parse_type)
+    /// macro to parse a `usize`, and other [`HasParser`](crate::parsing::HasParser) types.
+    ///
+    pub const fn parse_usize(&mut self) -> Result<usize, ParseError<'a>> {
+        parse_integer! {unsigned, (usize, usize), self}
+    }
+    /// Parses a `isize` until a non-digit is reached.
+    ///
+    /// This method mutates the parser in place on success, leaving it unmodified on error.
+    ///
+    /// To parse an integer from an entire string (erroring on non-digit bytes),
+    /// you can use [`isize::from_str_radix`]
+    ///
+    /// You also can use the [`parse_type`](crate::parsing::parse_type)
+    /// macro to parse a `isize`, and other [`HasParser`](crate::parsing::HasParser) types.
+    ///
+    /// # Example
+    ///
+    /// For an example for how to use this method,
+    /// you can look at the docs for the [`Parser::parse_i128`](#method.parse_i128) method.
+    ///
+    pub const fn parse_isize(&mut self) -> Result<isize, ParseError<'a>> {
+        parse_integer! {signed, (isize, usize), self}
+    }
+}
+
+macro_rules! parse_integer {
+    ($signedness:ident, ($type:ty, $uns:ty), $parser:ident) => (try_parsing! {
+        $parser, FromStart, ret;{
+            let mut num: $uns;
+
+            let mut bytes = $parser.str.as_bytes();
+
+            parse_integer! {@parse_signed $signedness, ($type, $uns), bytes, num, sign}
+
+            while let [byte @ b'0'..=b'9', rem @ ..] = bytes {
+                bytes = rem;
+
+                let (next_mul, overflowed_mul) = num.overflowing_mul(10);
+                let (next_add, overflowed_add) = next_mul.overflowing_add((*byte - b'0') as $uns);
+
+                if overflowed_mul | overflowed_add {
+                    throw!(ErrorKind::ParseInteger)
+                }
+
+                num = next_add;
+            }
+
+            parse_integer! {@apply_sign $signedness, ($type, $uns), num, sign}
+
+            $parser.str = string::str_from($parser.str, $parser.str.len() - bytes.len());
+
+            num
+        }
+    });
+    (@parse_signed signed, ($type:ty, $uns:ty), $bytes:ident, $num:ident, $isneg:ident) => {
+        let $isneg = if let [b'-', rem @ ..] = $bytes {
+            $bytes = rem;
+            true
+        } else {
+            false
+        };
+
+        parse_integer!(@parse_signed unsigned, ($type, $uns), $bytes, $num, $isneg)
+    };
+    (@parse_signed unsigned, ($type:ty, $uns:ty), $bytes:ident, $num:ident, $isneg:ident) => {
+        $num = if let [byte @ b'0'..=b'9', rem @ ..] = $bytes {
+            $bytes = rem;
+            (*byte - b'0') as $uns
+        } else {
+            throw!(ErrorKind::ParseInteger)
+        };
+    };
+    (@apply_sign signed, ($type:ty, $uns:ty), $num:ident, $isneg:ident) => {
+        const MAX_POS: $uns = <$type>::MAX as $uns;
+        const MAX_NEG: $uns = <$type>::MIN as $uns;
+
+        let $num = if $isneg {
+            if $num <= MAX_NEG {
+                ($num as $type).wrapping_neg()
+            } else {
+                throw!(ErrorKind::ParseInteger)
+            }
+        } else {
+            if $num <= MAX_POS {
+                $num as $type
+            } else {
+                throw!(ErrorKind::ParseInteger)
+            }
+        };
+    };
+    (@apply_sign unsigned, ($type:ty, $uns:ty), $num:ident, $isneg:ident) => {};
+}
+use parse_integer;
+
+////////////////////////////////////////////////////////////////////////////////
+
+impl<'a> Parser<'a> {
+    /// Parses a `bool`.
+    ///
+    /// This method mutates the parser in place on success, leaving it unmodified on error.
+    ///
+    /// To parse a bool from an entire string
+    /// (erroring if the string isn't exactly `"true"` or `"false"`),
+    /// you can use [`primitive::parse_bool`]
+    ///
+    /// You also can use the [`parse_type`](crate::parsing::parse_type)
+    /// macro to parse a `bool`, and other [`HasParser`](crate::parsing::HasParser) types.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use konst::{Parser, result};
+    ///
+    /// {
+    ///     let mut parser = Parser::new("falsemorestring");
+    ///     let boolean = result::unwrap!(parser.parse_bool());
+    ///     assert_eq!(boolean, false);
+    ///     assert_eq!(parser.remainder(), "morestring");
+    /// }
+    /// {
+    ///     let mut parser = Parser::new("truefoo");
+    ///     let boolean = result::unwrap!(parser.parse_bool());
+    ///     assert_eq!(boolean, true);
+    ///     assert_eq!(parser.remainder(), "foo");
+    /// }
+    ///
+    /// ```
+    ///
+    /// [`primitive::parse_bool`]: crate::primitive::parse_bool
+    pub const fn parse_bool(&mut self) -> Result<bool, ParseError<'a>> {
+        try_parsing! {self, FromStart, ret;
+            match self.str.as_bytes() {
+                [b't', b'r', b'u', b'e', ..] => {
+                    self.str = string::str_from(self.str, 4);
+                    true
+                }
+                [b'f', b'a', b'l', b's', b'e', ..] => {
+                    self.str = string::str_from(self.str, 5);
+                    false
+                }
+                _ => throw!(ErrorKind::ParseBool),
+            }
+        }
+    }
+}

@@ -1,0 +1,1467 @@
+//! wgpu compute backend for GPU-accelerated tape evaluation.
+//!
+//! Cross-platform (Metal, Vulkan, DX12). f32 only — WGSL does not support f64.
+//!
+//! Domain note: WGSL has no exact `fmod`, so the `Rem` opcode is computed as
+//! `a - trunc(a/b) * b` and is exact only while the quotient is exactly
+//! representable in f32 (`|a/b| < 2^24`). Above that ratio the remainder
+//! diverges from the CPU and CUDA backends, which use exact `fmod`.
+
+use super::{GpuBackend, GpuError, GpuTapeData, TapeMeta};
+
+/// GPU buffers holding an uploaded tape (wgpu backend).
+pub struct WgpuTapeBuffers {
+    pub(crate) opcodes_buf: wgpu::Buffer,
+    pub(crate) arg0_buf: wgpu::Buffer,
+    pub(crate) arg1_buf: wgpu::Buffer,
+    pub(crate) constants_buf: wgpu::Buffer,
+    pub(crate) output_indices_buf: wgpu::Buffer,
+    pub(crate) num_ops: u32,
+    pub(crate) num_inputs: u32,
+    pub(crate) num_variables: u32,
+    pub(crate) num_outputs: u32,
+}
+
+/// wgpu compute context — holds the device, queue, and compiled pipelines.
+pub struct WgpuContext {
+    device: wgpu::Device,
+    queue: wgpu::Queue,
+    forward_pipeline: wgpu::ComputePipeline,
+    reverse_pipeline: wgpu::ComputePipeline,
+    tangent_fwd_pipeline: wgpu::ComputePipeline,
+    tangent_rev_pipeline: wgpu::ComputePipeline,
+    /// K-specialized Taylor forward pipelines for K=1..5 (index = K-1).
+    #[cfg(feature = "stde")]
+    taylor_fwd_kth_pipelines: [wgpu::ComputePipeline; 5],
+    tape_bind_group_layout: wgpu::BindGroupLayout,
+    forward_io_bind_group_layout: wgpu::BindGroupLayout,
+    reverse_io_bind_group_layout: wgpu::BindGroupLayout,
+    tangent_fwd_io_bind_group_layout: wgpu::BindGroupLayout,
+    tangent_rev_io_bind_group_layout: wgpu::BindGroupLayout,
+    #[cfg(feature = "stde")]
+    taylor_fwd_2nd_io_bind_group_layout: wgpu::BindGroupLayout,
+}
+
+/// Build one compute pipeline from the shared triple every entry point
+/// repeats: a layout over `[tape_bgl, io_bgl]`, the shader module, and the
+/// pipeline itself with the crate's fixed defaults (`main` entry, default
+/// compilation options, no cache). `name` seeds the three labels.
+fn build_compute_pipeline(
+    device: &wgpu::Device,
+    name: &str,
+    tape_bgl: &wgpu::BindGroupLayout,
+    io_bgl: &wgpu::BindGroupLayout,
+    wgsl_src: &str,
+) -> wgpu::ComputePipeline {
+    let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        label: Some(&format!("echidna_{name}_pl")),
+        bind_group_layouts: &[Some(tape_bgl), Some(io_bgl)],
+        immediate_size: 0,
+    });
+    let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label: Some(&format!("echidna_{name}_shader")),
+        source: wgpu::ShaderSource::Wgsl(wgsl_src.into()),
+    });
+    device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+        label: Some(&format!("echidna_{name}_pipeline")),
+        layout: Some(&layout),
+        module: &shader,
+        entry_point: Some("main"),
+        compilation_options: wgpu::PipelineCompilationOptions::default(),
+        cache: None,
+    })
+}
+
+impl WgpuContext {
+    /// Acquire a GPU device. Returns `None` if no suitable adapter is found.
+    ///
+    /// ```no_run
+    /// use echidna::gpu::WgpuContext;
+    ///
+    /// let ctx = WgpuContext::new().expect("no wgpu adapter available");
+    /// ```
+    #[must_use]
+    pub fn new() -> Option<Self> {
+        pollster::block_on(Self::new_async())
+    }
+
+    async fn new_async() -> Option<Self> {
+        let instance = wgpu::Instance::default();
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions {
+                power_preference: wgpu::PowerPreference::HighPerformance,
+                compatible_surface: None,
+                force_fallback_adapter: false,
+                // wgpu 30 added limit bucketing (adapter-fingerprinting mitigation
+                // for untrusted content). echidna is a trusted native compute host,
+                // so keep the full reported limits available.
+                apply_limit_buckets: false,
+            })
+            .await
+            .ok()?;
+
+        // wgpu 29 tightened downlevel defaults — `max_storage_buffers_per_shader_stage`
+        // dropped. The tangent-reverse pipeline binds 13 storage buffers (5 in the
+        // tape layout + 8 in the tangent-reverse I/O layout); request that explicitly
+        // and fall back to whatever the adapter allows if it's higher.
+        let required_limits = wgpu::Limits {
+            max_storage_buffers_per_shader_stage: 13,
+            ..wgpu::Limits::downlevel_defaults()
+        }
+        .using_resolution(adapter.limits());
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor {
+                required_limits,
+                ..wgpu::DeviceDescriptor::default()
+            })
+            .await
+            .ok()?;
+
+        // Bind group layout 0: tape data (read-only storage + uniform)
+        let tape_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("echidna_tape_bgl"),
+                entries: &[
+                    // binding 0: opcodes
+                    bgl_storage_ro(0),
+                    // binding 1: arg0
+                    bgl_storage_ro(1),
+                    // binding 2: arg1
+                    bgl_storage_ro(2),
+                    // binding 3: constants
+                    bgl_storage_ro(3),
+                    // binding 4: TapeMeta uniform
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 4,
+                        visibility: wgpu::ShaderStages::COMPUTE,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                    // binding 5: output_indices
+                    bgl_storage_ro(5),
+                ],
+            });
+
+        // Bind group layout 1a: forward I/O buffers
+        let forward_io_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("echidna_fwd_io_bgl"),
+                entries: &[
+                    // binding 0: inputs [B * num_inputs] (read-only)
+                    bgl_storage_ro(0),
+                    // binding 1: values [B * num_variables] (read-write)
+                    bgl_storage_rw(1),
+                    // binding 2: outputs [B * num_outputs] (read-write)
+                    bgl_storage_rw(2),
+                ],
+            });
+
+        // Bind group layout 1b: reverse I/O buffers
+        let reverse_io_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("echidna_rev_io_bgl"),
+                entries: &[
+                    // binding 0: values [B * num_variables] (read-only, from forward)
+                    bgl_storage_ro(0),
+                    // binding 1: adjoints [B * num_variables] (read-write)
+                    bgl_storage_rw(1),
+                    // binding 2: grad_out [B * num_inputs] (read-write)
+                    bgl_storage_rw(2),
+                ],
+            });
+
+        // Forward pipeline
+        let forward_pipeline = build_compute_pipeline(
+            &device,
+            "forward",
+            &tape_bind_group_layout,
+            &forward_io_bind_group_layout,
+            include_str!("shaders/forward.wgsl"),
+        );
+
+        // Reverse pipeline
+        let reverse_pipeline = build_compute_pipeline(
+            &device,
+            "reverse",
+            &tape_bind_group_layout,
+            &reverse_io_bind_group_layout,
+            include_str!("shaders/reverse.wgsl"),
+        );
+
+        // Tangent forward pipeline
+        let tangent_fwd_io_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("echidna_tfwd_io_bgl"),
+                entries: &[
+                    bgl_storage_ro(0), // primal_inputs
+                    bgl_storage_ro(1), // tangent_seeds
+                    bgl_storage_rw(2), // primals working
+                    bgl_storage_rw(3), // tangents working
+                    bgl_storage_rw(4), // tangent_outputs
+                ],
+            });
+
+        let tangent_fwd_pipeline = build_compute_pipeline(
+            &device,
+            "tangent_fwd",
+            &tape_bind_group_layout,
+            &tangent_fwd_io_bind_group_layout,
+            include_str!("shaders/tangent_forward.wgsl"),
+        );
+
+        // Tangent reverse pipeline (forward-over-reverse for HVP)
+        let tangent_rev_io_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("echidna_trev_io_bgl"),
+                entries: &[
+                    bgl_storage_ro(0), // primal_inputs
+                    bgl_storage_ro(1), // tangent_seeds
+                    bgl_storage_rw(2), // primals working
+                    bgl_storage_rw(3), // tangents working
+                    bgl_storage_rw(4), // adj_re
+                    bgl_storage_rw(5), // adj_eps
+                    bgl_storage_rw(6), // grad_out
+                    bgl_storage_rw(7), // hvp_out
+                ],
+            });
+
+        let tangent_rev_pipeline = build_compute_pipeline(
+            &device,
+            "tangent_rev",
+            &tape_bind_group_layout,
+            &tangent_rev_io_bind_group_layout,
+            include_str!("shaders/tangent_reverse.wgsl"),
+        );
+
+        // Taylor forward 2nd-order pipeline (STDE only)
+        #[cfg(feature = "stde")]
+        let taylor_fwd_2nd_io_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("echidna_taylor2_io_bgl"),
+                entries: &[
+                    bgl_storage_ro(0), // primal_inputs
+                    bgl_storage_ro(1), // direction_seeds
+                    bgl_storage_rw(2), // jets working buffer
+                    bgl_storage_rw(3), // jet_outputs
+                ],
+            });
+
+        #[cfg(feature = "stde")]
+        let taylor2_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("echidna_taylor_fwd_2nd_pl"),
+            bind_group_layouts: &[
+                Some(&tape_bind_group_layout),
+                Some(&taylor_fwd_2nd_io_bind_group_layout),
+            ],
+            immediate_size: 0,
+        });
+
+        // Compile K-specialized Taylor forward pipelines for K=1..5
+        // (replaces the former handwritten taylor_forward_2nd.wgsl shader)
+        #[cfg(feature = "stde")]
+        let taylor_fwd_kth_pipelines = {
+            use super::taylor_codegen::generate_taylor_wgsl;
+            std::array::from_fn(|idx| {
+                let k = idx + 1;
+                let wgsl_src = generate_taylor_wgsl(k);
+                let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+                    label: Some(&format!("echidna_taylor_fwd_k{k}_shader")),
+                    source: wgpu::ShaderSource::Wgsl(wgsl_src.into()),
+                });
+                device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+                    label: Some(&format!("echidna_taylor_fwd_k{k}_pipeline")),
+                    layout: Some(&taylor2_layout),
+                    module: &shader,
+                    entry_point: Some("main"),
+                    compilation_options: wgpu::PipelineCompilationOptions::default(),
+                    cache: None,
+                })
+            })
+        };
+
+        Some(WgpuContext {
+            device,
+            queue,
+            forward_pipeline,
+            reverse_pipeline,
+            tangent_fwd_pipeline,
+            tangent_rev_pipeline,
+            #[cfg(feature = "stde")]
+            taylor_fwd_kth_pipelines,
+            tape_bind_group_layout,
+            forward_io_bind_group_layout,
+            reverse_io_bind_group_layout,
+            tangent_fwd_io_bind_group_layout,
+            tangent_rev_io_bind_group_layout,
+            #[cfg(feature = "stde")]
+            taylor_fwd_2nd_io_bind_group_layout,
+        })
+    }
+
+    /// Create the tape bind group (group 0) shared by all dispatch methods.
+    fn create_tape_bind_group(
+        &self,
+        tape: &WgpuTapeBuffers,
+        meta_buf: &wgpu::Buffer,
+    ) -> wgpu::BindGroup {
+        self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("tape_bg"),
+            layout: &self.tape_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: tape.opcodes_buf.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: tape.arg0_buf.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: tape.arg1_buf.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: tape.constants_buf.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 4,
+                    resource: meta_buf.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 5,
+                    resource: tape.output_indices_buf.as_entire_binding(),
+                },
+            ],
+        })
+    }
+
+    /// Batched K-th order Taylor forward propagation on GPU.
+    ///
+    /// Supports `order` (K) from 1 to 5. Each batch element pushes one direction
+    /// through the tape, producing a Taylor jet with K coefficients.
+    ///
+    /// `primal_inputs` is `[f32; batch_size * num_inputs]`.
+    /// `direction_seeds` is `[f32; batch_size * num_inputs]` — only c1 seeds are used.
+    ///
+    /// Returns `TaylorKthBatchResult` with K coefficient vectors.
+    #[cfg(feature = "stde")]
+    pub fn taylor_forward_kth_batch(
+        &self,
+        tape: &WgpuTapeBuffers,
+        primal_inputs: &[f32],
+        direction_seeds: &[f32],
+        batch_size: u32,
+        order: usize,
+    ) -> Result<super::TaylorKthBatchResult<f32>, GpuError> {
+        use wgpu::util::DeviceExt;
+
+        if !(1..=5).contains(&order) {
+            return Err(GpuError::Other(format!(
+                "unsupported Taylor order {order}, must be 1..=5"
+            )));
+        }
+        super::validate_batch_args(tape.num_inputs, batch_size)?;
+
+        // SAFETY(u32 cast): order is validated above to be in 1..=5.
+        let k = order as u32;
+        let ni = tape.num_inputs;
+        let nv = tape.num_variables;
+        let no = tape.num_outputs;
+
+        // WGSL indexes the jet buffer with `bid * nv * K` in u32; for K=4 or
+        // K=5 at realistic nv, this can overflow before the CPU-side index
+        // arithmetic catches it. Enforce the u32 envelope here so that the
+        // kernel's 32-bit indexing remains safe.
+        assert!(
+            (batch_size as u64) * (nv as u64) * (k as u64) <= u32::MAX as u64,
+            "batch_size * num_variables * order overflows u32 in WGSL shader index arithmetic"
+        );
+        let total_inputs = (batch_size as usize) * (ni as usize);
+
+        assert_eq!(
+            primal_inputs.len(),
+            total_inputs,
+            "primal_inputs length mismatch"
+        );
+        assert_eq!(
+            direction_seeds.len(),
+            total_inputs,
+            "direction_seeds length mismatch"
+        );
+
+        let meta_buf = self.create_meta_buffer(tape, batch_size, "taylor_kth_meta");
+
+        let primal_buf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("taylor_kth_primals"),
+                contents: bytemuck::cast_slice(primal_inputs),
+                usage: wgpu::BufferUsages::STORAGE,
+            });
+        let seed_buf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("taylor_kth_seeds"),
+                contents: bytemuck::cast_slice(direction_seeds),
+                usage: wgpu::BufferUsages::STORAGE,
+            });
+
+        // Jets working buffer: B * nv * K floats
+        let jets_size = (batch_size as u64) * (nv as u64) * (k as u64) * 4;
+        let jets_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("taylor_kth_jets"),
+            size: jets_size,
+            usage: wgpu::BufferUsages::STORAGE,
+            mapped_at_creation: false,
+        });
+
+        // Jet outputs: B * n_out * K floats
+        let out_count = (batch_size as u64) * (no as u64) * (k as u64);
+        let out_size = out_count * 4;
+        let jet_out_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("taylor_kth_jet_out"),
+            size: out_size,
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+            mapped_at_creation: false,
+        });
+
+        let staging_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("taylor_kth_staging"),
+            size: out_size,
+            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+
+        let tape_bg = self.create_tape_bind_group(tape, &meta_buf);
+
+        let io_bg = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("taylor_kth_io_bg"),
+            layout: &self.taylor_fwd_2nd_io_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: primal_buf.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: seed_buf.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: jets_buf.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: jet_out_buf.as_entire_binding(),
+                },
+            ],
+        });
+
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("taylor_kth_enc"),
+            });
+
+        {
+            let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                label: Some("taylor_kth_pass"),
+                timestamp_writes: None,
+            });
+            pass.set_pipeline(&self.taylor_fwd_kth_pipelines[order - 1]);
+            pass.set_bind_group(0, &tape_bg, &[]);
+            pass.set_bind_group(1, &io_bg, &[]);
+            self.dispatch_1d(&mut pass, batch_size.div_ceil(256))?;
+        }
+
+        encoder.copy_buffer_to_buffer(&jet_out_buf, 0, &staging_buf, 0, out_size);
+        let sub_idx = self.queue.submit(std::iter::once(encoder.finish()));
+
+        // Deinterleave straight from the mapped range — no intermediate Vec.
+        let total_out = (batch_size as usize) * (no as usize);
+        let coefficients = self.read_staging_with(&staging_buf, sub_idx, |bytes| {
+            super::deinterleave_coefficients(
+                bytemuck::cast_slice::<_, f32>(bytes),
+                total_out,
+                order,
+            )
+        })?;
+
+        Ok(super::TaylorKthBatchResult {
+            coefficients,
+            order,
+        })
+    }
+}
+
+impl WgpuContext {
+    /// Reject a 1-D dispatch whose workgroup count would exceed the device's
+    /// `max_compute_workgroups_per_dimension` limit (65535 on the wgpu
+    /// downlevel defaults), returning a clean `GpuError` instead of the opaque
+    /// wgpu validation error a too-large batch would otherwise raise.
+    fn check_dispatch_1d(&self, workgroups: u32) -> Result<(), GpuError> {
+        let max = self.device.limits().max_compute_workgroups_per_dimension;
+        if workgroups > max {
+            return Err(GpuError::Other(format!(
+                "dispatch of {workgroups} workgroups exceeds the device limit of {max} \
+                 per dimension (~{} elements at 256 per workgroup); split the batch",
+                (max as u64) * 256
+            )));
+        }
+        Ok(())
+    }
+
+    /// Run one 1-D compute dispatch after validating the workgroup count.
+    fn dispatch_1d(
+        &self,
+        pass: &mut wgpu::ComputePass<'_>,
+        workgroups: u32,
+    ) -> Result<(), GpuError> {
+        self.check_dispatch_1d(workgroups)?;
+        pass.dispatch_workgroups(workgroups, 1, 1);
+        Ok(())
+    }
+
+    /// Build the per-dispatch `TapeMeta` uniform buffer.
+    fn create_meta_buffer(
+        &self,
+        tape: &WgpuTapeBuffers,
+        batch_size: u32,
+        label: &str,
+    ) -> wgpu::Buffer {
+        use wgpu::util::DeviceExt;
+        let meta = TapeMeta {
+            num_ops: tape.num_ops,
+            num_inputs: tape.num_inputs,
+            num_variables: tape.num_variables,
+            num_outputs: tape.num_outputs,
+            batch_size,
+            _pad: [0; 3],
+        };
+        self.device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some(label),
+                contents: bytemuck::bytes_of(&meta),
+                usage: wgpu::BufferUsages::UNIFORM,
+            })
+    }
+
+    /// Wait for `sub_idx` to retire, then hand `staging`'s mapped bytes to
+    /// `f` and unmap.
+    ///
+    /// Propagates `device.poll` failures rather than swallowing them — on
+    /// device loss (driver reset, OOM in another submission) a silently
+    /// ignored poll error turned into an indefinite wait on the `rx.recv()`
+    /// below, looking like a deadlock to callers.
+    ///
+    /// Entry points with two staging buffers call this once per buffer:
+    /// the first call's poll retires the whole submission, so the second
+    /// buffer's map is already satisfied and its poll returns immediately —
+    /// equivalent to the previous map-both-then-poll-once sequence, taken
+    /// one buffer at a time.
+    fn read_staging_with<R>(
+        &self,
+        staging: &wgpu::Buffer,
+        sub_idx: wgpu::SubmissionIndex,
+        f: impl FnOnce(&[u8]) -> R,
+    ) -> Result<R, GpuError> {
+        let slice = staging.slice(..);
+        let (tx, rx) = std::sync::mpsc::channel();
+        slice.map_async(wgpu::MapMode::Read, move |result| {
+            let _ = tx.send(result);
+        });
+        self.device
+            .poll(wgpu::PollType::Wait {
+                submission_index: Some(sub_idx),
+                timeout: None,
+            })
+            .map_err(|e| GpuError::Other(format!("device poll failed: {e}")))?;
+        rx.recv()
+            .map_err(|e| GpuError::Other(format!("channel recv failed: {e}")))?
+            .map_err(|e| GpuError::Other(format!("buffer map failed: {e}")))?;
+        let out = {
+            let data = slice
+                .get_mapped_range()
+                .map_err(|e| GpuError::Other(format!("buffer map read failed: {e}")))?;
+            f(&data)
+        };
+        staging.unmap();
+        Ok(out)
+    }
+
+    /// [`read_staging_with`](Self::read_staging_with), copied out as `f32`s.
+    fn read_staging_f32(
+        &self,
+        staging: &wgpu::Buffer,
+        sub_idx: wgpu::SubmissionIndex,
+    ) -> Result<Vec<f32>, GpuError> {
+        self.read_staging_with(staging, sub_idx, |bytes| {
+            bytemuck::cast_slice::<_, f32>(bytes).to_vec()
+        })
+    }
+
+    /// [`hvp_batch`](GpuBackend::hvp_batch) with the gradient readback
+    /// truncated to `grad_read_len` floats. With identical primals across
+    /// the batch every element computes the same gradient, so
+    /// `sparse_hessian` reads back one copy (`num_inputs`) instead of
+    /// `num_colors` of them; the device-side gradient buffer stays full
+    /// size (the kernel writes every element).
+    fn hvp_batch_with_grad_len(
+        &self,
+        tape: &WgpuTapeBuffers,
+        x: &[f32],
+        tangent_dirs: &[f32],
+        batch_size: u32,
+        grad_read_len: u32,
+    ) -> Result<(Vec<f32>, Vec<f32>), GpuError> {
+        use wgpu::util::DeviceExt;
+
+        super::validate_batch_args(tape.num_inputs, batch_size)?;
+        let ni = tape.num_inputs;
+        let nv = tape.num_variables;
+
+        assert_eq!(x.len(), ni as usize);
+        assert_eq!(tangent_dirs.len(), (batch_size as usize) * (ni as usize));
+
+        // Guard against u32 overflow in WGSL index arithmetic
+        assert!(
+            (batch_size as u64) * (nv as u64) <= u32::MAX as u64,
+            "batch_size * num_variables overflows u32 in WGSL shader index arithmetic"
+        );
+
+        // Build primal inputs: same x replicated for each batch element
+        let mut primal_inputs = Vec::with_capacity((batch_size as usize) * (ni as usize));
+        for _ in 0..batch_size {
+            primal_inputs.extend_from_slice(x);
+        }
+
+        let meta_buf = self.create_meta_buffer(tape, batch_size, "meta");
+        let primal_buf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("primals_in"),
+                contents: bytemuck::cast_slice(&primal_inputs),
+                usage: wgpu::BufferUsages::STORAGE,
+            });
+        let seed_buf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("seeds"),
+                contents: bytemuck::cast_slice(tangent_dirs),
+                usage: wgpu::BufferUsages::STORAGE,
+            });
+
+        let buf_size = (batch_size as u64) * (nv as u64) * 4;
+        let grad_size = (batch_size as u64) * (ni as u64) * 4;
+
+        let primals_work = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("pw"),
+            size: buf_size,
+            usage: wgpu::BufferUsages::STORAGE,
+            mapped_at_creation: false,
+        });
+        let tangents_work = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("tw"),
+            size: buf_size,
+            usage: wgpu::BufferUsages::STORAGE,
+            mapped_at_creation: false,
+        });
+        let adj_re_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("ar"),
+            size: buf_size,
+            usage: wgpu::BufferUsages::STORAGE,
+            mapped_at_creation: false,
+        });
+        let adj_eps_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("ae"),
+            size: buf_size,
+            usage: wgpu::BufferUsages::STORAGE,
+            mapped_at_creation: false,
+        });
+        let grad_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("go"),
+            size: grad_size,
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+            mapped_at_creation: false,
+        });
+        let hvp_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("ho"),
+            size: grad_size,
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+            mapped_at_creation: false,
+        });
+        let grad_read_size = (grad_read_len as u64) * 4;
+        debug_assert!(
+            grad_read_size <= grad_size,
+            "gradient readback exceeds buffer"
+        );
+        let grad_staging = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("gs"),
+            size: grad_read_size,
+            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let hvp_staging = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("hs"),
+            size: grad_size,
+            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+
+        let tape_bg = self.create_tape_bind_group(tape, &meta_buf);
+
+        let io_bg = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("trev_io"),
+            layout: &self.tangent_rev_io_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: primal_buf.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: seed_buf.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: primals_work.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: tangents_work.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 4,
+                    resource: adj_re_buf.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 5,
+                    resource: adj_eps_buf.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 6,
+                    resource: grad_buf.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 7,
+                    resource: hvp_buf.as_entire_binding(),
+                },
+            ],
+        });
+
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("hvp_enc"),
+            });
+        {
+            let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                label: Some("trev_pass"),
+                timestamp_writes: None,
+            });
+            pass.set_pipeline(&self.tangent_rev_pipeline);
+            pass.set_bind_group(0, &tape_bg, &[]);
+            pass.set_bind_group(1, &io_bg, &[]);
+            self.dispatch_1d(&mut pass, batch_size.div_ceil(256))?;
+        }
+
+        encoder.copy_buffer_to_buffer(&grad_buf, 0, &grad_staging, 0, grad_read_size);
+        encoder.copy_buffer_to_buffer(&hvp_buf, 0, &hvp_staging, 0, grad_size);
+        let sub_idx = self.queue.submit(std::iter::once(encoder.finish()));
+
+        let grads = self.read_staging_f32(&grad_staging, sub_idx.clone())?;
+        let hvps = self.read_staging_f32(&hvp_staging, sub_idx)?;
+
+        Ok((grads, hvps))
+    }
+}
+
+impl GpuBackend for WgpuContext {
+    type TapeBuffers = WgpuTapeBuffers;
+
+    fn num_outputs(&self, tape: &WgpuTapeBuffers) -> u32 {
+        tape.num_outputs
+    }
+
+    fn upload_tape(&self, data: &GpuTapeData) -> WgpuTapeBuffers {
+        use wgpu::util::DeviceExt;
+
+        if let Err(e) = data.validate() {
+            panic!("refusing to upload invalid GpuTapeData: {e}");
+        }
+
+        let opcodes_buf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("opcodes"),
+                contents: bytemuck::cast_slice(&data.opcodes),
+                usage: wgpu::BufferUsages::STORAGE,
+            });
+        let arg0_buf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("arg0"),
+                contents: bytemuck::cast_slice(&data.arg0),
+                usage: wgpu::BufferUsages::STORAGE,
+            });
+        let arg1_buf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("arg1"),
+                contents: bytemuck::cast_slice(&data.arg1),
+                usage: wgpu::BufferUsages::STORAGE,
+            });
+        let constants_buf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("constants"),
+                contents: bytemuck::cast_slice(&data.constants),
+                usage: wgpu::BufferUsages::STORAGE,
+            });
+
+        let num_outputs = if data.output_indices.is_empty() {
+            1u32
+        } else {
+            data.output_indices.len() as u32
+        };
+        let output_indices = if data.output_indices.is_empty() {
+            vec![data.output_index]
+        } else {
+            data.output_indices.clone()
+        };
+
+        let output_indices_buf =
+            self.device
+                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some("output_indices"),
+                    contents: bytemuck::cast_slice(&output_indices),
+                    usage: wgpu::BufferUsages::STORAGE,
+                });
+
+        WgpuTapeBuffers {
+            opcodes_buf,
+            arg0_buf,
+            arg1_buf,
+            constants_buf,
+            output_indices_buf,
+            num_ops: data.num_ops,
+            num_inputs: data.num_inputs,
+            num_variables: data.num_variables,
+            num_outputs,
+        }
+    }
+
+    /// Evaluate the tape at `batch_size` input points in parallel on the GPU.
+    ///
+    /// `inputs` is a flat `[f32; batch_size * num_inputs]` array in row-major order:
+    /// `[x0_0, x0_1, ..., x0_n, x1_0, x1_1, ..., x1_n, ...]`.
+    ///
+    /// Returns `[f32; batch_size * num_outputs]` — one output per batch element
+    /// (or `num_outputs` per element for multi-output tapes).
+    fn forward_batch(
+        &self,
+        tape: &WgpuTapeBuffers,
+        inputs: &[f32],
+        batch_size: u32,
+    ) -> Result<Vec<f32>, GpuError> {
+        use wgpu::util::DeviceExt;
+
+        super::validate_batch_args(tape.num_inputs, batch_size)?;
+        let num_inputs = tape.num_inputs;
+        let num_variables = tape.num_variables;
+        let num_outputs = tape.num_outputs;
+
+        assert_eq!(
+            inputs.len(),
+            (batch_size as usize) * (num_inputs as usize),
+            "inputs length must be batch_size * num_inputs"
+        );
+
+        // Guard against u32 overflow in WGSL index arithmetic: batch_id * num_vars
+        assert!(
+            (batch_size as u64) * (num_variables as u64) <= u32::MAX as u64,
+            "batch_size * num_variables overflows u32 in WGSL shader index arithmetic"
+        );
+
+        // Create per-dispatch meta uniform with batch_size
+        let meta_buf = self.create_meta_buffer(tape, batch_size, "tape_meta");
+
+        // Input buffer (read-only from shader)
+        let input_buf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("inputs"),
+                contents: bytemuck::cast_slice(inputs),
+                usage: wgpu::BufferUsages::STORAGE,
+            });
+
+        // Values buffer: B * num_variables (working memory per thread)
+        let values_size = (batch_size as u64) * (num_variables as u64) * 4;
+        let values_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("values"),
+            size: values_size,
+            usage: wgpu::BufferUsages::STORAGE,
+            mapped_at_creation: false,
+        });
+
+        // Output buffer: B * num_outputs
+        let output_size = (batch_size as u64) * (num_outputs as u64) * 4;
+        let output_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("outputs"),
+            size: output_size,
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+            mapped_at_creation: false,
+        });
+
+        // Staging buffer for readback
+        let staging_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("staging"),
+            size: output_size,
+            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+
+        // Tape bind group (group 0)
+        let tape_bg = self.create_tape_bind_group(tape, &meta_buf);
+
+        // I/O bind group (group 1)
+        let io_bg = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("io_bg"),
+            layout: &self.forward_io_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: input_buf.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: values_buf.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: output_buf.as_entire_binding(),
+                },
+            ],
+        });
+
+        // Encode and dispatch
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("forward_enc"),
+            });
+
+        {
+            let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                label: Some("forward_pass"),
+                timestamp_writes: None,
+            });
+            pass.set_pipeline(&self.forward_pipeline);
+            pass.set_bind_group(0, &tape_bg, &[]);
+            pass.set_bind_group(1, &io_bg, &[]);
+            self.dispatch_1d(&mut pass, batch_size.div_ceil(256))?;
+        }
+
+        encoder.copy_buffer_to_buffer(&output_buf, 0, &staging_buf, 0, output_size);
+        let sub_idx = self.queue.submit(std::iter::once(encoder.finish()));
+
+        let result = self.read_staging_f32(&staging_buf, sub_idx)?;
+        Ok(result)
+    }
+
+    /// Compute gradients at `batch_size` input points in parallel on the GPU.
+    ///
+    /// Runs forward evaluation followed by a reverse adjoint sweep.
+    ///
+    /// Returns `(outputs, gradients)`:
+    /// - `outputs`: `[f32; batch_size * num_outputs]`
+    /// - `gradients`: `[f32; batch_size * num_inputs]` in row-major order
+    fn gradient_batch(
+        &self,
+        tape: &WgpuTapeBuffers,
+        inputs: &[f32],
+        batch_size: u32,
+    ) -> Result<(Vec<f32>, Vec<f32>), GpuError> {
+        use wgpu::util::DeviceExt;
+
+        super::validate_batch_args(tape.num_inputs, batch_size)?;
+        let num_inputs = tape.num_inputs;
+        let num_variables = tape.num_variables;
+        let num_outputs = tape.num_outputs;
+
+        assert_eq!(
+            inputs.len(),
+            (batch_size as usize) * (num_inputs as usize),
+            "inputs length must be batch_size * num_inputs"
+        );
+
+        // Guard against u32 overflow in WGSL index arithmetic: batch_id * num_vars
+        assert!(
+            (batch_size as u64) * (num_variables as u64) <= u32::MAX as u64,
+            "batch_size * num_variables overflows u32 in WGSL shader index arithmetic"
+        );
+
+        // Create per-dispatch meta uniform
+        let meta_buf = self.create_meta_buffer(tape, batch_size, "tape_meta");
+
+        // Input buffer
+        let input_buf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("inputs"),
+                contents: bytemuck::cast_slice(inputs),
+                usage: wgpu::BufferUsages::STORAGE,
+            });
+
+        // Values buffer: B * num_variables (shared between forward and reverse)
+        let values_size = (batch_size as u64) * (num_variables as u64) * 4;
+        let values_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("values"),
+            size: values_size,
+            usage: wgpu::BufferUsages::STORAGE,
+            mapped_at_creation: false,
+        });
+
+        // Output buffer: B * num_outputs
+        let output_count = (batch_size as u64) * (num_outputs as u64);
+        let output_size = output_count * 4;
+        let output_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("outputs"),
+            size: output_size,
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+            mapped_at_creation: false,
+        });
+
+        // Adjoint buffer: B * num_variables
+        let adjoints_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("adjoints"),
+            size: values_size,
+            usage: wgpu::BufferUsages::STORAGE,
+            mapped_at_creation: false,
+        });
+
+        // Gradient output buffer: B * num_inputs
+        let grad_count = (batch_size as u64) * (num_inputs as u64);
+        let grad_size = grad_count * 4;
+        let grad_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("grad_out"),
+            size: grad_size,
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+            mapped_at_creation: false,
+        });
+
+        // Staging buffers for readback
+        let output_staging = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("output_staging"),
+            size: output_size,
+            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let grad_staging = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("grad_staging"),
+            size: grad_size,
+            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+
+        // Tape bind group (shared between forward and reverse)
+        let tape_bg = self.create_tape_bind_group(tape, &meta_buf);
+
+        // Forward I/O bind group
+        let fwd_io_bg = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("fwd_io_bg"),
+            layout: &self.forward_io_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: input_buf.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: values_buf.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: output_buf.as_entire_binding(),
+                },
+            ],
+        });
+
+        // Reverse I/O bind group (values is read-only here, from forward pass)
+        let rev_io_bg = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("rev_io_bg"),
+            layout: &self.reverse_io_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: values_buf.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: adjoints_buf.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: grad_buf.as_entire_binding(),
+                },
+            ],
+        });
+
+        let workgroups = batch_size.div_ceil(256);
+
+        // Encode: forward pass → reverse pass → copy results
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("gradient_enc"),
+            });
+
+        // Forward pass
+        {
+            let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                label: Some("forward_pass"),
+                timestamp_writes: None,
+            });
+            pass.set_pipeline(&self.forward_pipeline);
+            pass.set_bind_group(0, &tape_bg, &[]);
+            pass.set_bind_group(1, &fwd_io_bg, &[]);
+            self.dispatch_1d(&mut pass, workgroups)?;
+        }
+
+        // Reverse pass
+        {
+            let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                label: Some("reverse_pass"),
+                timestamp_writes: None,
+            });
+            pass.set_pipeline(&self.reverse_pipeline);
+            pass.set_bind_group(0, &tape_bg, &[]);
+            pass.set_bind_group(1, &rev_io_bg, &[]);
+            self.dispatch_1d(&mut pass, workgroups)?;
+        }
+
+        encoder.copy_buffer_to_buffer(&output_buf, 0, &output_staging, 0, output_size);
+        encoder.copy_buffer_to_buffer(&grad_buf, 0, &grad_staging, 0, grad_size);
+        let sub_idx = self.queue.submit(std::iter::once(encoder.finish()));
+
+        let outputs = self.read_staging_f32(&output_staging, sub_idx.clone())?;
+        let grads = self.read_staging_f32(&grad_staging, sub_idx)?;
+
+        Ok((outputs, grads))
+    }
+    /// Compute a sparse Jacobian using forward-mode tangent sweeps on GPU.
+    ///
+    /// CPU performs sparsity detection and graph coloring; GPU dispatches all
+    /// colored tangent sweeps in parallel.
+    ///
+    /// `tape_cpu` is needed for sparsity detection (which uses the tape structure).
+    /// `x` is the evaluation point.
+    ///
+    /// Returns `(output_values, sparsity_pattern, jacobian_values)`:
+    /// - `output_values`: function values at x
+    /// - `sparsity_pattern`: the Jacobian sparsity pattern
+    /// - `jacobian_values`: non-zero Jacobian entries matching the pattern
+    fn sparse_jacobian(
+        &self,
+        tape: &WgpuTapeBuffers,
+        tape_cpu: &mut crate::BytecodeTape<f32>,
+        x: &[f32],
+    ) -> Result<(Vec<f32>, crate::sparse::JacobianSparsityPattern, Vec<f32>), GpuError> {
+        use wgpu::util::DeviceExt;
+
+        let num_inputs = tape.num_inputs as usize;
+        let num_outputs = tape.num_outputs as usize;
+        let num_variables = tape.num_variables;
+
+        // CPU: detect sparsity and compute coloring
+        let pattern = tape_cpu.detect_jacobian_sparsity();
+        let (colors, num_colors) = crate::sparse::column_coloring(&pattern);
+
+        if num_colors == 0 {
+            // All-zero Jacobian
+            tape_cpu.forward(x);
+            let vals = tape_cpu.output_values();
+            return Ok((vals, pattern, vec![]));
+        }
+
+        // Guard against u32 overflow in WGSL `bid * num_variables` index
+        // arithmetic. The effective batch_size for sparse-Jacobian dispatch
+        // is `num_colors` (one JVP per color); if the colored tape plus the
+        // variable count exceeds u32, indices would silently wrap.
+        assert!(
+            (num_colors as u64) * (num_variables as u64) <= u32::MAX as u64,
+            "num_colors * num_variables overflows u32 in WGSL shader index arithmetic"
+        );
+
+        // Build tangent seed vectors: one per color
+        // Each color c gets a seed where input[i].tangent = 1 if colors[i] == c, else 0
+        let batch = num_colors;
+        let mut primal_inputs = Vec::with_capacity(batch as usize * num_inputs);
+        let mut tangent_seeds = Vec::with_capacity(batch as usize * num_inputs);
+
+        for c in 0..num_colors {
+            for i in 0..num_inputs {
+                primal_inputs.push(x[i]);
+                tangent_seeds.push(if colors[i] == c { 1.0f32 } else { 0.0f32 });
+            }
+        }
+
+        // Create per-dispatch meta
+        let meta_buf = self.create_meta_buffer(tape, batch, "tape_meta");
+
+        let primal_buf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("primal_inputs"),
+                contents: bytemuck::cast_slice(&primal_inputs),
+                usage: wgpu::BufferUsages::STORAGE,
+            });
+        let seed_buf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("tangent_seeds"),
+                contents: bytemuck::cast_slice(&tangent_seeds),
+                usage: wgpu::BufferUsages::STORAGE,
+            });
+
+        let buf_size = (batch as u64) * (num_variables as u64) * 4;
+        let primals_work = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("primals_work"),
+            size: buf_size,
+            usage: wgpu::BufferUsages::STORAGE,
+            mapped_at_creation: false,
+        });
+        let tangents_work = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("tangents_work"),
+            size: buf_size,
+            usage: wgpu::BufferUsages::STORAGE,
+            mapped_at_creation: false,
+        });
+
+        let out_size = (batch as u64) * (tape.num_outputs as u64) * 4;
+        let tangent_out_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("tangent_outputs"),
+            size: out_size,
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+            mapped_at_creation: false,
+        });
+        let staging = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("staging"),
+            size: out_size,
+            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+
+        let tape_bg = self.create_tape_bind_group(tape, &meta_buf);
+
+        let io_bg = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("tfwd_io_bg"),
+            layout: &self.tangent_fwd_io_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: primal_buf.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: seed_buf.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: primals_work.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: tangents_work.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 4,
+                    resource: tangent_out_buf.as_entire_binding(),
+                },
+            ],
+        });
+
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("sparse_jac_enc"),
+            });
+        {
+            let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                label: Some("tangent_fwd_pass"),
+                timestamp_writes: None,
+            });
+            pass.set_pipeline(&self.tangent_fwd_pipeline);
+            pass.set_bind_group(0, &tape_bg, &[]);
+            pass.set_bind_group(1, &io_bg, &[]);
+            self.dispatch_1d(&mut pass, batch.div_ceil(256))?;
+        }
+        encoder.copy_buffer_to_buffer(&tangent_out_buf, 0, &staging, 0, out_size);
+        let sub_idx = self.queue.submit(std::iter::once(encoder.finish()));
+
+        let tangent_results = self.read_staging_f32(&staging, sub_idx)?;
+
+        // CPU: extract Jacobian entries from compressed tangent results
+        // tangent_results[c * num_outputs + o] = sum over {i : colors[i]==c} J[o][i] * 1
+        // Since coloring is valid, each entry J[o][i] appears in exactly one color.
+        let nnz = pattern.nnz();
+        let mut jac_values = vec![0.0f32; nnz];
+
+        for (k, (&row, &col)) in pattern.rows.iter().zip(pattern.cols.iter()).enumerate() {
+            let o = row as usize; // output index
+            let i = col as usize; // input index
+            let c = colors[i] as usize;
+            jac_values[k] = tangent_results[c * num_outputs + o];
+        }
+
+        // Get output values from CPU (could also read from GPU primals, but simpler)
+        tape_cpu.forward(x);
+        let output_values: Vec<f32> = tape_cpu.output_values();
+
+        Ok((output_values, pattern, jac_values))
+    }
+
+    /// Batched Hessian-vector product via forward-over-reverse on GPU.
+    ///
+    /// Dispatches `batch_size` HVP computations in parallel, each with the same
+    /// primal inputs `x` but different tangent directions.
+    ///
+    /// `tangent_dirs` is `[f32; batch_size * num_inputs]` — one direction per element.
+    ///
+    /// Returns `(gradients, hvps)` each of shape `[f32; batch_size * num_inputs]`.
+    fn hvp_batch(
+        &self,
+        tape: &WgpuTapeBuffers,
+        x: &[f32],
+        tangent_dirs: &[f32],
+        batch_size: u32,
+    ) -> Result<(Vec<f32>, Vec<f32>), GpuError> {
+        let ni = tape.num_inputs;
+        self.hvp_batch_with_grad_len(tape, x, tangent_dirs, batch_size, batch_size * ni)
+    }
+
+    /// Compute a sparse Hessian using forward-over-reverse HVP sweeps on GPU.
+    ///
+    /// CPU performs Hessian sparsity detection and distance-2 coloring; GPU
+    /// dispatches all colored HVP sweeps in parallel.
+    ///
+    /// Returns `(value, gradient, sparsity_pattern, hessian_values)`.
+    fn sparse_hessian(
+        &self,
+        tape: &WgpuTapeBuffers,
+        tape_cpu: &mut crate::BytecodeTape<f32>,
+        x: &[f32],
+    ) -> Result<(f32, Vec<f32>, crate::sparse::SparsityPattern, Vec<f32>), GpuError> {
+        let ni = tape.num_inputs as usize;
+
+        // CPU: detect sparsity and compute distance-2 coloring
+        let pattern = tape_cpu.detect_sparsity();
+        let (colors, num_colors) = crate::sparse::greedy_coloring(&pattern);
+
+        if num_colors == 0 {
+            tape_cpu.forward(x);
+            let val = tape_cpu.output_value();
+            let grad = tape_cpu.gradient(x);
+            return Ok((val, grad, pattern, vec![]));
+        }
+
+        // Build tangent seeds: one per color
+        let batch = num_colors;
+        let mut tangent_dirs = Vec::with_capacity(batch as usize * ni);
+        for c in 0..num_colors {
+            for &color in &colors[..ni] {
+                tangent_dirs.push(if color == c { 1.0f32 } else { 0.0f32 });
+            }
+        }
+
+        // Identical primals across colors → one gradient copy suffices.
+        let (grads, hvps) =
+            self.hvp_batch_with_grad_len(tape, x, &tangent_dirs, batch, ni as u32)?;
+
+        // Extract gradient from first HVP (all share the same gradient)
+        let gradient: Vec<f32> = grads[..ni].to_vec();
+
+        // Extract Hessian entries from compressed HVP results
+        let nnz = pattern.nnz();
+        let mut hess_values = vec![0.0f32; nnz];
+        for (k, (&row, &col)) in pattern.rows.iter().zip(pattern.cols.iter()).enumerate() {
+            let i = row as usize;
+            let j = col as usize;
+            // H[i][j] = hvp[color_of_j][i] (since seed_j = 1 for color_of_j)
+            let c = colors[j] as usize;
+            hess_values[k] = hvps[c * ni + i];
+        }
+
+        // Get function value from CPU
+        tape_cpu.forward(x);
+        let value = tape_cpu.output_value();
+
+        Ok((value, gradient, pattern, hess_values))
+    }
+
+    #[cfg(feature = "stde")]
+    fn taylor_forward_kth_batch(
+        &self,
+        tape: &WgpuTapeBuffers,
+        primal_inputs: &[f32],
+        direction_seeds: &[f32],
+        batch_size: u32,
+        order: usize,
+    ) -> Result<super::TaylorKthBatchResult<f32>, GpuError> {
+        // Delegate to the inherent method
+        self.taylor_forward_kth_batch(tape, primal_inputs, direction_seeds, batch_size, order)
+    }
+
+    // taylor_forward_2nd_batch: uses default trait impl (delegates to kth_batch(order=3))
+}
+
+// ── Helpers ──
+
+fn bgl_storage_ro(binding: u32) -> wgpu::BindGroupLayoutEntry {
+    wgpu::BindGroupLayoutEntry {
+        binding,
+        visibility: wgpu::ShaderStages::COMPUTE,
+        ty: wgpu::BindingType::Buffer {
+            ty: wgpu::BufferBindingType::Storage { read_only: true },
+            has_dynamic_offset: false,
+            min_binding_size: None,
+        },
+        count: None,
+    }
+}
+
+fn bgl_storage_rw(binding: u32) -> wgpu::BindGroupLayoutEntry {
+    wgpu::BindGroupLayoutEntry {
+        binding,
+        visibility: wgpu::ShaderStages::COMPUTE,
+        ty: wgpu::BindingType::Buffer {
+            ty: wgpu::BufferBindingType::Storage { read_only: false },
+            has_dynamic_offset: false,
+            min_binding_size: None,
+        },
+        count: None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Metal-gated: the 1-D dispatch guard rejects a workgroup count above the
+    // device limit and accepts one at the limit (skips when no adapter).
+    #[test]
+    fn dispatch_1d_guard_rejects_over_limit() {
+        let Some(ctx) = WgpuContext::new() else {
+            return;
+        };
+        let max = ctx.device.limits().max_compute_workgroups_per_dimension;
+        assert!(ctx.check_dispatch_1d(max).is_ok());
+        assert!(ctx.check_dispatch_1d(max + 1).is_err());
+        assert!(ctx.check_dispatch_1d(u32::MAX).is_err());
+    }
+}

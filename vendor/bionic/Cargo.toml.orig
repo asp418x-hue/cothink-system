@@ -1,0 +1,8 @@
+[package]
+name = "bionic"
+version = "0.0.0"
+edition = "2021"
+description = "A machine learning library for Rust"
+license = "MIT"
+
+[dependencies]

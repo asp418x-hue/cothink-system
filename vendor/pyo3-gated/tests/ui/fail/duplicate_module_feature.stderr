@@ -1,0 +1,5 @@
+error: duplicate `feature` entry
+ --> tests/ui/fail/duplicate_module_feature.rs:5:5
+  |
+5 |     feature = "bindings";
+  |     ^^^^^^^

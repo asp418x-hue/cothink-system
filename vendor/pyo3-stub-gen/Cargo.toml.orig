@@ -1,0 +1,54 @@
+[package]
+name = "pyo3-stub-gen"
+version.workspace = true
+edition.workspace = true
+description.workspace = true
+readme = "README.md"
+repository.workspace = true
+license.workspace = true
+keywords.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+chrono.workspace = true
+either = { workspace = true, optional = true }
+indexmap.workspace = true
+inventory.workspace = true
+itertools.workspace = true
+jiff-02 = { workspace = true, optional = true }
+log.workspace = true
+maplit.workspace = true
+num-complex.workspace = true
+numpy = { workspace = true, optional = true }
+ordered-float = { workspace = true, optional = true }
+pyo3.workspace = true
+rust_decimal = { workspace = true, optional = true }
+rustpython-parser = { version = "0.4", default-features = false, features = [
+  "location",
+  "num-bigint",
+] }
+serde.workspace = true
+serde_json.workspace = true
+time.workspace = true
+toml.workspace = true
+uuid = { workspace = true, optional = true }
+
+[dependencies.pyo3-stub-gen-derive]
+path = "../pyo3-stub-gen-derive"
+version = "0.23.1"
+
+[dev-dependencies]
+test-case.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+default = ["either", "infer_signature", "numpy", "ordered-float"]
+either = ["dep:either"]
+infer_signature = []
+jiff-02 = ["dep:jiff-02"]
+numpy = ["dep:numpy"]
+ordered-float = ["dep:ordered-float"]
+rust_decimal = ["dep:rust_decimal"]
+uuid = ["dep:uuid"]

@@ -1,0 +1,6 @@
+{
+  "git": {
+    "sha1": "ad97c7f1932a2b704b33ef98b2a55547bda23a44"
+  },
+  "path_in_vcs": "crates/pyo3-gated-macros"
+}

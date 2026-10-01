@@ -1,0 +1,5 @@
+error: `py_only` applies only to `#[py_compat_fn]` and function items passed to `#[py_compat]`
+ --> tests/ui/fail/py_only_on_impl.rs:6:21
+  |
+6 | #[py_compat_methods(py_only, stub_gen = false)]
+  |                     ^^^^^^^

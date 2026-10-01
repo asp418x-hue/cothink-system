@@ -1,0 +1,4 @@
+kafka:
+  # Brokers is a list of bootstrap servers with 
+  # port (for example "localhost:9092").
+  brokers: ["redpanda-0:29092"]

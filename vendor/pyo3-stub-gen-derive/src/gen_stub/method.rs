@@ -1,0 +1,263 @@
+use crate::gen_stub::util::TypeOrOverride;
+
+use super::{
+    arg::parse_args, attr::IgnoreTarget, extract_deprecated, extract_documents,
+    extract_return_type, parameter::Parameters, parse_gen_stub_type_ignore, parse_pyo3_attrs,
+    ArgInfo, Attr, DeprecatedInfo, Signature,
+};
+
+use proc_macro2::TokenStream as TokenStream2;
+use quote::{quote, ToTokens, TokenStreamExt};
+use syn::{
+    Error, GenericArgument, ImplItemFn, PathArguments, Result, Type, TypePath, TypeReference,
+};
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum MethodType {
+    Instance,
+    Static,
+    Class,
+    New,
+}
+
+#[derive(Debug)]
+pub struct MethodInfo {
+    pub(super) name: String,
+    pub(super) parameters: Parameters,
+    pub(super) r#return: Option<TypeOrOverride>,
+    pub(super) doc: String,
+    pub(super) r#type: MethodType,
+    pub(super) is_async: bool,
+    pub(super) deprecated: Option<DeprecatedInfo>,
+    pub(super) type_ignored: Option<IgnoreTarget>,
+    pub(super) is_overload: bool,
+}
+
+fn replace_inner(ty: &mut Type, self_: &Type) {
+    match ty {
+        Type::Path(TypePath { path, .. }) => {
+            if let Some(last) = path.segments.last_mut() {
+                if let PathArguments::AngleBracketed(arg) = &mut last.arguments {
+                    for arg in &mut arg.args {
+                        if let GenericArgument::Type(ty) = arg {
+                            replace_inner(ty, self_);
+                        }
+                    }
+                }
+                if last.ident == "Self" {
+                    *ty = self_.clone();
+                }
+            }
+        }
+        Type::Reference(TypeReference { elem, .. }) => {
+            replace_inner(elem, self_);
+        }
+        _ => {}
+    }
+}
+
+impl MethodInfo {
+    pub fn replace_self(&mut self, self_: &Type) {
+        for param in self.parameters.iter_mut() {
+            let arg_info = &mut param.arg_info;
+            let (ArgInfo {
+                r#type:
+                    TypeOrOverride::RustType {
+                        r#type: ref mut ty, ..
+                    },
+                ..
+            }
+            | ArgInfo {
+                r#type:
+                    TypeOrOverride::OverrideType {
+                        r#type: ref mut ty, ..
+                    },
+                ..
+            }) = arg_info;
+            replace_inner(ty, self_);
+        }
+        if let Some(
+            TypeOrOverride::RustType { r#type: ret }
+            | TypeOrOverride::OverrideType { r#type: ret, .. },
+        ) = self.r#return.as_mut()
+        {
+            replace_inner(ret, self_);
+        }
+    }
+}
+
+impl TryFrom<ImplItemFn> for MethodInfo {
+    type Error = Error;
+    fn try_from(item: ImplItemFn) -> Result<Self> {
+        let ImplItemFn { attrs, sig, .. } = item;
+        let doc = extract_documents(&attrs).join("\n");
+        let deprecated = extract_deprecated(&attrs);
+        let type_ignored = parse_gen_stub_type_ignore(&attrs)?;
+        let pyo3_attrs = parse_pyo3_attrs(&attrs)?;
+        let mut method_name = None;
+        let mut text_sig = Signature::overriding_operator(&sig);
+        let mut method_type = MethodType::Instance;
+        for attr in pyo3_attrs {
+            match attr {
+                Attr::Name(name) => method_name = Some(name),
+                Attr::Signature(text_sig_) => text_sig = Some(text_sig_),
+                Attr::StaticMethod => method_type = MethodType::Static,
+                Attr::ClassMethod => method_type = MethodType::Class,
+                Attr::New => method_type = MethodType::New,
+                _ => {}
+            }
+        }
+        let name = if method_type == MethodType::New {
+            "__new__".to_string()
+        } else {
+            method_name.unwrap_or(sig.ident.to_string())
+        };
+        let r#return = extract_return_type(&sig.output, &attrs)?;
+
+        // Build parameters from args and signature
+        let args = parse_args(sig.inputs)?;
+        let parameters = if let Some(text_sig) = text_sig {
+            Parameters::new_with_sig(&args, &text_sig)?
+        } else {
+            Parameters::new(&args)
+        };
+
+        Ok(MethodInfo {
+            name,
+            parameters,
+            r#return,
+            doc,
+            r#type: method_type,
+            is_async: sig.asyncness.is_some(),
+            deprecated,
+            type_ignored,
+            is_overload: false,
+        })
+    }
+}
+
+impl ToTokens for MethodInfo {
+    fn to_tokens(&self, tokens: &mut TokenStream2) {
+        let Self {
+            name,
+            r#return: ret,
+            parameters,
+            doc,
+            r#type,
+            is_async,
+            deprecated,
+            type_ignored,
+            is_overload,
+        } = self;
+
+        let ret_tt = if let Some(ret) = ret {
+            match ret {
+                TypeOrOverride::RustType { r#type } => {
+                    let ty = r#type.clone();
+                    quote! { <#ty as pyo3_stub_gen::PyStubType>::type_output }
+                }
+                TypeOrOverride::OverrideType {
+                    type_repr,
+                    imports,
+                    rust_type_markers,
+                    ..
+                } => {
+                    let imports = imports.iter().collect::<Vec<&String>>();
+
+                    // Generate code to process RustType markers
+                    let (type_name_code, type_refs_code) = if rust_type_markers.is_empty() {
+                        (
+                            quote! { #type_repr.to_string() },
+                            quote! { ::std::collections::HashMap::new() },
+                        )
+                    } else {
+                        let marker_types: Vec<syn::Type> = rust_type_markers
+                            .iter()
+                            .filter_map(|s| syn::parse_str(s).ok())
+                            .collect();
+
+                        let rust_names = rust_type_markers.iter().collect::<Vec<_>>();
+
+                        (
+                            quote! {
+                                {
+                                    let mut type_name = #type_repr.to_string();
+                                    #(
+                                        let type_info = <#marker_types as ::pyo3_stub_gen::PyStubType>::type_input();
+                                        type_name = type_name.replace(#rust_names, &type_info.name);
+                                    )*
+                                    type_name
+                                }
+                            },
+                            quote! {
+                                {
+                                    let mut type_refs = ::std::collections::HashMap::new();
+                                    #(
+                                        let type_info = <#marker_types as ::pyo3_stub_gen::PyStubType>::type_input();
+                                        if let Some(module) = type_info.source_module {
+                                            type_refs.insert(
+                                                type_info.name.split('[').next().unwrap_or(&type_info.name).split('.').last().unwrap_or(&type_info.name).to_string(),
+                                                ::pyo3_stub_gen::TypeIdentifierRef {
+                                                    module: module.into(),
+                                                    import_kind: ::pyo3_stub_gen::ImportKind::Module,
+                                                }
+                                            );
+                                        }
+                                        type_refs.extend(type_info.type_refs);
+                                    )*
+                                    type_refs
+                                }
+                            },
+                        )
+                    };
+
+                    quote! {
+                        || ::pyo3_stub_gen::TypeInfo { name: #type_name_code, source_module: None, import: ::std::collections::HashSet::from([#(#imports.into(),)*]), type_refs: #type_refs_code }
+                    }
+                }
+            }
+        } else {
+            quote! { ::pyo3_stub_gen::type_info::no_return_type_output }
+        };
+        let type_tt = match r#type {
+            MethodType::Instance => quote! { ::pyo3_stub_gen::type_info::MethodType::Instance },
+            MethodType::Static => quote! { ::pyo3_stub_gen::type_info::MethodType::Static },
+            MethodType::Class => quote! { ::pyo3_stub_gen::type_info::MethodType::Class },
+            MethodType::New => quote! { ::pyo3_stub_gen::type_info::MethodType::New },
+        };
+        let deprecated_tt = deprecated
+            .as_ref()
+            .map(|d| quote! { Some(#d) })
+            .unwrap_or_else(|| quote! { None });
+        let type_ignored_tt = if let Some(target) = type_ignored {
+            match target {
+                IgnoreTarget::All => {
+                    quote! { Some(::pyo3_stub_gen::type_info::IgnoreTarget::All) }
+                }
+                IgnoreTarget::SpecifiedLits(rules) => {
+                    let rule_strs: Vec<String> = rules.iter().map(|lit| lit.value()).collect();
+                    quote! {
+                        Some(::pyo3_stub_gen::type_info::IgnoreTarget::Specified(
+                            &[#(#rule_strs),*] as &[&str]
+                        ))
+                    }
+                }
+            }
+        } else {
+            quote! { None }
+        };
+        tokens.append_all(quote! {
+            ::pyo3_stub_gen::type_info::MethodInfo {
+                name: #name,
+                parameters: #parameters,
+                r#return: #ret_tt,
+                doc: #doc,
+                r#type: #type_tt,
+                is_async: #is_async,
+                deprecated: #deprecated_tt,
+                type_ignored: #type_ignored_tt,
+                is_overload: #is_overload,
+            }
+        })
+    }
+}

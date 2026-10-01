@@ -1,0 +1,5 @@
+error: `pyfunction_args` applies only to `#[py_compat_fn]` and function items passed to `#[py_compat]`
+ --> tests/ui/fail/pyfunction_args_on_enum.rs:3:18
+  |
+3 | #[py_compat_enum(pyfunction_args(signature = ()))]
+  |                  ^^^^^^^^^^^^^^^

@@ -1,0 +1,23 @@
+[package]
+name = "konst_proc_macros"
+version = "0.4.1"
+authors = ["rodrimati1992 <rodrimatt1985@gmail.com>"]
+rust-version = "1.89.0"
+edition = "2024"
+license = "Zlib"
+description = "Implementation detail of the `konst` crate"
+documentation = "https://docs.rs/konst/"
+keywords = ["no-std"]
+categories = ["no-std"]
+repository = "https://github.com/rodrimati1992/konst/"
+include = [
+    "Cargo.toml", 
+    "src/**/*.rs", 
+    "LICENSE-ZLIB.md", 
+]
+
+[dev-dependencies.proc-macro2]
+version = "1.0.100"
+
+[lib]
+proc-macro = true

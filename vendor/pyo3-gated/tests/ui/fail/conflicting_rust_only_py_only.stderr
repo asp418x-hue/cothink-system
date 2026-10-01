@@ -1,0 +1,7 @@
+error: `#[py_only]` and `#[rust_only]` cannot both appear on the same item
+  --> tests/ui/fail/conflicting_rust_only_py_only.rs:8:5
+   |
+ 8 | /     #[py_only]
+ 9 | |     #[rust_only]
+10 | |     pub fn bad(&self) {}
+   | |________________________^

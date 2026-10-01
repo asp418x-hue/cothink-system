@@ -1,0 +1,20 @@
+[package]
+name = "rustpython-parser-core"
+description = "RustPython parser data types."
+edition = { workspace = true }
+version = { workspace = true }
+authors = { workspace = true }
+repository = { workspace = true }
+license = { workspace = true }
+rust-version = { workspace = true }
+
+[dependencies]
+# vendored dependency shouldn't be placed out of this crate
+rustpython-parser-vendored.workspace = true
+serde = { version = "1.0.133", optional = true, default-features = false, features = ["derive"] }
+is-macro.workspace = true
+memchr.workspace = true
+
+[features]
+default = []
+location = []

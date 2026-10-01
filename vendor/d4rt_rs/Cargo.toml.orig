@@ -1,0 +1,93 @@
+[package]
+name = "d4rt_rs"
+version = "0.1.5"
+edition = "2024"
+rust-version = "1.95.0"
+description = "A Dart interpreter and runtime environment in Rust, embeddable as a library (QuickJS-style Context API)"
+license = "MIT"
+keywords = ["dart", "interpreter", "runtime", "scripting", "embed"]
+categories = ["parser-implementations", "api-bindings"]
+readme = "README.md"
+documentation = "https://docs.rs/d4rt_rs"
+repository = "https://github.com/tachibana-shin/d4rt_rs"
+
+[dependencies]
+chrono = "0.4.45"
+num-bigint = "0.5.1"
+num-integer = "0.1.46"
+num-traits = "0.2.19"
+regex = "1.13.1"
+tree-sitter = "0.26"
+tree-sitter-dart = "0.2"
+
+[features]
+# Core interpreter + `dart:core` only. Always compiled; the feature exists
+# as a documented baseline that every stdlib feature builds on.
+core = []
+# Full standard library (default).
+default = ["stdlib"]
+stdlib = ["core", "async", "math", "convert", "collection", "typed_data", "io", "isolate"]
+# Individual `dart:*` libraries. `dart:async`'s stream machinery is part of
+# the interpreter core; the `async` feature only gates the library surface
+# (Future/Stream/Timer/Completer) being available to Dart code.
+async = ["core"]
+math = ["core"]
+convert = ["core"]
+collection = ["core"]
+typed_data = ["core"]
+# `dart:io` (File, Socket, Process, HttpServer/HttpClient...). Pulls in the
+# `dart:async` and `dart:convert` bundles it re-exports.
+io = ["core", "async", "convert"]
+# `dart:isolate` (ReceivePort/Isolate.run/spawn).
+isolate = ["core", "async"]
+
+[[test]]
+name = "asyncstar_smoke_test"
+required-features = ["async"]
+
+[[test]]
+name = "context_test"
+required-features = ["io", "isolate"]
+
+[[test]]
+name = "permission_test"
+required-features = ["io", "isolate", "math"]
+
+[[test]]
+name = "stdlib_dart_async_ref_test"
+required-features = ["async"]
+
+[[test]]
+name = "stdlib_dart_async_test"
+required-features = ["async"]
+
+[[test]]
+name = "stdlib_dart_collection_ref_test"
+required-features = ["collection"]
+
+[[test]]
+name = "stdlib_dart_collection_test"
+required-features = ["collection"]
+
+[[test]]
+name = "stdlib_dart_convert_test"
+required-features = ["convert"]
+
+[[test]]
+name = "stdlib_dart_io_test"
+required-features = ["io", "isolate", "typed_data"]
+
+[[test]]
+name = "stdlib_dart_stream_test"
+required-features = ["async", "convert"]
+
+[[test]]
+name = "stdlib_dart_typed_data_test"
+required-features = ["typed_data"]
+
+[[test]]
+name = "stdlib_math_test"
+required-features = ["math"]
+
+[package.metadata.docs.rs]
+all-features = true

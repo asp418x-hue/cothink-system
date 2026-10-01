@@ -1,0 +1,97 @@
+//! Phase 7 Commit 2 regressions — GPU compile-flag parity and pinning
+//! tests for the M28 investigation that found the GPU kernels already
+//! matched CPU behaviour.
+//!
+//! Covers L25 (NVRTC `--fmad=false`) and M28 (CUDA REM). The ABS-at-±0
+//! convention (formerly M26 here) moved to `tests/abs_kink_convention.rs`.
+//! M23 (device.poll error propagation) is compile-tested only — it
+//! requires a driver reset to exercise the error path at runtime, which
+//! can't be simulated from a unit test.
+
+#![cfg(any(feature = "gpu-wgpu", feature = "gpu-cuda"))]
+
+// The remaining tests (L25 FMA parity, M28 CUDA REM) are all CUDA-only; the
+// ABS-at-±0 (M26) wgpu tests moved to tests/abs_kink_convention.rs.
+#[cfg(feature = "gpu-cuda")]
+use echidna::gpu::{CudaContext, GpuBackend, GpuTapeData};
+#[cfg(feature = "gpu-cuda")]
+use echidna::{record, BReverse};
+
+// ── L25: NVRTC --fmad=false gives bit-exact CPU-GPU parity on mul+add ──
+// With `--fmad=true` (CUDA default), NVRTC fuses `a*b + c` into a single
+// FMA instruction that rounds once instead of twice — the GPU result
+// drifts from the CPU's two-step `(a*b) + c` by ≤1 ULP. The fix disables
+// FMA so both follow the same rounding policy and agree bit-for-bit on
+// f64 arithmetic.
+
+#[cfg(feature = "gpu-cuda")]
+#[test]
+// The a/b/c literals are deliberately full-precision — the exact bit patterns
+// are what produce the FMA-vs-separate-rounding divergence this test pins.
+#[allow(clippy::excessive_precision)]
+fn l25_cuda_fmad_disabled_bit_exact_with_cpu_f64() {
+    let ctx = match CudaContext::new() {
+        Some(c) => c,
+        None => return,
+    };
+    // f(a, b, c) = a*b + c — the canonical FMA-vs-pair divergence point.
+    // Values chosen so the separately-rounded mul gives a result that
+    // isn't exactly representable: a*b = 1e-10 + ULP noise, + 1.0 drifts.
+    let a = 1.2345678901234567_f64;
+    let b = 9.8765432109876543_f64;
+    let c = 1.1111111111111111_f64;
+    let (tape, _) = record(|v: &[BReverse<f64>]| v[0] * v[1] + v[2], &[a, b, c]);
+    let gpu_data = GpuTapeData::from_tape_f64_lossy(&tape).unwrap();
+    let gpu_tape = ctx.upload_tape(&gpu_data);
+    let (gpu_result, _) = ctx
+        .gradient_batch(&gpu_tape, &[a as f32, b as f32, c as f32], 1)
+        .unwrap();
+    let cpu_result = (a as f32) * (b as f32) + (c as f32);
+    // With --fmad=false the GPU should match the CPU's f32 pair-rounded
+    // computation bit-for-bit. Without the flag, NVRTC could fold to
+    // FMA and drift by 1 ULP.
+    assert_eq!(
+        gpu_result[0].to_bits(),
+        cpu_result.to_bits(),
+        "fmad=false should give bit-exact CPU-GPU parity on a*b+c, got \
+         GPU={} CPU={}",
+        gpu_result[0],
+        cpu_result
+    );
+}
+
+// ABS at ±0.0 is now covered by tests/abs_kink_convention.rs (unified 0-at-the-kink
+// convention, generic over backend, across the reverse / tangent-forward / HVP
+// sweeps) — which supersedes the former wgpu-only M26 pair here.
+
+// ── M28: CUDA REM primal and tangent are internally consistent ──
+// Investigation finding: CUDA REM primal uses `fmod(a, b)` and reverse
+// partials compute `da = 1, db = -trunc(a/b)`. These are internally
+// consistent (both differentiate `a - b·trunc(a/b)`) even though the
+// CPU uses a slightly different `a - b·floor(a/b)` convention. This
+// test pins the quotient-boundary behaviour so any future kernel edit
+// gets caught.
+
+#[cfg(feature = "gpu-cuda")]
+#[test]
+fn m28_cuda_rem_quotient_boundary_consistent() {
+    let ctx = match CudaContext::new() {
+        Some(c) => c,
+        None => return,
+    };
+    let (tape, _) = record(|v: &[BReverse<f64>]| v[0] % v[1], &[5.0_f64, 2.0_f64]);
+    let gpu_data = GpuTapeData::from_tape_f64_lossy(&tape).unwrap();
+    let gpu_tape = ctx.upload_tape(&gpu_data);
+    // a = 5, b = 2: trunc(5/2) = 2, so primal = 5 - 2*2 = 1.
+    // Gradient: da = 1, db = -trunc(5/2) = -2.
+    let (r, g) = ctx
+        .gradient_batch(&gpu_tape, &[5.0_f32, 2.0_f32], 1)
+        .unwrap();
+    assert!((r[0] - 1.0).abs() < 1e-5, "r = 5 % 2 = 1, got {}", r[0]);
+    assert!((g[0] - 1.0).abs() < 1e-5, "da should be 1, got {}", g[0]);
+    assert!(
+        (g[1] - (-2.0)).abs() < 1e-5,
+        "db should be -2, got {}",
+        g[1]
+    );
+}

@@ -1,0 +1,49 @@
+/*
+ * SPDX-License-Identifier: MIT
+ * Copyright (c) 2023 - 2026. The DeepCausality Authors and Contributors. All Rights Reserved.
+ */
+
+use deep_causality_uncertain::Uncertain;
+
+#[test]
+fn test_uncertain_f64_add() {
+    let a = Uncertain::<f64>::point(5.0);
+    let b = Uncertain::<f64>::point(3.0);
+    let c = a + b;
+    assert_eq!(c.sample_from_entropy().unwrap(), 8.0);
+}
+
+#[test]
+fn test_uncertain_f64_sub() {
+    let a = Uncertain::<f64>::point(5.0);
+    let b = Uncertain::<f64>::point(3.0);
+    let c = a - b;
+    assert_eq!(c.sample_from_entropy().unwrap(), 2.0);
+}
+
+#[test]
+fn test_uncertain_f64_mul() {
+    let a = Uncertain::<f64>::point(5.0);
+    let b = Uncertain::<f64>::point(3.0);
+    let c = a * b;
+    assert_eq!(c.sample_from_entropy().unwrap(), 15.0);
+}
+
+#[test]
+fn test_uncertain_f64_div() {
+    let a = Uncertain::<f64>::point(6.0);
+    let b = Uncertain::<f64>::point(3.0);
+    let c = a / b;
+    assert_eq!(c.sample_from_entropy().unwrap(), 2.0);
+}
+
+#[test]
+fn test_uncertain_f64_neg() {
+    let a = Uncertain::<f64>::point(5.0);
+    let b = -a;
+    assert_eq!(b.sample_from_entropy().unwrap(), -5.0);
+
+    let c = Uncertain::<f64>::point(-10.0);
+    let d = -c;
+    assert_eq!(d.sample_from_entropy().unwrap(), 10.0);
+}

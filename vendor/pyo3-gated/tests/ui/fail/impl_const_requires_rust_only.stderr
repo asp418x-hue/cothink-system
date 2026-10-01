@@ -1,0 +1,5 @@
+error: `#[py_compat_methods]` can only expose functions to PyO3; mark associated consts/types/macros as `#[rust_only]` or move them outside the PyO3 impl block
+ --> tests/ui/fail/impl_const_requires_rust_only.rs:8:5
+  |
+8 |     pub const CHANNELS: u8 = 3;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^

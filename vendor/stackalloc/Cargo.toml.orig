@@ -1,0 +1,24 @@
+[package]
+name = "stackalloc"
+version = "1.2.2"
+homepage = "https://git.flanchan.moe/flanchan/stackalloc-rs"
+repository = "https://github.com/notflan/stackalloc-rs"
+keywords = ["alloca", "stack", "stack-allocation", "safe"]
+description = "Safely allocate and manipulate arbitrarily-sized slices on the stack at runtime"
+authors = ["Avril <flanchan@cumallover.me>"]
+edition = "2018"
+license = "MIT"
+
+[dev-dependencies]
+lazy_static = "1.4.0"
+
+[build-dependencies]
+cc = "1.0"
+rustc_version = "0.2"
+
+[features]
+default = []
+no_std = []
+
+# for tests
+no_unwind_protection = []

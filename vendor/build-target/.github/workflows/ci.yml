@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTDOCFLAGS: "--deny warnings"
+  RUSTFLAGS: "--deny warnings"
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: ["beta"]
+        target:
+          - x86_64-unknown-linux-gnu
+          - x86_64-pc-windows-msvc
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install latest ${{ matrix.toolchain }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          target: ${{ matrix.target }}
+      - name: Build
+        run: cargo build --target ${{ matrix.target }}
+      - name: Install all targets
+        shell: pwsh
+        run: |
+          rustup target list | ForEach-Object {
+              $target = ($_ -split ' ')[0]
+              Write-Host "Adding Rust target: $target"
+              rustup target add $target
+          }
+      - name: Test
+        run: cargo test --target ${{ matrix.target }}
+        
+  documentation:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install latest nightly
+      uses: dtolnay/rust-toolchain@nightly
+    - name: Generate documentation
+      run: cargo doc --all-features
+    - name: Install cargo-deadlinks
+      run: cargo install cargo-deadlinks
+    - name: Check dead links in doc
+      run: cargo deadlinks
+
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install latest nightly
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+            components: clippy
+            
+      - name: Clippy check
+        run: cargo clippy --all-features
+          
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install latest nightly
+      uses: dtolnay/rust-toolchain@nightly
+      with:
+          components: rustfmt
+          
+    - name: Format check
+      run: cargo fmt --all -- --check

@@ -1,0 +1,290 @@
+//! Module for testing using fuzzing (quickcheck)
+#![allow(clippy::type_complexity)]
+
+use std::fmt::Debug;
+
+use crate::{joint::JointPrefix, *};
+use either::Either;
+use quickcheck::Arbitrary;
+
+mod aggregate;
+mod basic;
+mod views;
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub(crate) enum Operation<P, T> {
+    Add(P, T),
+    Remove(P),
+    RemoveChildren(P),
+}
+
+const NUM_TESTS: usize = if cfg!(miri) {
+    10
+} else if cfg!(debug_assertions) {
+    2000
+} else {
+    10_000
+};
+const DEFAULT_GEN_SIZE: usize = 100;
+
+pub(crate) fn proptest_runner<A: Arbitrary + Debug + PartialEq, F: Fn(A) -> bool>(f: F) {
+    let num_tests: usize = std::env::var("QUICKCHECK_TESTS")
+        .ok()
+        .and_then(|x| x.parse::<usize>().ok())
+        .unwrap_or(NUM_TESTS);
+
+    let gen_size: usize = std::env::var("QUICKCHECK_GENERATOR_SIZE")
+        .ok()
+        .and_then(|x| x.parse::<usize>().ok())
+        .unwrap_or(DEFAULT_GEN_SIZE);
+
+    let mut generator = quickcheck::Gen::new(gen_size);
+
+    // sample all inputs
+    for _ in 0..num_tests {
+        let input = A::arbitrary(&mut generator);
+        let input_c = input.clone();
+        let success = f(input_c);
+        if !success {
+            shrink_failure(f, input)
+        }
+    }
+}
+
+fn shrink_failure<A: Arbitrary + Debug + PartialEq, F: Fn(A) -> bool>(f: F, input: A) -> ! {
+    for i in input.shrink() {
+        let i_c = i.clone();
+        let success = f(i_c);
+        if !success {
+            shrink_failure(f, i)
+        }
+    }
+    // if we reach this point, then all shrunken inputs work. Therefore, `inputs` is the minimal
+    // input
+    panic!(
+        "[QUICKCHECK] Test case failed!\n  Minimal input: {:#?}",
+        input
+    );
+}
+
+#[allow(missing_docs)]
+#[macro_export]
+macro_rules! qc {
+    ($name:ident, $f:ident) => {
+        #[test]
+        fn $name() {
+            proptest_runner($f)
+        }
+    };
+}
+
+fn select<P: Prefix + Clone, T: Clone, F: Fn(&P, &T) -> bool>(
+    map: &PrefixMap<P, T>,
+    f: F,
+) -> Vec<(P, T)> {
+    map.iter()
+        .map(|(p, t)| (p.clone(), t.clone()))
+        .filter(|(p, t)| f(p, t))
+        .collect()
+}
+
+impl<P: Prefix + Arbitrary, T: Arbitrary> Arbitrary for PrefixMap<P, T> {
+    fn arbitrary(g: &mut quickcheck::Gen) -> Self {
+        <Vec<(P, T)> as Arbitrary>::arbitrary(g)
+            .into_iter()
+            .collect()
+    }
+
+    fn shrink(&self) -> Box<dyn Iterator<Item = Self>> {
+        let elems = self.clone().into_iter().collect::<Vec<_>>();
+        let shrinked = elems.shrink();
+        Box::new(shrinked.map(PrefixMap::from_iter))
+    }
+}
+
+impl<P: Prefix + Arbitrary> Arbitrary for PrefixSet<P> {
+    fn arbitrary(g: &mut quickcheck::Gen) -> Self {
+        <Vec<P> as Arbitrary>::arbitrary(g).into_iter().collect()
+    }
+
+    fn shrink(&self) -> Box<dyn Iterator<Item = Self>> {
+        let elems = self.clone().into_iter().collect::<Vec<_>>();
+        Box::new(elems.shrink().map(PrefixSet::from_iter))
+    }
+}
+
+impl<P: Arbitrary, T: Arbitrary> Arbitrary for Operation<P, T> {
+    fn arbitrary(g: &mut quickcheck::Gen) -> Self {
+        let p = P::arbitrary(g);
+        match g
+            .choose(&[
+                "add",
+                "add",
+                "add",
+                "add",
+                "add",
+                "add",
+                "add",
+                "remove",
+                "remove",
+                "remove",
+                "remove_children",
+            ])
+            .copied()
+            .unwrap_or_default()
+        {
+            "add" => {
+                let t = T::arbitrary(g);
+                Self::Add(p, t)
+            }
+            "remove" => Self::Remove(p),
+            "remove_children" => Self::RemoveChildren(p),
+            _ => unreachable!(),
+        }
+    }
+
+    fn shrink(&self) -> Box<dyn Iterator<Item = Self>> {
+        match self {
+            Operation::Add(p, t) => {
+                let t = t.clone();
+                Box::new(
+                    p.clone()
+                        .shrink()
+                        .map(move |p| Operation::Add(p, t.clone())),
+                )
+            }
+            Operation::Remove(p) => Box::new(p.clone().shrink().map(|p| Operation::Remove(p))),
+            Operation::RemoveChildren(p) => {
+                Box::new(p.clone().shrink().map(|p| Operation::RemoveChildren(p)))
+            }
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
+pub(crate) struct TestPrefix(u32, u8);
+
+impl Debug for TestPrefix {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "0x{:08x}/{}", self.0, self.1)
+    }
+}
+
+impl Arbitrary for TestPrefix {
+    fn arbitrary(g: &mut quickcheck::Gen) -> Self {
+        #[rustfmt::skip]
+        #[allow(clippy::zero_prefixed_literal)]
+        let len: u8 = *g
+            .choose(&[
+                00,
+                01, 02,
+                03, 04, 04,
+                05, 05, 06, 06,
+                07, 07, 08, 08, 08,
+                09, 09, 09, 10, 10, 10,
+                11, 11, 11, 12, 12, 12, 12,
+                13, 13, 13, 13, 14, 14, 14, 14,
+                15, 15, 15, 15, 16, 16, 16, 16, 16,
+                17, 17, 17, 17, 17, 18, 18, 18, 18, 18,
+                19, 19, 19, 19, 19, 20, 20, 20, 20, 20, 20,
+                21, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 22,
+                23, 23, 23, 23, 23, 23, 24, 24, 24, 24, 24, 24, 24,
+                32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32
+            ])
+            .unwrap();
+        let x = u32::arbitrary(g);
+        Self::from_repr_len(x, len)
+    }
+
+    fn shrink(&self) -> Box<dyn Iterator<Item = Self>> {
+        if self.1 == 0 {
+            quickcheck::empty_shrinker()
+        } else {
+            let len = self.1 - 1;
+            let x = Self::from_repr_len(self.0, len);
+            quickcheck::single_shrinker(x)
+        }
+    }
+}
+
+impl Prefix for TestPrefix {
+    type R = u32;
+
+    fn repr(&self) -> Self::R {
+        self.0
+    }
+
+    fn prefix_len(&self) -> u8 {
+        self.1
+    }
+
+    fn from_repr_len(repr: Self::R, len: u8) -> Self {
+        let x = Prefix::mask(&(repr, len));
+        Self(x, len)
+    }
+}
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
+pub(crate) enum JointTestPrefix {
+    V4(TestPrefix),
+    V6(TestPrefix),
+}
+
+impl Debug for JointTestPrefix {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            JointTestPrefix::V4(p) => write!(f, "V4:{p:?}"),
+            JointTestPrefix::V6(p) => write!(f, "V6:{p:?}"),
+        }
+    }
+}
+
+impl Arbitrary for JointTestPrefix {
+    fn arbitrary(g: &mut quickcheck::Gen) -> Self {
+        #[rustfmt::skip]
+        let v4 = bool::arbitrary(g);
+        if v4 {
+            JointTestPrefix::V4(TestPrefix::arbitrary(g))
+        } else {
+            JointTestPrefix::V6(TestPrefix::arbitrary(g))
+        }
+    }
+
+    fn shrink(&self) -> Box<dyn Iterator<Item = Self>> {
+        match self {
+            JointTestPrefix::V4(p) => Box::new(p.shrink().map(JointTestPrefix::V4)),
+            JointTestPrefix::V6(p) => Box::new(p.shrink().map(JointTestPrefix::V6)),
+        }
+    }
+}
+
+impl JointPrefix for JointTestPrefix {
+    type P1 = TestPrefix;
+    type P2 = TestPrefix;
+
+    /// Get either `Left(P1)` or `Right(P2)`.
+    fn p1_or_p2(self) -> Either<Self::P1, Self::P2> {
+        match self {
+            JointTestPrefix::V4(p) => Either::Left(p),
+            JointTestPrefix::V6(p) => Either::Right(p),
+        }
+    }
+
+    /// Get either `Left(P1)` or `Right(P2)`, as a reference.
+    fn p1_or_p2_ref(&self) -> Either<&Self::P1, &Self::P2> {
+        match self {
+            JointTestPrefix::V4(p) => Either::Left(p),
+            JointTestPrefix::V6(p) => Either::Right(p),
+        }
+    }
+
+    /// Construct a prefix from a reference to the first variant.
+    fn from_p1(p: &Self::P1) -> Self {
+        Self::V4(*p)
+    }
+
+    /// Construct a prefix from a reference to the second variant.
+    fn from_p2(p: &Self::P2) -> Self {
+        Self::V6(*p)
+    }
+}

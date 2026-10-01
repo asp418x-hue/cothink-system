@@ -1,0 +1,13 @@
+error: `#[py_compat_methods]` can only expose functions to PyO3; mark associated consts/types/macros as `#[rust_only]` or move them outside the PyO3 impl block
+  --> tests/ui/fail/impl_macro_requires_rust_only.rs:14:5
+   |
+14 |     helper!();
+   |     ^^^^^^^^^^
+
+warning: unused macro definition: `helper`
+ --> tests/ui/fail/impl_macro_requires_rust_only.rs:3:14
+  |
+3 | macro_rules! helper {
+  |              ^^^^^^
+  |
+  = note: `#[warn(unused_macros)]` on by default

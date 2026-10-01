@@ -1,0 +1,78 @@
+//! Reverse-mode automatic differentiation via an Adept-style tape.
+//!
+//! [`Reverse<F>`] is a lightweight variable (12 bytes for f64, `Copy`) that records
+//! operations on a thread-local tape. Best suited for functions with many inputs and
+//! few outputs, such as computing gradients.
+
+use std::fmt::{self, Display};
+
+use crate::tape::CONSTANT;
+use crate::Float;
+
+/// Reverse-mode AD variable.
+///
+/// Just a value and a tape index — 12 bytes for `f64`. `Copy` because the
+/// tape lives in a thread-local, not inside this struct.
+#[derive(Clone, Copy, Debug)]
+pub struct Reverse<F: Float> {
+    pub(crate) value: F,
+    pub(crate) index: u32,
+}
+
+impl<F: Float> From<F> for Reverse<F> {
+    #[inline]
+    fn from(val: F) -> Self {
+        Reverse::constant(val)
+    }
+}
+
+impl<F: Float> Reverse<F> {
+    /// Create a constant (not tracked on tape).
+    #[inline]
+    #[must_use]
+    pub fn constant(value: F) -> Self {
+        Reverse {
+            value,
+            index: CONSTANT,
+        }
+    }
+
+    /// Create a reverse variable from a tape allocation.
+    /// Typically only used internally by the API layer and tests.
+    #[inline]
+    #[must_use]
+    pub fn from_tape(value: F, index: u32) -> Self {
+        Reverse { value, index }
+    }
+
+    /// Get the tape index (for advanced usage / testing).
+    #[inline]
+    pub fn index(&self) -> u32 {
+        self.index
+    }
+}
+
+impl<F: Float> crate::tape::Tape<F> {
+    /// Register every element of `x` as a tape variable, returning the
+    /// tracked [`Reverse`] values in order.
+    pub(crate) fn new_variables(&mut self, x: &[F]) -> Vec<Reverse<F>> {
+        x.iter()
+            .map(|&val| {
+                let (idx, v) = self.new_variable(val);
+                Reverse::from_tape(v, idx)
+            })
+            .collect()
+    }
+}
+
+impl<F: Float> Display for Reverse<F> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.value)
+    }
+}
+
+impl<F: Float> Default for Reverse<F> {
+    fn default() -> Self {
+        Reverse::constant(F::zero())
+    }
+}

@@ -1,0 +1,53 @@
+[package]
+name = "topological-sort"
+version = "0.3.1"
+edition = "2024"
+rust-version = "1.88.0"
+description = "Performs topological sorting."
+documentation = "https://docs.rs/topological-sort"
+readme = "README.md"
+repository = "https://github.com/gifnksm/topological-sort-rs"
+license = "MIT OR Apache-2.0"
+keywords = ["dag", "dependency", "graph", "topological", "toposort"]
+categories = ["algorithms", "data-structures"]
+
+[package.metadata.cargo-sync-rdme.badge.badges]
+maintenance = true
+license = { link = "#license" }
+crates-io = true
+docs-rs = true
+rust-version = true
+github-actions = { workflows = "ci.yml" }
+codecov = true
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
+
+[dev-dependencies]
+quickcheck = "1.1.0"
+quickcheck_macros = "1.2.0"
+
+[badges]
+maintenance = { status = "passively-maintained" }
+
+[lints.clippy]
+cargo = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+
+# Restriction group
+get_unwrap = "warn"
+inline_trait_bounds = "warn"
+
+[lints.rust]
+missing_copy_implementations = "warn"
+missing_debug_implementations = "warn"
+missing_docs = "warn"
+nonstandard_style = "warn"
+trivial_casts = "warn"
+trivial_numeric_casts = "warn"
+unused = "warn"
+unused_extern_crates = "warn"
+unused_import_braces = "warn"
+unused_qualifications = "warn"

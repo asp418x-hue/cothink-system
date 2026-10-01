@@ -1,0 +1,5 @@
+error: `py_only` applies only to `#[py_compat_fn]` and function items passed to `#[py_compat]`
+ --> tests/ui/fail/py_only_on_struct.rs:3:20
+  |
+3 | #[py_compat_struct(py_only)]
+  |                    ^^^^^^^

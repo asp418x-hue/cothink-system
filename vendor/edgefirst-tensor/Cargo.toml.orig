@@ -1,0 +1,56 @@
+[package]
+name = "edgefirst-tensor"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+description = "Zero-copy tensor memory management with DMA, shared memory, and heap backends"
+homepage.workspace = true
+repository.workspace = true
+readme = "README.md"
+license.workspace = true
+keywords = ["tensor", "dma", "shared-memory", "zero-copy", "edge-ai"]
+categories = ["data-structures", "memory-management", "embedded", "science"]
+documentation = "https://docs.rs/edgefirst-tensor"
+
+[features]
+default = ["ndarray"]
+ndarray = ["dep:ndarray"]
+
+[dependencies]
+ctor = { workspace = true }
+env_logger = { workspace = true }
+half = { workspace = true }
+libloading = { workspace = true }
+log = { workspace = true }
+ndarray = { workspace = true, optional = true }
+num-traits = { workspace = true }
+serde = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+dma-heap = { workspace = true }
+libc = { workspace = true }
+
+[target.'cfg(unix)'.dependencies]
+nix = { workspace = true }
+
+[target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]
+# Raw FFI bindings to IOSurface and CoreFoundation; lighter touch than the
+# objc2 wrappers and matches the production spike at
+# spikes/angle_iosurface/. The IOSurface and CoreFoundation frameworks are
+# linked via the `#[link]` attribute inside the iosurface module. Both
+# frameworks ship on macOS AND iOS, so the `iosurface` module (and this
+# `libc` dep) are available on either Apple OS.
+libc = { workspace = true }
+
+[dev-dependencies]
+edgefirst-bench = { workspace = true }
+serde_json = { workspace = true }
+
+[target.'cfg(target_os = "linux")'.dev-dependencies]
+procfs = { workspace = true }
+
+[[bench]]
+name = "tensor_benchmark"
+harness = false

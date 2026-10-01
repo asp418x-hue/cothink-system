@@ -1,0 +1,7 @@
+error: `#[py_only]` and `#[py_attrs]` cannot both appear on the same item
+  --> tests/ui/conflicting_sentinels.rs:10:5
+   |
+10 | /     #[py_only]
+11 | |     #[py_attrs]
+12 | |     pub fn bad(&self) {}
+   | |________________________^

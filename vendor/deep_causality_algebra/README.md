@@ -1,0 +1,73 @@
+[//]: # (---)
+
+[//]: # (SPDX-License-Identifier: MIT)
+
+[//]: # (---)
+
+# DeepCausality Algebra
+
+[![Crates.io][crates-badge]][crates-url]
+[![Docs.rs][docs-badge]][docs-url]
+[![MIT licensed][mit-badge]][mit-url]
+
+[crates-badge]: https://img.shields.io/badge/Crates.io-Latest-blue
+
+[crates-url]: https://crates.io/crates/deep_causality_algebra
+
+[docs-badge]: https://img.shields.io/badge/Docs.rs-Latest-blue
+
+[docs-url]: https://docs.rs/deep_causality_algebra/latest/deep_causality_algebra/
+
+[mit-badge]: https://img.shields.io/badge/License-MIT-blue.svg
+
+[mit-url]: https://github.com/deepcausality-rs/deep_causality/blob/main/LICENSE
+
+## Summary
+
+Abstract algebra traits for the [DeepCausality project](http://www.deepcausality.com): the trait tower the numeric
+and physics crates build on.
+
+- **Structure traits:** Magma, Semigroup, Monoid, Group, Ring, Field, and the algebra-over-a-ring traits.
+- **Scalar traits:** `Real`, `Scalar`, `RealField`, `ComplexField`, `Normed`, `NormedScalar`, and `ConjugateScalar`.
+- **Marker traits:** `Associative`, `Commutative`, `Distributive`, `Idempotent`, and the semilattice markers.
+- **Isomorphism markers:** `GroupIso`, `RingIso`, `FieldIso`, `AlgebraIso`, and `DivisionAlgebraIso`, plus their
+  witness-typed Tier 2 counterparts.
+
+Blanket implementations cover the real scalars (`f32`, `f64`, `Float106`, `BFloat16`) through the `Float` trait from
+`deep_causality_num`. The concrete number types implement these traits in their own crates: `Complex`, `Quaternion`,
+and `Octonion` in `deep_causality_num_complex`, and `Dual` in `deep_causality_num_dual`.
+
+The implementation is macro-free and unsafe-free. Its only dependency is `deep_causality_num`.
+
+## Reference documentation
+
+- [Algebraic Traits](README_ALGEBRA_TRAITS.md) — the full trait hierarchy, from Magma to Field, with the laws each
+  trait promises and the types that implement it.
+- [Isomorphism Traits](README_ISOMORPHISM.md) — the three-tier iso vocabulary (`From`-based markers, witness-typed
+  isos, and the HKT bridge in `deep_causality_haft`).
+
+## Dependency
+
+Add the crate to your `Cargo.toml`:
+
+```toml
+[dependencies]
+deep_causality_algebra = "0.1"
+```
+
+## Build configurations
+
+| Configuration | Cargo features | Supported |
+|---|---|:-:|
+| `std`, hosted | default | ✓ |
+| `no-std` with a heap | `default-features = false, features = ["no-std"]` | ✓ |
+| `no-std` on `core` alone, no heap | `default-features = false, features = ["no-std"]` | ✓ |
+
+The crate needs only `core`: with `no-std` it links into a program that defines no `#[global_allocator]`.
+
+CI builds every supported bare-metal configuration for `thumbv7em-none-eabihf` and links the `core` configuration without an allocator.
+[README_NO_STD.md](https://github.com/deepcausality-rs/deep_causality/blob/main/README_NO_STD.md) describes the build configuration of every crate in the workspace.
+
+## License
+
+This project is licensed under the [MIT license](LICENSE).

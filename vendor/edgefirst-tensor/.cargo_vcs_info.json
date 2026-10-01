@@ -1,0 +1,6 @@
+{
+  "git": {
+    "sha1": "fe4b36a80b1cc919f65f20fc7462b7e83027e04c"
+  },
+  "path_in_vcs": "crates/tensor"
+}

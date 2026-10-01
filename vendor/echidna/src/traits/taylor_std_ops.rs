@@ -1,0 +1,500 @@
+//! `std::ops` implementations for `Taylor<F, K>` and `TaylorDyn<F>`.
+
+use std::ops::{
+    Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign,
+};
+
+use crate::float::Float;
+use crate::taylor::Taylor;
+use crate::taylor_ops;
+
+// ══════════════════════════════════════════════
+//  Taylor<F, K> ↔ Taylor<F, K>
+// ══════════════════════════════════════════════
+
+impl<F: Float, const K: usize> Add for Taylor<F, K> {
+    type Output = Self;
+    #[inline]
+    fn add(self, rhs: Self) -> Self {
+        let mut c = [F::zero(); K];
+        taylor_ops::taylor_add(&self.coeffs, &rhs.coeffs, &mut c);
+        Taylor { coeffs: c }
+    }
+}
+
+impl<F: Float, const K: usize> Sub for Taylor<F, K> {
+    type Output = Self;
+    #[inline]
+    fn sub(self, rhs: Self) -> Self {
+        let mut c = [F::zero(); K];
+        taylor_ops::taylor_sub(&self.coeffs, &rhs.coeffs, &mut c);
+        Taylor { coeffs: c }
+    }
+}
+
+// Truncated Taylor series multiplication uses the Cauchy product, which accumulates
+// terms via addition — clippy flags the + inside a Mul impl, but this is correct for
+// power-series coefficient propagation.
+impl<F: Float, const K: usize> Mul for Taylor<F, K> {
+    type Output = Self;
+    #[inline]
+    fn mul(self, rhs: Self) -> Self {
+        let mut c = [F::zero(); K];
+        taylor_ops::taylor_mul(&self.coeffs, &rhs.coeffs, &mut c);
+        Taylor { coeffs: c }
+    }
+}
+
+// Truncated Taylor series division computes coefficients via recurrence that uses
+// multiplication internally — clippy flags the * inside a Div impl, but this is correct
+// for power-series coefficient propagation.
+impl<F: Float, const K: usize> Div for Taylor<F, K> {
+    type Output = Self;
+    #[inline]
+    fn div(self, rhs: Self) -> Self {
+        let mut c = [F::zero(); K];
+        taylor_ops::taylor_div(&self.coeffs, &rhs.coeffs, &mut c);
+        Taylor { coeffs: c }
+    }
+}
+
+impl<F: Float, const K: usize> Neg for Taylor<F, K> {
+    type Output = Self;
+    #[inline]
+    fn neg(self) -> Self {
+        let mut c = [F::zero(); K];
+        taylor_ops::taylor_neg(&self.coeffs, &mut c);
+        Taylor { coeffs: c }
+    }
+}
+
+impl<F: Float, const K: usize> Rem for Taylor<F, K> {
+    type Output = Self;
+    #[inline]
+    fn rem(self, rhs: Self) -> Self {
+        // Zero-divisor produces `Inf` from the division and `NaN` from the
+        // modulo in the k=0 slot, then a silent tangent recurrence that mixes
+        // finite and non-finite coefficients. Flag the whole series as NaN so
+        // downstream consumers see a uniformly degenerate result.
+        if rhs.coeffs[0] == F::zero() {
+            return Taylor {
+                coeffs: std::array::from_fn(|_| F::nan()),
+            };
+        }
+        let q = (self.coeffs[0] / rhs.coeffs[0]).trunc();
+        Taylor {
+            coeffs: std::array::from_fn(|k| {
+                if k == 0 {
+                    self.coeffs[0] % rhs.coeffs[0]
+                } else {
+                    self.coeffs[k] - rhs.coeffs[k] * q
+                }
+            }),
+        }
+    }
+}
+
+impl<F: Float, const K: usize> AddAssign for Taylor<F, K> {
+    #[inline]
+    fn add_assign(&mut self, rhs: Self) {
+        *self = *self + rhs;
+    }
+}
+
+impl<F: Float, const K: usize> SubAssign for Taylor<F, K> {
+    #[inline]
+    fn sub_assign(&mut self, rhs: Self) {
+        *self = *self - rhs;
+    }
+}
+
+impl<F: Float, const K: usize> MulAssign for Taylor<F, K> {
+    #[inline]
+    fn mul_assign(&mut self, rhs: Self) {
+        *self = *self * rhs;
+    }
+}
+
+impl<F: Float, const K: usize> DivAssign for Taylor<F, K> {
+    #[inline]
+    fn div_assign(&mut self, rhs: Self) {
+        *self = *self / rhs;
+    }
+}
+
+impl<F: Float, const K: usize> RemAssign for Taylor<F, K> {
+    #[inline]
+    fn rem_assign(&mut self, rhs: Self) {
+        *self = *self % rhs;
+    }
+}
+
+// Mixed ops: Taylor<F, K> with primitive floats.
+macro_rules! impl_taylor_scalar_ops {
+    ($f:ty) => {
+        impl<const K: usize> Add<$f> for Taylor<$f, K> {
+            type Output = Taylor<$f, K>;
+            #[inline]
+            fn add(self, rhs: $f) -> Taylor<$f, K> {
+                let mut coeffs = self.coeffs;
+                coeffs[0] += rhs;
+                Taylor { coeffs }
+            }
+        }
+
+        impl<const K: usize> Add<Taylor<$f, K>> for $f {
+            type Output = Taylor<$f, K>;
+            #[inline]
+            fn add(self, rhs: Taylor<$f, K>) -> Taylor<$f, K> {
+                let mut coeffs = rhs.coeffs;
+                coeffs[0] += self;
+                Taylor { coeffs }
+            }
+        }
+
+        impl<const K: usize> Sub<$f> for Taylor<$f, K> {
+            type Output = Taylor<$f, K>;
+            #[inline]
+            fn sub(self, rhs: $f) -> Taylor<$f, K> {
+                let mut coeffs = self.coeffs;
+                coeffs[0] -= rhs;
+                Taylor { coeffs }
+            }
+        }
+
+        impl<const K: usize> Sub<Taylor<$f, K>> for $f {
+            type Output = Taylor<$f, K>;
+            #[inline]
+            fn sub(self, rhs: Taylor<$f, K>) -> Taylor<$f, K> {
+                Taylor {
+                    coeffs: std::array::from_fn(|k| {
+                        if k == 0 {
+                            self - rhs.coeffs[0]
+                        } else {
+                            -rhs.coeffs[k]
+                        }
+                    }),
+                }
+            }
+        }
+
+        impl<const K: usize> Mul<$f> for Taylor<$f, K> {
+            type Output = Taylor<$f, K>;
+            #[inline]
+            fn mul(self, rhs: $f) -> Taylor<$f, K> {
+                Taylor {
+                    coeffs: std::array::from_fn(|k| self.coeffs[k] * rhs),
+                }
+            }
+        }
+
+        impl<const K: usize> Mul<Taylor<$f, K>> for $f {
+            type Output = Taylor<$f, K>;
+            #[inline]
+            fn mul(self, rhs: Taylor<$f, K>) -> Taylor<$f, K> {
+                Taylor {
+                    coeffs: std::array::from_fn(|k| self * rhs.coeffs[k]),
+                }
+            }
+        }
+
+        // Scalar division multiplies by the reciprocal for efficiency — clippy flags
+        // the * inside a Div impl, but this is the standard reciprocal-multiply optimization.
+        #[allow(clippy::suspicious_arithmetic_impl)]
+        impl<const K: usize> Div<$f> for Taylor<$f, K> {
+            type Output = Taylor<$f, K>;
+            #[inline]
+            fn div(self, rhs: $f) -> Taylor<$f, K> {
+                let inv: $f = 1.0 / rhs;
+                Taylor {
+                    coeffs: std::array::from_fn(|k| self.coeffs[k] * inv),
+                }
+            }
+        }
+
+        impl<const K: usize> Div<Taylor<$f, K>> for $f {
+            type Output = Taylor<$f, K>;
+            #[inline]
+            fn div(self, rhs: Taylor<$f, K>) -> Taylor<$f, K> {
+                Taylor::constant(self) / rhs
+            }
+        }
+
+        impl<const K: usize> Rem<$f> for Taylor<$f, K> {
+            type Output = Taylor<$f, K>;
+            #[inline]
+            fn rem(self, rhs: $f) -> Taylor<$f, K> {
+                // Zero divisor: flag the whole series NaN (mirrors `Taylor::rem`)
+                // rather than leaving a NaN k=0 slot beside finite higher coeffs.
+                if rhs == 0.0 {
+                    return Taylor {
+                        coeffs: std::array::from_fn(|_| <$f>::NAN),
+                    };
+                }
+                let mut coeffs = self.coeffs;
+                coeffs[0] %= rhs;
+                Taylor { coeffs }
+            }
+        }
+
+        impl<const K: usize> Rem<Taylor<$f, K>> for $f {
+            type Output = Taylor<$f, K>;
+            #[inline]
+            fn rem(self, rhs: Taylor<$f, K>) -> Taylor<$f, K> {
+                // Zero divisor constant term: flag the whole series NaN
+                // (mirrors `Taylor::rem`) rather than emitting an Inf/NaN mix.
+                if rhs.coeffs[0] == 0.0 {
+                    return Taylor {
+                        coeffs: std::array::from_fn(|_| <$f>::NAN),
+                    };
+                }
+                // scalar % b(t) = scalar - trunc(scalar/b[0]) * b(t)
+                let q = (self / rhs.coeffs[0]).trunc();
+                Taylor {
+                    coeffs: std::array::from_fn(|k| {
+                        if k == 0 {
+                            self % rhs.coeffs[0]
+                        } else {
+                            -q * rhs.coeffs[k]
+                        }
+                    }),
+                }
+            }
+        }
+    };
+}
+
+impl_taylor_scalar_ops!(f32);
+impl_taylor_scalar_ops!(f64);
+
+impl<F: Float, const K: usize> PartialEq for Taylor<F, K> {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self.coeffs[0] == other.coeffs[0]
+    }
+}
+
+impl<F: Float, const K: usize> PartialOrd for Taylor<F, K> {
+    #[inline]
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.coeffs[0].partial_cmp(&other.coeffs[0])
+    }
+}
+
+// ══════════════════════════════════════════════
+//  TaylorDyn<F> operators
+// ══════════════════════════════════════════════
+
+use crate::taylor_dyn::{TaylorArenaLocal, TaylorDyn};
+
+impl<F: Float + TaylorArenaLocal> Add for TaylorDyn<F> {
+    type Output = Self;
+    #[inline]
+    fn add(self, rhs: Self) -> Self {
+        TaylorDyn::binary_op(&self, &rhs, |a, b, c| taylor_ops::taylor_add(a, b, c))
+    }
+}
+
+impl<F: Float + TaylorArenaLocal> Sub for TaylorDyn<F> {
+    type Output = Self;
+    #[inline]
+    fn sub(self, rhs: Self) -> Self {
+        TaylorDyn::binary_op(&self, &rhs, |a, b, c| taylor_ops::taylor_sub(a, b, c))
+    }
+}
+
+// Truncated Taylor series multiplication uses the Cauchy product, which accumulates
+// terms via addition — clippy flags the + inside a Mul impl, but this is correct for
+// power-series coefficient propagation.
+impl<F: Float + TaylorArenaLocal> Mul for TaylorDyn<F> {
+    type Output = Self;
+    #[inline]
+    fn mul(self, rhs: Self) -> Self {
+        TaylorDyn::binary_op(&self, &rhs, |a, b, c| taylor_ops::taylor_mul(a, b, c))
+    }
+}
+
+// Truncated Taylor series division computes coefficients via recurrence that uses
+// multiplication internally — clippy flags the * inside a Div impl, but this is correct
+// for power-series coefficient propagation.
+impl<F: Float + TaylorArenaLocal> Div for TaylorDyn<F> {
+    type Output = Self;
+    #[inline]
+    fn div(self, rhs: Self) -> Self {
+        TaylorDyn::binary_op(&self, &rhs, |a, b, c| taylor_ops::taylor_div(a, b, c))
+    }
+}
+
+impl<F: Float + TaylorArenaLocal> Neg for TaylorDyn<F> {
+    type Output = Self;
+    #[inline]
+    fn neg(self) -> Self {
+        TaylorDyn::unary_op(&self, |a, c| taylor_ops::taylor_neg(a, c))
+    }
+}
+
+impl<F: Float + TaylorArenaLocal> Rem for TaylorDyn<F> {
+    type Output = Self;
+    #[inline]
+    fn rem(self, rhs: Self) -> Self {
+        TaylorDyn::binary_op(&self, &rhs, |a, b, c| {
+            // Mirror the `Taylor::rem` zero-divisor guard — without it the
+            // k=0 slot holds `a[0] % 0 = NaN` while higher-order slots
+            // compute from `(a[0]/0).trunc() = Inf` → `a[k] - b[k]*Inf`,
+            // producing a mixed finite/NaN/Inf series that looks internally
+            // inconsistent to downstream consumers.
+            if b[0] == F::zero() {
+                for ci in c.iter_mut() {
+                    *ci = F::nan();
+                }
+                return;
+            }
+            c[0] = a[0] % b[0];
+            let q = (a[0] / b[0]).trunc();
+            for k in 1..c.len() {
+                c[k] = a[k] - b[k] * q;
+            }
+        })
+    }
+}
+
+impl<F: Float + TaylorArenaLocal> AddAssign for TaylorDyn<F> {
+    #[inline]
+    fn add_assign(&mut self, rhs: Self) {
+        *self = *self + rhs;
+    }
+}
+
+impl<F: Float + TaylorArenaLocal> SubAssign for TaylorDyn<F> {
+    #[inline]
+    fn sub_assign(&mut self, rhs: Self) {
+        *self = *self - rhs;
+    }
+}
+
+impl<F: Float + TaylorArenaLocal> MulAssign for TaylorDyn<F> {
+    #[inline]
+    fn mul_assign(&mut self, rhs: Self) {
+        *self = *self * rhs;
+    }
+}
+
+impl<F: Float + TaylorArenaLocal> DivAssign for TaylorDyn<F> {
+    #[inline]
+    fn div_assign(&mut self, rhs: Self) {
+        *self = *self / rhs;
+    }
+}
+
+impl<F: Float + TaylorArenaLocal> RemAssign for TaylorDyn<F> {
+    #[inline]
+    fn rem_assign(&mut self, rhs: Self) {
+        *self = *self % rhs;
+    }
+}
+
+// Mixed ops: TaylorDyn<F> with primitive floats.
+macro_rules! impl_promote_scalar_ops {
+    ([$($gen:tt)*] $ty:ty, $f:ty) => {
+        impl<$($gen)*> Add<$f> for $ty {
+            type Output = $ty;
+            #[inline]
+            fn add(self, rhs: $f) -> $ty {
+                self + <$ty>::constant(rhs)
+            }
+        }
+
+        impl<$($gen)*> Add<$ty> for $f {
+            type Output = $ty;
+            #[inline]
+            fn add(self, rhs: $ty) -> $ty {
+                <$ty>::constant(self) + rhs
+            }
+        }
+
+        impl<$($gen)*> Sub<$f> for $ty {
+            type Output = $ty;
+            #[inline]
+            fn sub(self, rhs: $f) -> $ty {
+                self - <$ty>::constant(rhs)
+            }
+        }
+
+        impl<$($gen)*> Sub<$ty> for $f {
+            type Output = $ty;
+            #[inline]
+            fn sub(self, rhs: $ty) -> $ty {
+                <$ty>::constant(self) - rhs
+            }
+        }
+
+        impl<$($gen)*> Mul<$f> for $ty {
+            type Output = $ty;
+            #[inline]
+            fn mul(self, rhs: $f) -> $ty {
+                self * <$ty>::constant(rhs)
+            }
+        }
+
+        impl<$($gen)*> Mul<$ty> for $f {
+            type Output = $ty;
+            #[inline]
+            fn mul(self, rhs: $ty) -> $ty {
+                <$ty>::constant(self) * rhs
+            }
+        }
+
+        impl<$($gen)*> Div<$f> for $ty {
+            type Output = $ty;
+            #[inline]
+            fn div(self, rhs: $f) -> $ty {
+                self / <$ty>::constant(rhs)
+            }
+        }
+
+        impl<$($gen)*> Div<$ty> for $f {
+            type Output = $ty;
+            #[inline]
+            fn div(self, rhs: $ty) -> $ty {
+                <$ty>::constant(self) / rhs
+            }
+        }
+
+        impl<$($gen)*> Rem<$f> for $ty {
+            type Output = $ty;
+            #[inline]
+            fn rem(self, rhs: $f) -> $ty {
+                self % <$ty>::constant(rhs)
+            }
+        }
+
+        impl<$($gen)*> Rem<$ty> for $f {
+            type Output = $ty;
+            #[inline]
+            fn rem(self, rhs: $ty) -> $ty {
+                <$ty>::constant(self) % rhs
+            }
+        }
+        };
+}
+// Re-exported for the Laurent scalar-ops impls; unused when only `taylor`
+// is enabled (`laurent` implies `taylor`, so the gate is always satisfiable).
+#[cfg(feature = "laurent")]
+pub(super) use impl_promote_scalar_ops;
+
+impl_promote_scalar_ops!([] TaylorDyn<f32>, f32);
+impl_promote_scalar_ops!([] TaylorDyn<f64>, f64);
+
+impl<F: Float> PartialEq for TaylorDyn<F> {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self.value == other.value
+    }
+}
+
+impl<F: Float> PartialOrd for TaylorDyn<F> {
+    #[inline]
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.value.partial_cmp(&other.value)
+    }
+}

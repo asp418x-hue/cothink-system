@@ -1,0 +1,82 @@
+[package]
+name = "pyo3-gated"
+version = "0.1.2"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+description = "Attribute macros to expose Rust types to Python via PyO3 from a single definition - no duplicate structs or impl blocks."
+readme = "README.md"
+keywords = ["pyo3", "python", "macros", "bindings", "codegen"]
+categories = [
+    "development-tools::procedural-macro-helpers",
+    "api-bindings",
+    "rust-patterns",
+]
+
+[features]
+default = []
+python = ["dep:pyo3"]
+stub-gen = ["python", "dep:pyo3-stub-gen"]
+
+auto-initialize = ["python", "pyo3/auto-initialize"]
+extension-module = ["python", "pyo3/extension-module"]
+generate-import-lib = ["python", "pyo3/generate-import-lib"]
+
+abi3 = ["python", "pyo3/abi3"]
+abi3-py38 = ["python", "pyo3/abi3-py38"]
+abi3-py39 = ["python", "pyo3/abi3-py39"]
+abi3-py310 = ["python", "pyo3/abi3-py310"]
+abi3-py311 = ["python", "pyo3/abi3-py311"]
+abi3-py312 = ["python", "pyo3/abi3-py312"]
+abi3-py313 = ["python", "pyo3/abi3-py313"]
+abi3-py314 = ["python", "pyo3/abi3-py314"]
+abi3-py315 = ["python", "pyo3/abi3-py315"]
+abi3t = ["python", "pyo3/abi3t"]
+abi3t-py315 = ["python", "pyo3/abi3t-py315"]
+
+experimental-async = ["python", "pyo3/experimental-async"]
+experimental-inspect = ["python", "pyo3/experimental-inspect"]
+multiple-pymethods = ["python", "pyo3/multiple-pymethods"]
+nightly = ["python", "pyo3/nightly"]
+py-clone = ["python", "pyo3/py-clone"]
+
+anyhow = ["python", "pyo3/anyhow"]
+arc_lock = ["python", "pyo3/arc_lock"]
+bigdecimal = ["python", "pyo3/bigdecimal"]
+bytes = ["python", "pyo3/bytes"]
+chrono = ["python", "pyo3/chrono"]
+chrono-local = ["python", "pyo3/chrono-local"]
+chrono-tz = ["python", "pyo3/chrono-tz"]
+either = ["python", "pyo3/either"]
+eyre = ["python", "pyo3/eyre"]
+hashbrown = ["python", "pyo3/hashbrown"]
+indexmap = ["python", "pyo3/indexmap"]
+inventory = ["python", "pyo3/inventory"]
+jiff-02 = ["python", "pyo3/jiff-02"]
+lock_api = ["python", "pyo3/lock_api"]
+num-bigint = ["python", "pyo3/num-bigint"]
+num-complex = ["python", "pyo3/num-complex"]
+num-rational = ["python", "pyo3/num-rational"]
+ordered-float = ["python", "pyo3/ordered-float"]
+parking_lot = ["python", "pyo3/parking_lot"]
+rust_decimal = ["python", "pyo3/rust_decimal"]
+serde = ["python", "pyo3/serde"]
+smallvec = ["python", "pyo3/smallvec"]
+time = ["python", "pyo3/time"]
+uuid = ["python", "pyo3/uuid"]
+full = ["python", "pyo3/full"]
+
+[dependencies]
+pyo3-gated-macros = { version = "=0.1.1", path = "../pyo3-gated-macros" }
+pyo3 = { workspace = true, optional = true, default-features = false, features = ["macros"] }
+pyo3-stub-gen = { workspace = true, optional = true }
+
+[dev-dependencies]
+trybuild.workspace = true
+macrotest.workspace = true
+serde_json = "1"
+
+[package.metadata.docs.rs]
+features = ["full", "stub-gen"]

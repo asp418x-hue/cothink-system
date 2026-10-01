@@ -1,0 +1,918 @@
+//! Phase 9 R1 — CPU ↔ GPU parity property test suite.
+//!
+//! Runs a table of hand-picked tapes against CPU (f64), wgpu (f32), and
+//! CUDA (f32 + f64) at a mix of normal, edge, and extreme input points.
+//! Asserts that the forward value and reverse-mode gradient match within
+//! a documented ULP tolerance (4 ULPs for f32, 16 ULPs for f64).
+//!
+//! The goal is to catch future CPU-GPU drift introduced by:
+//! - New CPU formula tweaks not mirrored into shaders.
+//! - Shader refactors that silently change behaviour.
+//! - GPU compiler updates (new clippy-equivalent shader lints).
+//!
+//! Layout: one `PARITY_CASES` table defines ~30 tapes with per-case
+//! tolerances; three runner functions (one per backend) each run the
+//! whole table. Failing a single case names the tape in the assertion,
+//! so debugging points straight at the divergent op.
+
+#![cfg(any(feature = "gpu-wgpu", feature = "gpu-cuda"))]
+
+use echidna::gpu::{GpuBackend, GpuTapeData};
+use echidna::{record, BReverse, BytecodeTape};
+use num_traits::Float;
+
+#[cfg(feature = "gpu-wgpu")]
+use echidna::gpu::WgpuContext;
+
+#[cfg(feature = "gpu-cuda")]
+use echidna::gpu::CudaContext;
+
+/// Test case: one tape expression plus the input points and tolerances.
+#[allow(dead_code)]
+struct ParityCase {
+    name: &'static str,
+    /// Number of inputs the tape takes. Used to sanity-check `points`
+    /// lengths; each inner slice must have `n_inputs` values. The wgpu
+    /// path doesn't read this field (the backend derives from the tape),
+    /// but it documents the contract for humans eyeballing the table.
+    n_inputs: usize,
+    /// Builder that records the tape at a nominal `x0` (tape structure
+    /// is identical regardless of `x0` — only the primal values change).
+    build: fn() -> (BytecodeTape<f64>, f64),
+    /// Evaluation points. Each inner slice has length `n_inputs`.
+    points: &'static [&'static [f64]],
+    /// Max ULP distance allowed between CPU-f64 and GPU-f32 value/gradient.
+    /// Higher numbers acknowledge f32 precision limits on trig/log/pow ops.
+    f32_ulp: u32,
+    /// Max ULP distance allowed between CPU-f64 and GPU-f64 value/gradient.
+    /// Only exercised by the `cuda_f64_parity_all_cases` runner.
+    f64_ulp: u64,
+}
+
+fn build_add() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0] + v[1], &[1.0, 1.0])
+}
+fn build_sub() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0] - v[1], &[1.0, 1.0])
+}
+fn build_mul() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0] * v[1], &[1.0, 1.0])
+}
+fn build_div() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0] / v[1], &[1.0, 1.0])
+}
+fn build_sqrt() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0].sqrt(), &[1.0])
+}
+fn build_cbrt() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0].cbrt(), &[1.0])
+}
+fn build_recip() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| BReverse::constant(1.0) / v[0], &[1.0])
+}
+fn build_recip_native() -> (BytecodeTape<f64>, f64) {
+    // `powi(-1)` lowers to the native `OpCode::Recip` (bytecode_tape push_powi),
+    // a distinct kernel path from the `constant(1.0) / v[0]` Div above.
+    record(|v: &[BReverse<f64>]| v[0].powi(-1), &[2.0])
+}
+fn build_neg() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| -v[0], &[1.0])
+}
+fn build_abs() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0].abs(), &[1.0])
+}
+fn build_exp() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0].exp(), &[1.0])
+}
+fn build_expm1() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0].exp_m1(), &[1.0])
+}
+fn build_ln() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0].ln(), &[1.0])
+}
+fn build_ln1p() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0].ln_1p(), &[1.0])
+}
+fn build_sin() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0].sin(), &[1.0])
+}
+fn build_cos() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0].cos(), &[1.0])
+}
+fn build_tan() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0].tan(), &[0.5])
+}
+fn build_atan() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0].atan(), &[1.0])
+}
+fn build_atan2() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0].atan2(v[1]), &[1.0, 1.0])
+}
+fn build_sinh() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0].sinh(), &[1.0])
+}
+fn build_cosh() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0].cosh(), &[1.0])
+}
+fn build_tanh() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0].tanh(), &[1.0])
+}
+fn build_asinh() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0].asinh(), &[1.0])
+}
+fn build_acosh() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0].acosh(), &[2.0])
+}
+fn build_atanh() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0].atanh(), &[0.5])
+}
+fn build_asin() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0].asin(), &[0.5])
+}
+fn build_acos() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0].acos(), &[0.5])
+}
+fn build_exp2() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0].exp2(), &[1.0])
+}
+fn build_log2() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0].log2(), &[1.0])
+}
+fn build_log10() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0].log10(), &[1.0])
+}
+fn build_rem() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0] % v[1], &[5.0, 2.0])
+}
+fn build_powi() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0].powi(3), &[2.0])
+}
+fn build_powf() -> (BytecodeTape<f64>, f64) {
+    record(
+        |v: &[BReverse<f64>]| v[0].powf(BReverse::constant(2.5)),
+        &[2.0],
+    )
+}
+fn build_powf_int() -> (BytecodeTape<f64>, f64) {
+    // `powf` with a constant *integer* exponent. BReverse records `OpCode::Powf`
+    // (no integer lowering), so this exercises the Powf path — including the
+    // negative-base case, where `x^3` is finite (x<0 is only valid at integer
+    // exponents). WGSL `pow(x<0, y)` is undefined, so this is the regression
+    // guard for the negative-base fix.
+    record(
+        |v: &[BReverse<f64>]| v[0].powf(BReverse::constant(3.0)),
+        &[2.0],
+    )
+}
+fn build_powf_var() -> (BytecodeTape<f64>, f64) {
+    // `powf` with a LIVE (differentiated) exponent — records `Powf(v0, v1)`
+    // with both operands as tape inputs, so the base AND exponent directions
+    // are exercised. Used for the a=0 corner cases (0^0, 0^b).
+    record(|v: &[BReverse<f64>]| v[0].powf(v[1]), &[2.0, 2.0])
+}
+fn build_hypot() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0].hypot(v[1]), &[3.0, 4.0])
+}
+fn build_max() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0].max(v[1]), &[1.0, 2.0])
+}
+fn build_min() -> (BytecodeTape<f64>, f64) {
+    record(|v: &[BReverse<f64>]| v[0].min(v[1]), &[1.0, 2.0])
+}
+fn build_composite_rosenbrock() -> (BytecodeTape<f64>, f64) {
+    // f(x, y) = (1 - x)² + 100(y - x²)² — tests composition of sub/mul/powi.
+    record(
+        |v: &[BReverse<f64>]| {
+            let a = BReverse::constant(1.0) - v[0];
+            let b = v[1] - v[0] * v[0];
+            a * a + BReverse::constant(100.0) * b * b
+        },
+        &[1.0, 1.0],
+    )
+}
+fn build_composite_mixed() -> (BytecodeTape<f64>, f64) {
+    // f(x) = sin(x² + 1) · exp(-x) — exercises composition + tiny-magnitude outputs.
+    record(
+        |v: &[BReverse<f64>]| (v[0] * v[0] + BReverse::constant(1.0)).sin() * (-v[0]).exp(),
+        &[1.0],
+    )
+}
+fn build_composite_log_sum() -> (BytecodeTape<f64>, f64) {
+    // log-sum-exp-style: log(exp(x) + exp(y)) — conditioning test.
+    record(
+        |v: &[BReverse<f64>]| (v[0].exp() + v[1].exp()).ln(),
+        &[1.0, 0.5],
+    )
+}
+
+const PARITY_CASES: &[ParityCase] = &[
+    // Arithmetic
+    ParityCase {
+        name: "add",
+        n_inputs: 2,
+        build: build_add,
+        points: &[&[1.0, 1.0], &[-3.5, 2.25], &[1e10, 1e-10], &[0.0, 0.0]],
+        f32_ulp: 2,
+        f64_ulp: 2,
+    },
+    ParityCase {
+        name: "sub",
+        n_inputs: 2,
+        build: build_sub,
+        // Deliberately avoid near-catastrophic-cancellation inputs like
+        // (1.0, 0.99999) — the f64→f32 input rounding alone accounts for
+        // the visible ULP drift, not a GPU formula divergence.
+        points: &[&[1.0, 1.0], &[-3.5, 2.25], &[2.0, -1.5]],
+        f32_ulp: 4,
+        f64_ulp: 4,
+    },
+    ParityCase {
+        name: "mul",
+        n_inputs: 2,
+        build: build_mul,
+        points: &[&[1.0, 1.0], &[-2.5, 4.0], &[1e10, 1e-10], &[0.0, 5.0]],
+        f32_ulp: 2,
+        f64_ulp: 2,
+    },
+    ParityCase {
+        name: "div",
+        n_inputs: 2,
+        build: build_div,
+        points: &[&[1.0, 2.0], &[-6.0, 3.0], &[1.0, 1e-3]],
+        f32_ulp: 4,
+        f64_ulp: 4,
+    },
+    // Unary algebraic
+    ParityCase {
+        name: "sqrt",
+        n_inputs: 1,
+        build: build_sqrt,
+        // 0.0: value 0, derivative 0.5/sqrt(0) = +Inf (boundary singularity).
+        points: &[&[1.0], &[4.0], &[0.25], &[1e6], &[0.0]],
+        f32_ulp: 4,
+        f64_ulp: 4,
+    },
+    ParityCase {
+        name: "cbrt",
+        n_inputs: 1,
+        build: build_cbrt,
+        // 0.0: value 0, derivative +Inf (cbrt'(0) singularity, analogous to sqrt).
+        points: &[&[1.0], &[8.0], &[-27.0], &[0.0]],
+        f32_ulp: 8,
+        f64_ulp: 8,
+    },
+    ParityCase {
+        // `constant(1.0) / v[0]` records a Div, not the native Recip opcode —
+        // named accordingly. The native Recip path is covered by "recip" below.
+        name: "one_div_x",
+        n_inputs: 1,
+        build: build_recip,
+        points: &[&[1.0], &[2.0], &[-0.5]],
+        f32_ulp: 4,
+        f64_ulp: 4,
+    },
+    ParityCase {
+        // Native OpCode::Recip (via powi(-1)). 0.0: value 1/0 = +Inf,
+        // derivative -1/0² = -Inf (boundary singularity).
+        name: "recip",
+        n_inputs: 1,
+        build: build_recip_native,
+        points: &[&[2.0], &[-0.5], &[0.0]],
+        f32_ulp: 4,
+        f64_ulp: 4,
+    },
+    ParityCase {
+        name: "neg",
+        n_inputs: 1,
+        build: build_neg,
+        points: &[&[1.0], &[-3.5], &[0.0]],
+        f32_ulp: 0,
+        f64_ulp: 0,
+    },
+    ParityCase {
+        name: "abs",
+        n_inputs: 1,
+        build: build_abs,
+        // 0.0: the kink. Unified convention abs'(0) = 0 across CPU/WGSL/CUDA.
+        points: &[&[1.0], &[-3.5], &[2.0], &[0.0]],
+        f32_ulp: 0,
+        f64_ulp: 0,
+    },
+    // Exp/Log
+    ParityCase {
+        name: "exp",
+        n_inputs: 1,
+        build: build_exp,
+        // 1000.0: exp overflows to +Inf (value AND derivative, since exp'=exp).
+        // Must exceed the f64 overflow threshold (~709.78) so the cuda_f64
+        // runner also exercises the +Inf path, not just f32.
+        points: &[&[0.0], &[1.0], &[-1.0], &[5.0], &[1000.0]],
+        f32_ulp: 8,
+        f64_ulp: 8,
+    },
+    ParityCase {
+        name: "expm1",
+        n_inputs: 1,
+        build: build_expm1,
+        points: &[&[0.0], &[1e-6], &[0.5], &[-2.0]],
+        f32_ulp: 16,
+        f64_ulp: 8,
+    },
+    ParityCase {
+        name: "ln",
+        n_inputs: 1,
+        build: build_ln,
+        // 0.0: value -Inf, derivative 1/0 = +Inf (in-domain boundary singularity).
+        points: &[&[1.0], &[2.0], &[10.0], &[0.5], &[0.0]],
+        f32_ulp: 8,
+        f64_ulp: 8,
+    },
+    ParityCase {
+        name: "ln1p",
+        n_inputs: 1,
+        build: build_ln1p,
+        // -1.0: value ln(0) = -Inf, derivative 1/(1+a) = 1/0 = +Inf (boundary).
+        points: &[&[0.0], &[1e-6], &[1.0], &[-0.5], &[-1.0]],
+        f32_ulp: 16,
+        f64_ulp: 8,
+    },
+    // Trig
+    ParityCase {
+        name: "sin",
+        n_inputs: 1,
+        build: build_sin,
+        // Avoid near-π inputs: sin is zero-crossing there, making any f32
+        // input rounding catastrophic (LSB in f32(π) shifts the output
+        // by ~500k ULPs in the near-zero result). Not a GPU bug.
+        points: &[&[0.0], &[0.5], &[1.0], &[-0.3]],
+        f32_ulp: 16,
+        f64_ulp: 16,
+    },
+    ParityCase {
+        name: "cos",
+        n_inputs: 1,
+        build: build_cos,
+        // Avoid near-π/2 and near-π inputs for the same cancellation reason.
+        points: &[&[0.0], &[0.5], &[1.0], &[-0.3]],
+        f32_ulp: 16,
+        f64_ulp: 16,
+    },
+    ParityCase {
+        name: "tan",
+        n_inputs: 1,
+        build: build_tan,
+        points: &[&[0.0], &[0.5], &[-0.5]],
+        f32_ulp: 16,
+        f64_ulp: 16,
+    },
+    ParityCase {
+        name: "atan",
+        n_inputs: 1,
+        build: build_atan,
+        points: &[&[0.0], &[1.0], &[-2.5], &[100.0]],
+        f32_ulp: 8,
+        f64_ulp: 8,
+    },
+    ParityCase {
+        name: "atan2",
+        n_inputs: 2,
+        build: build_atan2,
+        // (0,0): origin convention — value and both partials are 0 (matched
+        // across CPU/WGSL/CUDA).
+        points: &[
+            &[1.0, 1.0],
+            &[-1.0, 1.0],
+            &[3.0, 4.0],
+            &[1e10, 1e10],
+            &[0.0, 0.0],
+        ],
+        f32_ulp: 16,
+        f64_ulp: 16,
+    },
+    // Hyperbolic
+    ParityCase {
+        name: "sinh",
+        n_inputs: 1,
+        build: build_sinh,
+        // 1000.0: sinh overflows to +Inf; derivative cosh also +Inf.
+        points: &[&[0.0], &[1.0], &[-2.0], &[1000.0]],
+        f32_ulp: 16,
+        f64_ulp: 16,
+    },
+    ParityCase {
+        name: "cosh",
+        n_inputs: 1,
+        build: build_cosh,
+        // 1000.0: cosh overflows to +Inf; derivative sinh also +Inf.
+        points: &[&[0.0], &[1.0], &[-2.0], &[1000.0]],
+        f32_ulp: 16,
+        f64_ulp: 16,
+    },
+    ParityCase {
+        name: "tanh",
+        n_inputs: 1,
+        build: build_tanh,
+        points: &[&[0.0], &[1.0], &[-2.0]],
+        f32_ulp: 16,
+        f64_ulp: 16,
+    },
+    ParityCase {
+        name: "asinh",
+        n_inputs: 1,
+        build: build_asinh,
+        // 1e20 (and -1e20): x²+1 overflows f32 (|x| > ~1.8e19), so the naive
+        // primal log(|x|+sqrt(x²+1)) is +Inf where asinh is finite (~46.7).
+        points: &[&[0.0], &[1.0], &[-3.0], &[1e6], &[1e20], &[-1e20]],
+        f32_ulp: 16,
+        f64_ulp: 16,
+    },
+    ParityCase {
+        name: "acosh",
+        n_inputs: 1,
+        build: build_acosh,
+        // acosh domain is a >= 1. Near-1 probes are skipped here because
+        // f32 GPU precision at `a = 1 + ε` for small ε is dominated by
+        // the input f32 quantization (`f32(1.00001) ≈ 1.0000099`) rather
+        // than the formula choice — neither factored `(a-1)(a+1)` nor
+        // unfactored `a*a - 1` recovers precision at that floor in f32.
+        // The factored-form regression test for `kernels::acosh_deriv`
+        // lives in `src/kernels/mod.rs` (unit test, f64-only).
+        //
+        // 1.0 IS included: at the exact branch point acosh(1) = 0 and the
+        // derivative is 1/sqrt((1-1)(1+1)) = +Inf — a special value both
+        // backends produce identically (distinct from the excluded finite
+        // near-1 probes, which suffer f32 input quantization).
+        // 1e20: (x-1)(x+1) overflows f32, so the naive primal is +Inf where
+        // acosh is finite (~46.7).
+        points: &[&[1.5], &[2.0], &[10.0], &[1.0], &[1e20]],
+        f32_ulp: 16,
+        f64_ulp: 16,
+    },
+    ParityCase {
+        name: "atanh",
+        n_inputs: 1,
+        build: build_atanh,
+        // atanh domain is |a| < 1. The exact endpoints ±1 are the boundary
+        // singularities: value ±Inf, derivative 1/((1-a)(1+a)) = +Inf.
+        points: &[&[0.0], &[0.25], &[-0.5], &[0.9], &[1.0], &[-1.0]],
+        f32_ulp: 16,
+        f64_ulp: 16,
+    },
+    ParityCase {
+        name: "asin",
+        n_inputs: 1,
+        build: build_asin,
+        // ±1: value ±π/2 (finite), derivative 1/sqrt((1-a)(1+a)) = +Inf at
+        // BOTH endpoints. Exact inputs, unlike the excluded near-±1 probes.
+        points: &[&[0.0], &[0.5], &[-0.25], &[1.0], &[-1.0]],
+        f32_ulp: 16,
+        f64_ulp: 16,
+    },
+    ParityCase {
+        name: "acos",
+        n_inputs: 1,
+        build: build_acos,
+        // ±1: value 0/π (finite), derivative -1/sqrt((1-a)(1+a)) = -Inf at
+        // BOTH endpoints.
+        points: &[&[0.0], &[0.5], &[-0.25], &[1.0], &[-1.0]],
+        f32_ulp: 16,
+        f64_ulp: 16,
+    },
+    // Exp/Log extras
+    ParityCase {
+        name: "exp2",
+        n_inputs: 1,
+        build: build_exp2,
+        points: &[&[0.0], &[1.0], &[-1.0], &[3.0]],
+        f32_ulp: 8,
+        f64_ulp: 8,
+    },
+    ParityCase {
+        name: "log2",
+        n_inputs: 1,
+        build: build_log2,
+        // 0.0: value -Inf, derivative 1/(a·ln2) = +Inf (boundary singularity).
+        points: &[&[1.0], &[2.0], &[8.0], &[0.0]],
+        f32_ulp: 8,
+        f64_ulp: 8,
+    },
+    ParityCase {
+        name: "log10",
+        n_inputs: 1,
+        build: build_log10,
+        // 0.0: value -Inf, derivative 1/(a·ln10) = +Inf (boundary singularity).
+        points: &[&[1.0], &[10.0], &[100.0], &[0.0]],
+        f32_ulp: 8,
+        f64_ulp: 8,
+    },
+    // Powers — fragile ops Phase 7 specifically patched.
+    ParityCase {
+        name: "powi",
+        n_inputs: 1,
+        build: build_powi,
+        // Includes negative and zero bases: (-3)^3 = -27, 0^3 = 0.
+        points: &[&[2.0], &[-3.0], &[0.5], &[0.0]],
+        f32_ulp: 8,
+        f64_ulp: 8,
+    },
+    ParityCase {
+        name: "powf",
+        n_inputs: 1,
+        build: build_powf,
+        points: &[&[2.0], &[0.5], &[10.0]],
+        f32_ulp: 32,
+        f64_ulp: 16,
+    },
+    ParityCase {
+        name: "powf_int",
+        n_inputs: 1,
+        // Negative base with integer exponent: (-2)^3 = -8, (-3)^3 = -27,
+        // 0^3 = 0. Value and gradient must be finite and match CPU.
+        build: build_powf_int,
+        points: &[&[2.0], &[-2.0], &[-3.0], &[0.0]],
+        f32_ulp: 16,
+        f64_ulp: 16,
+    },
+    ParityCase {
+        name: "powf_var",
+        n_inputs: 2,
+        build: build_powf_var,
+        // Live exponent. The a=0 corners: 0^0 (value 1, both partials 0 per
+        // CPU convention), 0^2 (value 0, HVP finite), 0^3. CPU never NaN here.
+        points: &[&[2.0, 3.0], &[0.0, 0.0], &[0.0, 2.0], &[0.0, 3.0]],
+        f32_ulp: 16,
+        f64_ulp: 16,
+    },
+    // Remainder.
+    ParityCase {
+        name: "rem",
+        n_inputs: 2,
+        build: build_rem,
+        // (5,0): divisor zero — value is NaN (fmod(5,0)); the reverse partial
+        // w.r.t. the divisor is -trunc(5/0) = -Inf. Exercises the NaN-aware
+        // comparison (both backends must produce NaN, not the same bits).
+        // (1e6, 3): large-but-in-domain quotient ratio — wgpu computes REM
+        // as a - trunc(a/b)*b, exact only for |a/b| < 2^24; this point pins
+        // agreement inside that documented domain (see wgpu_backend docs).
+        points: &[
+            &[5.0, 2.0],
+            &[7.5, 2.5],
+            &[-3.0, 2.0],
+            &[5.0, 0.0],
+            &[1e6, 3.0],
+        ],
+        f32_ulp: 4,
+        f64_ulp: 4,
+    },
+    // Multi-arg
+    ParityCase {
+        name: "hypot",
+        n_inputs: 2,
+        build: build_hypot,
+        // (0,0): origin convention — value 0, both partials 0.
+        points: &[
+            &[3.0, 4.0],
+            &[1e10, 1e10],
+            &[1.0, 0.0],
+            &[0.0, 1e-6],
+            &[0.0, 0.0],
+        ],
+        f32_ulp: 8,
+        f64_ulp: 8,
+    },
+    ParityCase {
+        name: "max",
+        n_inputs: 2,
+        build: build_max,
+        // NaN operand, both orders: CPU `f64::max`/`min` return the non-NaN
+        // operand (value 1.0; the gradient flows entirely to the non-NaN
+        // input). The convention is asymmetric, hence both orders. All GPU
+        // max/min sites hand-roll this non-NaN-wins tie-break (forward.wgsl,
+        // the tangent kernels, and the Taylor codegen, all via an `is_nan_f32`
+        // bit test), and CUDA `fmax`/`fmin` are IEEE non-NaN by construction.
+        // This point is the regression tripwire if any path ever diverges.
+        points: &[
+            &[1.0, 2.0],
+            &[-1.0, -2.0],
+            &[3.0, 3.0],
+            &[f64::NAN, 1.0],
+            &[1.0, f64::NAN],
+        ],
+        f32_ulp: 0,
+        f64_ulp: 0,
+    },
+    ParityCase {
+        name: "min",
+        n_inputs: 2,
+        build: build_min,
+        // See `max` above: NaN operand, both orders, non-NaN operand wins.
+        points: &[
+            &[1.0, 2.0],
+            &[-1.0, -2.0],
+            &[3.0, 3.0],
+            &[f64::NAN, 1.0],
+            &[1.0, f64::NAN],
+        ],
+        f32_ulp: 0,
+        f64_ulp: 0,
+    },
+    // Composite
+    ParityCase {
+        name: "rosenbrock",
+        n_inputs: 2,
+        build: build_composite_rosenbrock,
+        points: &[&[1.0, 1.0], &[0.0, 0.0], &[-1.2, 1.0]],
+        f32_ulp: 64,
+        f64_ulp: 32,
+    },
+    ParityCase {
+        name: "sin_x2_mul_exp_neg_x",
+        n_inputs: 1,
+        build: build_composite_mixed,
+        points: &[&[0.5], &[1.0], &[-0.5]],
+        f32_ulp: 64,
+        f64_ulp: 32,
+    },
+    ParityCase {
+        name: "log_sum_exp",
+        n_inputs: 2,
+        build: build_composite_log_sum,
+        points: &[&[0.0, 0.0], &[1.0, -1.0], &[3.0, 5.0]],
+        f32_ulp: 64,
+        f64_ulp: 32,
+    },
+];
+
+fn ulp_diff_f32(a: f32, b: f32) -> u32 {
+    if !a.is_finite() || !b.is_finite() {
+        // Two NaNs are a parity match regardless of payload: CPU `F::nan()`,
+        // WGSL `bitcast(0x7fc00000)`, and CUDA `nan("")` carry different bit
+        // patterns, but the convention only asserts "both NaN". A raw bit
+        // compare still guards ±Inf (sign-exact) and Inf-vs-finite mismatches.
+        if a.is_nan() && b.is_nan() {
+            return 0;
+        }
+        return if a.to_bits() == b.to_bits() {
+            0
+        } else {
+            u32::MAX
+        };
+    }
+    let a_bits = a.to_bits();
+    let b_bits = b.to_bits();
+    // Same sign (bit-31 identical) → ULP distance is just the bit diff.
+    // Cross-sign → distance is |a| + |b| through zero (saturating if extreme).
+    if (a_bits ^ b_bits) & 0x8000_0000 == 0 {
+        a_bits.abs_diff(b_bits)
+    } else {
+        let abs_a = a_bits & 0x7FFF_FFFF;
+        let abs_b = b_bits & 0x7FFF_FFFF;
+        abs_a.saturating_add(abs_b)
+    }
+}
+
+fn ulp_diff_f64(a: f64, b: f64) -> u64 {
+    if !a.is_finite() || !b.is_finite() {
+        // Both NaN → match (payload-agnostic); see `ulp_diff_f32`.
+        if a.is_nan() && b.is_nan() {
+            return 0;
+        }
+        return if a.to_bits() == b.to_bits() {
+            0
+        } else {
+            u64::MAX
+        };
+    }
+    let a_bits = a.to_bits();
+    let b_bits = b.to_bits();
+    if (a_bits ^ b_bits) & 0x8000_0000_0000_0000 == 0 {
+        a_bits.abs_diff(b_bits)
+    } else {
+        let abs_a = a_bits & 0x7FFF_FFFF_FFFF_FFFF;
+        let abs_b = b_bits & 0x7FFF_FFFF_FFFF_FFFF;
+        abs_a.saturating_add(abs_b)
+    }
+}
+
+#[test]
+fn ulp_diff_non_finite_semantics() {
+    // Both NaN → match regardless of the (differing) payloads CPU/WGSL/CUDA emit.
+    assert_eq!(ulp_diff_f32(f32::NAN, f32::from_bits(0x7fc0_0001)), 0);
+    assert_eq!(
+        ulp_diff_f64(f64::NAN, f64::from_bits(0x7ff8_0000_0000_0001)),
+        0
+    );
+    // Same-signed Inf matches; opposite-signed Inf does not.
+    assert_eq!(ulp_diff_f32(f32::INFINITY, f32::INFINITY), 0);
+    assert_eq!(ulp_diff_f32(f32::INFINITY, f32::NEG_INFINITY), u32::MAX);
+    assert_eq!(ulp_diff_f64(f64::NEG_INFINITY, f64::NEG_INFINITY), 0);
+    assert_eq!(ulp_diff_f64(f64::INFINITY, f64::NEG_INFINITY), u64::MAX);
+    // A non-finite against a finite value is always a mismatch.
+    assert_eq!(ulp_diff_f32(f32::NAN, 1.0), u32::MAX);
+    assert_eq!(ulp_diff_f32(f32::INFINITY, 1.0), u32::MAX);
+    assert_eq!(ulp_diff_f64(f64::NAN, 1.0), u64::MAX);
+    // Finite comparisons are unaffected.
+    assert_eq!(ulp_diff_f32(1.0, 1.0), 0);
+    assert_eq!(ulp_diff_f64(1.0, 1.0), 0);
+    assert_eq!(ulp_diff_f32(1.0, f32::from_bits(1.0_f32.to_bits() + 3)), 3);
+}
+
+// ── wgpu f32 parity runner ─────────────────────────────────────────
+
+#[cfg(feature = "gpu-wgpu")]
+#[test]
+fn wgpu_parity_all_cases() {
+    let ctx = match WgpuContext::new() {
+        Some(c) => c,
+        None => {
+            // Silent returns on no-GPU machines would pass the assertion
+            // without running any case. Surface the skip so `cargo test
+            // -- --nocapture` makes it visible.
+            eprintln!("SKIP: no wgpu adapter; parity test not executed");
+            return;
+        }
+    };
+    let mut failures = Vec::new();
+    for case in PARITY_CASES {
+        for (pt_i, pt) in case.points.iter().enumerate() {
+            let (mut cpu_tape, _) = (case.build)();
+            let cpu_grad = cpu_tape.gradient(pt);
+            cpu_tape.forward(pt);
+            let cpu_val = cpu_tape.output_values()[0];
+
+            let gpu_data = match GpuTapeData::from_tape_f64_lossy(&cpu_tape) {
+                Ok(d) => d,
+                Err(e) => {
+                    failures.push(format!(
+                        "case {}[{}]: GpuTapeData::from_tape_f64_lossy failed: {:?}",
+                        case.name, pt_i, e
+                    ));
+                    continue;
+                }
+            };
+            let gpu_tape = ctx.upload_tape(&gpu_data);
+            let pt_f32: Vec<f32> = pt.iter().map(|&x| x as f32).collect();
+            let (gpu_val, gpu_grad) = match ctx.gradient_batch(&gpu_tape, &pt_f32, 1) {
+                Ok(r) => r,
+                Err(e) => {
+                    failures.push(format!(
+                        "case {}[{}]: wgpu gradient_batch failed: {:?}",
+                        case.name, pt_i, e
+                    ));
+                    continue;
+                }
+            };
+
+            let val_ulp = ulp_diff_f32(gpu_val[0], cpu_val as f32);
+            if val_ulp > case.f32_ulp {
+                failures.push(format!(
+                    "case {}[{}]: value ULP diff {} > {} (CPU {:e}, GPU {:e})",
+                    case.name, pt_i, val_ulp, case.f32_ulp, cpu_val, gpu_val[0]
+                ));
+            }
+            for (i, (&gg, &cg)) in gpu_grad.iter().zip(cpu_grad.iter()).enumerate() {
+                let grad_ulp = ulp_diff_f32(gg, cg as f32);
+                if grad_ulp > case.f32_ulp {
+                    failures.push(format!(
+                        "case {}[{}]: grad[{}] ULP diff {} > {} (CPU {:e}, GPU {:e})",
+                        case.name, pt_i, i, grad_ulp, case.f32_ulp, cg, gg
+                    ));
+                }
+            }
+        }
+    }
+    if !failures.is_empty() {
+        panic!("wgpu parity failures:\n  {}", failures.join("\n  "));
+    }
+}
+
+// ── CUDA f32 parity runner ─────────────────────────────────────────
+
+#[cfg(feature = "gpu-cuda")]
+#[test]
+fn cuda_f32_parity_all_cases() {
+    let ctx = match CudaContext::new() {
+        Some(c) => c,
+        None => {
+            eprintln!("SKIP: no CUDA device; parity test not executed");
+            return;
+        }
+    };
+    let mut failures = Vec::new();
+    for case in PARITY_CASES {
+        for (pt_i, pt) in case.points.iter().enumerate() {
+            let (mut cpu_tape, _) = (case.build)();
+            let cpu_grad = cpu_tape.gradient(pt);
+            cpu_tape.forward(pt);
+            let cpu_val = cpu_tape.output_values()[0];
+
+            let gpu_data = match GpuTapeData::from_tape_f64_lossy(&cpu_tape) {
+                Ok(d) => d,
+                Err(e) => {
+                    failures.push(format!(
+                        "case {}[{}]: from_tape_f64_lossy failed: {:?}",
+                        case.name, pt_i, e
+                    ));
+                    continue;
+                }
+            };
+            let gpu_tape = ctx.upload_tape(&gpu_data);
+            let pt_f32: Vec<f32> = pt.iter().map(|&x| x as f32).collect();
+            let (gpu_val, gpu_grad) = match ctx.gradient_batch(&gpu_tape, &pt_f32, 1) {
+                Ok(r) => r,
+                Err(e) => {
+                    failures.push(format!(
+                        "case {}[{}]: CUDA gradient_batch failed: {:?}",
+                        case.name, pt_i, e
+                    ));
+                    continue;
+                }
+            };
+
+            let val_ulp = ulp_diff_f32(gpu_val[0], cpu_val as f32);
+            if val_ulp > case.f32_ulp {
+                failures.push(format!(
+                    "case {}[{}]: value ULP diff {} > {}",
+                    case.name, pt_i, val_ulp, case.f32_ulp
+                ));
+            }
+            for (i, (&gg, &cg)) in gpu_grad.iter().zip(cpu_grad.iter()).enumerate() {
+                let grad_ulp = ulp_diff_f32(gg, cg as f32);
+                if grad_ulp > case.f32_ulp {
+                    failures.push(format!(
+                        "case {}[{}]: grad[{}] ULP diff {} > {}",
+                        case.name, pt_i, i, grad_ulp, case.f32_ulp
+                    ));
+                }
+            }
+        }
+    }
+    if !failures.is_empty() {
+        panic!("CUDA f32 parity failures:\n  {}", failures.join("\n  "));
+    }
+}
+
+// ── CUDA f64 parity runner ─────────────────────────────────────────
+
+#[cfg(feature = "gpu-cuda")]
+#[test]
+fn cuda_f64_parity_all_cases() {
+    let ctx = match CudaContext::new() {
+        Some(c) => c,
+        None => {
+            eprintln!("SKIP: no CUDA device; parity test not executed");
+            return;
+        }
+    };
+    let mut failures = Vec::new();
+    for case in PARITY_CASES {
+        for (pt_i, pt) in case.points.iter().enumerate() {
+            let (cpu_tape, _) = (case.build)();
+            let mut cpu_tape = cpu_tape;
+            let cpu_grad = cpu_tape.gradient(pt);
+            cpu_tape.forward(pt);
+            let cpu_val = cpu_tape.output_values()[0];
+
+            let gpu_tape = match ctx.upload_tape_f64(&cpu_tape) {
+                Ok(t) => t,
+                Err(e) => {
+                    failures.push(format!(
+                        "case {}[{}]: upload_tape_f64 failed: {:?}",
+                        case.name, pt_i, e
+                    ));
+                    continue;
+                }
+            };
+            let (gpu_val, gpu_grad) = match ctx.gradient_batch_f64(&gpu_tape, pt, 1) {
+                Ok(r) => r,
+                Err(e) => {
+                    failures.push(format!(
+                        "case {}[{}]: CUDA gradient_batch_f64 failed: {:?}",
+                        case.name, pt_i, e
+                    ));
+                    continue;
+                }
+            };
+
+            let val_ulp = ulp_diff_f64(gpu_val[0], cpu_val);
+            if val_ulp > case.f64_ulp {
+                failures.push(format!(
+                    "case {}[{}]: value ULP diff {} > {} (CPU {:e}, GPU {:e})",
+                    case.name, pt_i, val_ulp, case.f64_ulp, cpu_val, gpu_val[0]
+                ));
+            }
+            for (i, (&gg, &cg)) in gpu_grad.iter().zip(cpu_grad.iter()).enumerate() {
+                let grad_ulp = ulp_diff_f64(gg, cg);
+                if grad_ulp > case.f64_ulp {
+                    failures.push(format!(
+                        "case {}[{}]: grad[{}] ULP diff {} > {} (CPU {:e}, GPU {:e})",
+                        case.name, pt_i, i, grad_ulp, case.f64_ulp, cg, gg
+                    ));
+                }
+            }
+        }
+    }
+    if !failures.is_empty() {
+        panic!("CUDA f64 parity failures:\n  {}", failures.join("\n  "));
+    }
+}

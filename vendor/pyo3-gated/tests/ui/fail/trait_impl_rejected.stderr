@@ -1,0 +1,5 @@
+error: `#[py_compat_methods]` only supports inherent `impl Type { ... }` blocks; split Python methods into a separate inherent impl and keep trait impls as normal Rust impls
+  --> tests/ui/fail/trait_impl_rejected.rs:13:1
+   |
+13 | impl Value for Color {
+   | ^^^^

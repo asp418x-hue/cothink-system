@@ -1,0 +1,5 @@
+error: duplicate `feature` argument
+ --> tests/ui/fail/duplicate_argument.rs:3:40
+  |
+3 | #[py_compat_struct(feature = "python", feature = "bindings")]
+  |                                        ^^^^^^^

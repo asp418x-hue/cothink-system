@@ -1,0 +1,171 @@
+use std::cell::Cell;
+use std::marker::PhantomData;
+
+use crate::dual::Dual;
+use crate::float::Float;
+
+use super::BytecodeTape;
+
+thread_local! {
+    static BTAPE_F32: Cell<*mut BytecodeTape<f32>> = const { Cell::new(std::ptr::null_mut()) };
+    static BTAPE_F64: Cell<*mut BytecodeTape<f64>> = const { Cell::new(std::ptr::null_mut()) };
+    static BTAPE_DUAL_F32: Cell<*mut BytecodeTape<Dual<f32>>> = const { Cell::new(std::ptr::null_mut()) };
+    static BTAPE_DUAL_F64: Cell<*mut BytecodeTape<Dual<f64>>> = const { Cell::new(std::ptr::null_mut()) };
+    // Per-type borrow guards (prevents false reentrance detection across different float types)
+    static BTAPE_BORROWED_F32: Cell<bool> = const { Cell::new(false) };
+    static BTAPE_BORROWED_F64: Cell<bool> = const { Cell::new(false) };
+    static BTAPE_BORROWED_DUAL_F32: Cell<bool> = const { Cell::new(false) };
+    static BTAPE_BORROWED_DUAL_F64: Cell<bool> = const { Cell::new(false) };
+}
+
+/// Trait to select the correct thread-local for a given float type.
+///
+/// Implemented for `f32`, `f64`, `Dual<f32>`, and `Dual<f64>`, enabling
+/// `BReverse<F>` to be used with these base types.
+pub trait BtapeThreadLocal: Float {
+    /// Returns the thread-local cell holding a pointer to the active bytecode tape.
+    fn btape_cell() -> &'static std::thread::LocalKey<Cell<*mut BytecodeTape<Self>>>;
+    /// Returns the per-type borrow flag cell.
+    fn btape_borrow_cell() -> &'static std::thread::LocalKey<Cell<bool>>;
+}
+
+impl BtapeThreadLocal for f32 {
+    fn btape_cell() -> &'static std::thread::LocalKey<Cell<*mut BytecodeTape<Self>>> {
+        &BTAPE_F32
+    }
+    fn btape_borrow_cell() -> &'static std::thread::LocalKey<Cell<bool>> {
+        &BTAPE_BORROWED_F32
+    }
+}
+
+impl BtapeThreadLocal for f64 {
+    fn btape_cell() -> &'static std::thread::LocalKey<Cell<*mut BytecodeTape<Self>>> {
+        &BTAPE_F64
+    }
+    fn btape_borrow_cell() -> &'static std::thread::LocalKey<Cell<bool>> {
+        &BTAPE_BORROWED_F64
+    }
+}
+
+impl BtapeThreadLocal for Dual<f32> {
+    fn btape_cell() -> &'static std::thread::LocalKey<Cell<*mut BytecodeTape<Self>>> {
+        &BTAPE_DUAL_F32
+    }
+    fn btape_borrow_cell() -> &'static std::thread::LocalKey<Cell<bool>> {
+        &BTAPE_BORROWED_DUAL_F32
+    }
+}
+
+impl BtapeThreadLocal for Dual<f64> {
+    fn btape_cell() -> &'static std::thread::LocalKey<Cell<*mut BytecodeTape<Self>>> {
+        &BTAPE_DUAL_F64
+    }
+    fn btape_borrow_cell() -> &'static std::thread::LocalKey<Cell<bool>> {
+        &BTAPE_BORROWED_DUAL_F64
+    }
+}
+
+/// Access the active bytecode tape for the current thread.
+/// Panics if no tape is active.
+///
+/// The pointer in the thread-local cell is installed only by
+/// [`BtapeGuard`], whose `'a` lifetime ties it to a live
+/// `&'a mut BytecodeTape<F>` — the guard contract
+/// `active_cell::with_active_ptr` relies on.
+#[inline]
+pub fn with_active_btape<F: BtapeThreadLocal, R>(f: impl FnOnce(&mut BytecodeTape<F>) -> R) -> R {
+    crate::active_cell::with_active_ptr(
+        F::btape_cell(),
+        F::btape_borrow_cell(),
+        "with_active_btape",
+        "No active bytecode tape. Use echidna::record() to record a function.",
+        f,
+    )
+}
+
+/// Debug-only: the identity of the thread-local active tape, or
+/// [`crate::breverse::TAPE_ID_UNTRACKED`] when no recording is active. Reads
+/// only the `tape_id` field through the raw pointer (no `&mut` is formed),
+/// so it is safe to call between operations of an active recording. Do NOT
+/// call from inside a `with_active_btape` closure: the closure's `&mut`
+/// reborrow would alias this read.
+#[cfg(debug_assertions)]
+pub(crate) fn active_btape_id<F: BtapeThreadLocal>() -> u64 {
+    F::btape_cell().with(|cell| {
+        let ptr = cell.get();
+        if ptr.is_null() {
+            crate::breverse::TAPE_ID_UNTRACKED
+        } else {
+            // SAFETY: non-null implies a live guard whose tape outlives it
+            // (same invariant `with_active_btape` relies on); `addr_of!`
+            // avoids materializing a reference to the whole tape.
+            unsafe { std::ptr::addr_of!((*ptr).tape_id).read() }
+        }
+    })
+}
+
+/// RAII guard that sets a bytecode tape as the thread-local active tape.
+///
+/// The `'a` lifetime ties the guard to the borrow of the tape it was
+/// constructed from, so the borrow checker rejects any pattern where the
+/// guard could outlive its tape.
+///
+/// ```compile_fail
+/// use echidna::bytecode_tape::{BtapeGuard, BytecodeTape};
+/// let guard: BtapeGuard<f64>;
+/// {
+///     let mut tape: BytecodeTape<f64> = BytecodeTape::new();
+///     guard = BtapeGuard::new(&mut tape);
+/// } // tape dropped, but guard would survive — rejected by the borrow checker.
+/// drop(guard);
+/// ```
+/// Guards must be dropped in LIFO order (last activated, first deactivated).
+/// `record()` and the borrow checker enforce this for nested recording scopes;
+/// direct `BtapeGuard` users must uphold it too — dropping out of order would
+/// restore a stale (possibly dangling) pointer into the thread-local cell.
+/// `Drop` enforces the LIFO contract with a hard assertion in all build
+/// profiles: the violation would otherwise be a use-after-free reachable
+/// from safe code, so it must be a deterministic panic rather than a
+/// debug-only check.
+pub struct BtapeGuard<'a, F: BtapeThreadLocal> {
+    prev: *mut BytecodeTape<F>,
+    current: *mut BytecodeTape<F>,
+    _borrow: PhantomData<&'a mut BytecodeTape<F>>,
+}
+
+impl<'a, F: BtapeThreadLocal> BtapeGuard<'a, F> {
+    /// Activate `tape` as the thread-local bytecode tape.
+    #[must_use = "dropping the guard immediately deactivates the tape; bind it to extend the recording scope"]
+    pub fn new(tape: &'a mut BytecodeTape<F>) -> Self {
+        let current: *mut BytecodeTape<F> = tape;
+        let prev = F::btape_cell().with(|cell| {
+            let prev = cell.get();
+            cell.set(current);
+            prev
+        });
+        BtapeGuard {
+            prev,
+            current,
+            _borrow: PhantomData,
+        }
+    }
+}
+
+impl<'a, F: BtapeThreadLocal> Drop for BtapeGuard<'a, F> {
+    fn drop(&mut self) {
+        F::btape_cell().with(|cell| {
+            // LIFO contract: this guard must be the active tape when it drops.
+            // Out-of-order drops (only reachable via direct `BtapeGuard`
+            // misuse) would install a stale pointer that can dangle once the
+            // earlier tape is freed — a use-after-free on the next
+            // `with_active_btape` deref. A hard assert turns that UB into a
+            // deterministic panic in every build profile; the happy path
+            // costs one pointer compare.
+            assert!(
+                cell.get() == self.current,
+                "BtapeGuard dropped out of LIFO order — the active tape is not this guard's"
+            );
+            cell.set(self.prev);
+        });
+    }
+}

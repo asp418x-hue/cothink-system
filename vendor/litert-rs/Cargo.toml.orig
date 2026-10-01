@@ -1,0 +1,33 @@
+[package]
+name = "litert-rs"
+version = "0.1.2"
+edition = "2021"
+rust-version = "1.95"
+description = "On-device LiteRT-LM (.litertlm) LLM inference for Rust via FFI. Load a model (Gemma, Qwen, DeepSeek) and generate text locally, no cloud."
+license = "MIT"
+repository = "https://github.com/JhonaCodes/litert-rs"
+homepage = "https://github.com/JhonaCodes/litert-rs"
+readme = "README.md"
+keywords = ["llm", "ffi", "gemma", "on-device", "ai"]
+categories = ["api-bindings", "science"]
+exclude = ["native/*.dylib", "native/*.so", "native/**/"]
+
+[dependencies]
+libloading = "0.8"
+thiserror = "2"
+serde_json = "1"
+ureq = { version = "2", optional = true }
+sha2 = { version = "0.10", optional = true }
+flate2 = { version = "1", optional = true }
+tar = { version = "0.4", optional = true }
+
+[build-dependencies]
+bindgen = "0.70"
+
+[features]
+default = ["fetch"]
+fetch = ["dep:ureq", "dep:sha2", "dep:flate2", "dep:tar"]
+
+[[bin]]
+name = "fetch_natives"
+required-features = ["fetch"]

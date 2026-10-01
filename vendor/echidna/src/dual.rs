@@ -1,0 +1,464 @@
+//! Forward-mode dual numbers for automatic differentiation.
+//!
+//! [`Dual<F>`] pairs a value with its tangent (derivative), using the algebra of
+//! dual numbers where epsilon^2 = 0. Best suited for functions with few inputs and many
+//! outputs, or when computing a single directional derivative (JVP).
+
+use std::fmt::{self, Display};
+
+use crate::kernels;
+use crate::Float;
+
+/// Forward-mode dual number: a value paired with its tangent (derivative).
+///
+/// `Dual { re, eps }` represents `re + eps·ε` where `ε² = 0`.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Dual<F: Float> {
+    /// Primal (real) value.
+    pub re: F,
+    /// Tangent (derivative) value.
+    pub eps: F,
+}
+
+impl<F: Float> Display for Dual<F> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} + {}ε", self.re, self.eps)
+    }
+}
+
+impl<F: Float> From<F> for Dual<F> {
+    #[inline]
+    fn from(val: F) -> Self {
+        Dual::constant(val)
+    }
+}
+
+/// Emits the elementary-function methods whose bodies are identical for
+/// [`Dual`] and [`DualVec`](crate::dual_vec::DualVec): every rule that
+/// funnels through the type's `chain` (only `chain` itself differs — a
+/// scalar tangent versus per-lane tangents), plus the constant-result step
+/// functions and the pass-through `fract`/`max`/`min`. Keeping one body
+/// per rule removes the two-copies-in-sync hazard this file previously
+/// managed by hand. The ops that touch the tangent container directly
+/// (`powf`, `atan2`, `mul_add`, `hypot`) genuinely differ per lane and
+/// stay hand-written in each type.
+macro_rules! forward_elementary_methods {
+    () => {
+        /// Reciprocal (1/x).
+        #[inline]
+        pub fn recip(self) -> Self {
+            // d/dx (1/x) = -1/x². At x = 0 the derivative is unbounded; `chain`'s
+            // structural-zero short-circuit keeps a constant input's tangent at
+            // exactly 0, while a live tangent keeps the Inf.
+            let inv = F::one() / self.re;
+            self.chain(inv, -inv * inv)
+        }
+
+        /// Square root.
+        #[inline]
+        pub fn sqrt(self) -> Self {
+            let s = self.re.sqrt();
+            let two = F::one() + F::one();
+            self.chain(s, F::one() / (two * s))
+        }
+
+        /// Cube root.
+        #[inline]
+        pub fn cbrt(self) -> Self {
+            let c = self.re.cbrt();
+            let three = F::from(3.0).unwrap();
+            self.chain(c, F::one() / (three * c * c))
+        }
+
+        /// Integer power.
+        #[inline]
+        pub fn powi(self, n: i32) -> Self {
+            if n == 0 {
+                return Self::constant(F::one());
+            }
+            let val = self.re.powi(n);
+            let deriv = if n == i32::MIN {
+                // n - 1 would overflow i32; use x^n / x to avoid precision loss
+                // from converting n-1 to float (which rounds for f32)
+                F::from(n).unwrap() * val / self.re
+            } else {
+                F::from(n).unwrap() * self.re.powi(n - 1)
+            };
+            self.chain(val, deriv)
+        }
+
+        /// Natural exponential (e^x).
+        #[inline]
+        pub fn exp(self) -> Self {
+            let e = self.re.exp();
+            self.chain(e, e)
+        }
+
+        /// Base-2 exponential (2^x).
+        #[inline]
+        pub fn exp2(self) -> Self {
+            let e = self.re.exp2();
+            self.chain(e, e * F::LN_2())
+        }
+
+        /// e^x - 1, accurate near zero.
+        #[inline]
+        pub fn exp_m1(self) -> Self {
+            self.chain(self.re.exp_m1(), self.re.exp())
+        }
+
+        /// Natural logarithm.
+        #[inline]
+        pub fn ln(self) -> Self {
+            self.chain(self.re.ln(), crate::kernels::ln_deriv(self.re))
+        }
+
+        /// Base-2 logarithm.
+        #[inline]
+        pub fn log2(self) -> Self {
+            self.chain(self.re.log2(), crate::kernels::log2_deriv(self.re))
+        }
+
+        /// Base-10 logarithm.
+        #[inline]
+        pub fn log10(self) -> Self {
+            self.chain(self.re.log10(), crate::kernels::log10_deriv(self.re))
+        }
+
+        /// ln(1+x), accurate near zero.
+        #[inline]
+        pub fn ln_1p(self) -> Self {
+            self.chain(self.re.ln_1p(), crate::kernels::ln_1p_deriv(self.re))
+        }
+
+        /// Logarithm with given base.
+        #[inline]
+        pub fn log(self, base: Self) -> Self {
+            self.ln() / base.ln()
+        }
+
+        /// Sine.
+        #[inline]
+        pub fn sin(self) -> Self {
+            self.chain(self.re.sin(), self.re.cos())
+        }
+
+        /// Cosine.
+        #[inline]
+        pub fn cos(self) -> Self {
+            self.chain(self.re.cos(), -self.re.sin())
+        }
+
+        /// Tangent.
+        #[inline]
+        pub fn tan(self) -> Self {
+            let c = self.re.cos();
+            self.chain(self.re.tan(), F::one() / (c * c))
+        }
+
+        /// Simultaneous sine and cosine.
+        #[inline]
+        pub fn sin_cos(self) -> (Self, Self) {
+            // Delegate to `chain` so the structural-zero tangent convention
+            // cannot drift from `sin`/`cos`.
+            let (s, c) = self.re.sin_cos();
+            (self.chain(s, c), self.chain(c, -s))
+        }
+
+        /// Arcsine.
+        #[inline]
+        pub fn asin(self) -> Self {
+            self.chain(
+                self.re.asin(),
+                F::one() / ((F::one() - self.re) * (F::one() + self.re)).sqrt(),
+            )
+        }
+
+        /// Arccosine.
+        #[inline]
+        pub fn acos(self) -> Self {
+            self.chain(
+                self.re.acos(),
+                -F::one() / ((F::one() - self.re) * (F::one() + self.re)).sqrt(),
+            )
+        }
+
+        /// Arctangent.
+        #[inline]
+        pub fn atan(self) -> Self {
+            self.chain(self.re.atan(), crate::kernels::atan_deriv(self.re))
+        }
+
+        /// Hyperbolic sine.
+        #[inline]
+        pub fn sinh(self) -> Self {
+            self.chain(self.re.sinh(), self.re.cosh())
+        }
+
+        /// Hyperbolic cosine.
+        #[inline]
+        pub fn cosh(self) -> Self {
+            self.chain(self.re.cosh(), self.re.sinh())
+        }
+
+        /// Hyperbolic tangent.
+        #[inline]
+        pub fn tanh(self) -> Self {
+            let c = self.re.cosh();
+            self.chain(self.re.tanh(), F::one() / (c * c))
+        }
+
+        /// Inverse hyperbolic sine.
+        #[inline]
+        pub fn asinh(self) -> Self {
+            self.chain(self.re.asinh(), crate::kernels::asinh_deriv(self.re))
+        }
+
+        /// Inverse hyperbolic cosine.
+        #[inline]
+        pub fn acosh(self) -> Self {
+            self.chain(self.re.acosh(), crate::kernels::acosh_deriv(self.re))
+        }
+
+        /// Inverse hyperbolic tangent.
+        #[inline]
+        pub fn atanh(self) -> Self {
+            self.chain(self.re.atanh(), crate::kernels::atanh_deriv(self.re))
+        }
+
+        /// Absolute value.
+        ///
+        /// The derivative delegates to [`crate::kernels::abs_deriv`]: `0` at the kink `x = 0`
+        /// (the minimal-norm subgradient, value-based so `+0` and `-0` agree), `sign(x)`
+        /// elsewhere, `NaN` at `NaN`. This convention is unified across every AD mode
+        /// and both GPU backends; sharp/limiting subgradients still force `±1` via the
+        /// nonsmooth machinery.
+        #[inline]
+        pub fn abs(self) -> Self {
+            self.chain(self.re.abs(), crate::kernels::abs_deriv(self.re))
+        }
+
+        /// Sign function (zero derivative).
+        #[inline]
+        pub fn signum(self) -> Self {
+            Self::constant(self.re.signum())
+        }
+
+        /// Floor (zero derivative).
+        #[inline]
+        pub fn floor(self) -> Self {
+            Self::constant(self.re.floor())
+        }
+
+        /// Ceiling (zero derivative).
+        #[inline]
+        pub fn ceil(self) -> Self {
+            Self::constant(self.re.ceil())
+        }
+
+        /// Round to nearest integer (zero derivative).
+        #[inline]
+        pub fn round(self) -> Self {
+            Self::constant(self.re.round())
+        }
+
+        /// Truncate toward zero (zero derivative).
+        #[inline]
+        pub fn trunc(self) -> Self {
+            Self::constant(self.re.trunc())
+        }
+
+        /// Fractional part.
+        #[inline]
+        pub fn fract(self) -> Self {
+            Self {
+                re: self.re.fract(),
+                eps: self.eps,
+            }
+        }
+
+        /// Maximum of two values.
+        ///
+        /// Matches `num_traits::Float::max` semantics: returns the non-NaN argument.
+        /// At tie points, returns `self` (standard AD convention for non-differentiable points).
+        #[inline]
+        pub fn max(self, other: Self) -> Self {
+            if self.re >= other.re || other.re.is_nan() {
+                self
+            } else {
+                other
+            }
+        }
+
+        /// Minimum of two values.
+        ///
+        /// Matches `num_traits::Float::min` semantics: returns the non-NaN argument.
+        /// At tie points, returns `self` (standard AD convention for non-differentiable points).
+        #[inline]
+        pub fn min(self, other: Self) -> Self {
+            if self.re <= other.re || other.re.is_nan() {
+                self
+            } else {
+                other
+            }
+        }
+    };
+}
+pub(crate) use forward_elementary_methods;
+
+impl<F: Float> Dual<F> {
+    /// Create a new dual number.
+    #[inline]
+    #[must_use]
+    pub fn new(re: F, eps: F) -> Self {
+        Dual { re, eps }
+    }
+
+    /// Create a constant (zero derivative).
+    #[inline]
+    #[must_use]
+    pub fn constant(re: F) -> Self {
+        Dual { re, eps: F::zero() }
+    }
+
+    /// Create a variable (unit derivative) for differentiation.
+    #[inline]
+    #[must_use]
+    pub fn variable(re: F) -> Self {
+        Dual { re, eps: F::one() }
+    }
+
+    /// Apply the chain rule: given `f(self.re)` and `f'(self.re)`, produce the dual result.
+    ///
+    /// A structurally zero tangent short-circuits to exactly zero: the
+    /// derivative of a constant is 0 regardless of where `f` is evaluated,
+    /// even where `f_deriv` is ±Inf (domain boundaries like `sqrt`/`ln` at 0,
+    /// `atanh` at ±1) or NaN (out-of-domain primals) — IEEE `0 * Inf` would
+    /// otherwise poison the tangent with NaN. This matches the `hypot` origin
+    /// convention and the reverse-sweep zero-adjoint skip. The check uses
+    /// `is_all_zero()` rather than `==` (which compares only the primal) so a
+    /// nested tangent like `Dual<Dual<F>>` with a zero first-order but live
+    /// second-order component is NOT dropped.
+    #[inline]
+    fn chain(self, f_val: F, f_deriv: F) -> Self {
+        let eps = if self.eps.is_all_zero() {
+            F::zero()
+        } else {
+            self.eps * f_deriv
+        };
+        Dual { re: f_val, eps }
+    }
+
+    forward_elementary_methods!();
+
+    // ── Powers ──
+
+    /// Floating-point power.
+    #[inline]
+    pub fn powf(self, n: Self) -> Self {
+        // d/dx (x^y) = y * x^(y-1) * dx + x^y * ln(x) * dy
+        //
+        // Constant integer exponent fast path: if `n` has no tangent and its
+        // value is a losslessly representable integer, dispatch to `powi`.
+        // This avoids computing `ln(x)` for `x < 0` where stdlib returns NaN —
+        // that NaN would poison `eps` via `NaN * 0 = NaN` in IEEE 754, even
+        // though `dy` is algebraically zero for a constant exponent.
+        if n.eps.is_all_zero() {
+            if let Some(ni) = n.re.to_i32() {
+                if F::from(ni).unwrap() == n.re {
+                    return self.powi(ni);
+                }
+            }
+        }
+        if n.re == F::zero() {
+            // a^0 = 1, d/da(a^0) = 0, d/db(a^b)|_{b=0} = ln(a) (for a > 0)
+            let dy = if self.re > F::zero() {
+                self.re.ln()
+            } else {
+                F::zero()
+            };
+            return Dual {
+                re: F::one(),
+                eps: dy * n.eps,
+            };
+        }
+        let val = self.re.powf(n.re);
+        let dx = if self.eps.is_all_zero() {
+            // Structural-zero base tangent contributes nothing, even where the
+            // base-direction partial is unbounded (e.g. x^0.5 at x = 0, where
+            // 0.5·x^(-0.5) = Inf and `Inf * 0` would be NaN).
+            F::zero()
+        } else if self.re == F::zero()
+            || val == F::zero()
+            || !self.re.is_finite()
+            || !val.is_finite()
+        {
+            // Use n*x^(n-1) form to avoid 0/0 when x=0, to handle underflow
+            // when x^n underflows to 0 but x != 0, and to avoid Inf/Inf = NaN
+            // at an infinite base (e.g. Inf^2 has derivative Inf, not NaN) —
+            // matching `Reverse`/`opcode`.
+            n.re * self.re.powf(n.re - F::one()) * self.eps
+        } else {
+            n.re * val / self.re * self.eps
+        };
+        let dy = if n.eps.is_all_zero() || val == F::zero() || self.re <= F::zero() {
+            // Structural-zero exponent tangent contributes nothing — guarded
+            // explicitly because `val` can overflow to Inf for a finite base
+            // (e.g. 1e200^2.5), where `Inf * ln(x) * 0` would otherwise be NaN
+            // while the base-direction derivative is still finite.
+            // `lim_{x→0+} x^y·ln(x) = 0` for y > 0; and for a negative base
+            // `ln(x)` is undefined (complex), so the exponent direction is
+            // treated as locally constant — matching `Reverse`/`opcode`. The
+            // base-direction `dx` term above stays finite for integer exponents.
+            F::zero()
+        } else {
+            val * self.re.ln() * n.eps
+        };
+        Dual {
+            re: val,
+            eps: dx + dy,
+        }
+    }
+
+    // ── Trig ──
+
+    /// Two-argument arctangent.
+    #[inline]
+    pub fn atan2(self, other: Self) -> Self {
+        let (d_self, d_other) = kernels::atan2_partials(self.re, other.re);
+        Dual {
+            re: self.re.atan2(other.re),
+            eps: d_self * self.eps + d_other * other.eps,
+        }
+    }
+
+    // ── Misc ──
+
+    /// Fused multiply-add: self * a + b.
+    #[inline]
+    pub fn mul_add(self, a: Self, b: Self) -> Self {
+        // d(x*a + b) = a*dx + x*da + db
+        Dual {
+            re: self.re.mul_add(a.re, b.re),
+            eps: self.eps * a.re + self.re * a.eps + b.eps,
+        }
+    }
+
+    /// Euclidean distance: sqrt(self^2 + other^2).
+    #[inline]
+    pub fn hypot(self, other: Self) -> Self {
+        let h = self.re.hypot(other.re);
+        if h == F::zero() {
+            // Singularity: kernel returns (0, 0) partials, but `0 * eps` is
+            // NaN if `self.eps` or `other.eps` is non-finite. Mirror
+            // `Dual::recip`'s explicit short-circuit to preserve the
+            // bit-for-bit zero-eps convention.
+            return Self::constant(h);
+        }
+        let (da, db) = kernels::hypot_partials(self.re, other.re, h);
+        Dual {
+            re: h,
+            eps: da * self.eps + db * other.eps,
+        }
+    }
+}

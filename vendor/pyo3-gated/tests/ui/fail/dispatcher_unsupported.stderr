@@ -1,0 +1,5 @@
+error: `#[py_compat]` supports structs, enums, inherent impl blocks, and free functions
+ --> tests/ui/fail/dispatcher_unsupported.rs:4:1
+  |
+4 | pub const VALUE: i32 = 1;
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^

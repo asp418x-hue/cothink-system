@@ -1,0 +1,502 @@
+use crate::dual::Dual;
+use crate::dual_vec::DualVec;
+use crate::float::{Float, IsAllZero};
+use crate::opcode::{self, OpCode, UNUSED};
+use num_traits::Float as NumFloat;
+
+impl<F: Float> super::BytecodeTape<F> {
+    // ── Forward-over-reverse (second-order) ──
+
+    /// Forward sweep with tangent-carrying numbers. Reads opcodes and constants
+    /// from `self`, writing results into `buf`. Does not mutate the tape.
+    ///
+    /// Generic over `T: NumFloat` so it works with both `Dual<F>` and
+    /// `DualVec<F, N>`.
+    ///
+    /// # Custom-op accuracy
+    ///
+    /// Custom operations use recording-time primals (`self.values`) for their
+    /// first-order linearization. If the tape has been re-evaluated at different
+    /// inputs via [`forward()`](Self::forward) but `self.values` was not updated
+    /// to match the tangent inputs, the custom-op linearization point will be
+    /// stale, producing O(||x - x_record||) errors in the tangent output.
+    /// For exact derivatives through custom ops, use the specializations
+    /// [`forward_tangent_dual`](Self::forward_tangent_dual) (`Dual<F>`) or
+    /// [`forward_tangent_dual2`](Self::forward_tangent_dual2)
+    /// (`Dual<Dual<F>>`), which route through `CustomOp::eval_dual` /
+    /// `CustomOp::partials_dual`.
+    pub fn forward_tangent<T: NumFloat>(&self, inputs: &[T], buf: &mut Vec<T>) {
+        self.forward_tangent_inner(inputs, buf, |i, a_t, b_t| {
+            // First-order linearization of custom ops: result + da*(a - a₀) + db*(b - b₀).
+            // Primal part is exact (a₀ matches self.values from forward()), tangent part
+            // is the correct first-order chain rule. Chained custom ops stay exact because
+            // each op's primal matches self.values[i] (computed by the preceding forward()).
+            // For full second-order accuracy through custom ops, use forward_tangent_dual.
+            let ops = super::decode_custom_operands(
+                &self.arg_indices,
+                &self.custom_second_args,
+                &self.values,
+                i,
+            );
+            let result = self.custom_ops[ops.cb_idx as usize].eval(ops.a, ops.b);
+            let (da, db) = self.custom_ops[ops.cb_idx as usize].partials(ops.a, ops.b, result);
+            let result_t = T::from(result).unwrap();
+            let da_t = T::from(da).unwrap();
+            let db_t = T::from(db).unwrap();
+            let a_re_t = T::from(ops.a).unwrap();
+            let b_re_t = T::from(ops.b).unwrap();
+            result_t + da_t * (a_t - a_re_t) + db_t * (b_t - b_re_t)
+        });
+    }
+
+    /// Forward sweep specialized for `Dual<Dual<F>>` (forward-over-forward),
+    /// propagating exact first- and second-order information through custom
+    /// ops.
+    ///
+    /// The inner dual level is evaluated with
+    /// [`CustomOp::eval_dual`](crate::CustomOp::eval_dual) at the
+    /// *current* inputs, and the outer tangent applies the chain rule with
+    /// partials from
+    /// [`CustomOp::partials_dual`](crate::CustomOp::partials_dual) — duals
+    /// whose tangent
+    /// components carry the partials' own derivatives, so the custom op's
+    /// curvature lands in the `eps.eps` component exactly as the built-in
+    /// arms produce it. Accuracy therefore matches what the op implements:
+    /// ops overriding `eval_dual`/`partials_dual` are exact to second order;
+    /// ops relying on the trait defaults degrade to constant partials (zero
+    /// curvature) but are still evaluated at the current point. The generic
+    /// [`forward_tangent`](Self::forward_tangent) would instead linearize
+    /// around recording-time primals, which both drops curvature and is
+    /// stale away from the recording point.
+    pub fn forward_tangent_dual2(&self, inputs: &[Dual<Dual<F>>], buf: &mut Vec<Dual<Dual<F>>>) {
+        self.forward_tangent_inner(inputs, buf, |i, a_t, b_t| {
+            let [_a_idx, cb_idx] = self.arg_indices[i];
+            let op = &self.custom_ops[cb_idx as usize];
+            let r_re = op.eval_dual(a_t.re, b_t.re);
+            let (da, db) = op.partials_dual(a_t.re, b_t.re, r_re);
+            Dual::new(r_re, da * a_t.eps + db * b_t.eps)
+        });
+    }
+
+    /// Forward sweep specialized for `Dual<F>`, calling
+    /// [`CustomOp::eval_dual`](crate::CustomOp::eval_dual) so custom ops
+    /// propagate exact first-order tangents at the *current* inputs. The
+    /// generic [`forward_tangent`](Self::forward_tangent) instead linearizes
+    /// custom ops around recording-time primals, which is stale away from
+    /// the recording point.
+    pub fn forward_tangent_dual(&self, inputs: &[Dual<F>], buf: &mut Vec<Dual<F>>) {
+        self.forward_tangent_inner(inputs, buf, |i, a_t, b_t| {
+            let [_a_idx, cb_idx] = self.arg_indices[i];
+            self.custom_ops[cb_idx as usize].eval_dual(a_t, b_t)
+        });
+    }
+
+    /// Common forward-tangent loop. The `handle_custom` closure receives
+    /// `(tape_index, a_value, b_value)` for custom op slots and returns
+    /// the result to store.
+    fn forward_tangent_inner<T: NumFloat>(
+        &self,
+        inputs: &[T],
+        buf: &mut Vec<T>,
+        handle_custom: impl Fn(usize, T, T) -> T,
+    ) {
+        assert_eq!(
+            inputs.len(),
+            self.num_inputs as usize,
+            "wrong number of inputs"
+        );
+
+        let n = self.num_variables_count();
+        buf.clear();
+        buf.resize(n, T::zero());
+
+        let mut input_idx = 0usize;
+        for i in 0..self.opcodes.len() {
+            match self.opcodes[i] {
+                OpCode::Input => {
+                    buf[i] = inputs[input_idx];
+                    input_idx += 1;
+                }
+                OpCode::Const => {
+                    buf[i] = T::from(self.values[i]).unwrap();
+                }
+                OpCode::Custom => {
+                    let [a_idx, _cb_idx] = self.arg_indices[i];
+                    let b_idx_opt = self.custom_second_args.get(&(i as u32)).copied();
+                    let a_t = buf[a_idx as usize];
+                    let b_t = b_idx_opt.map(|bi| buf[bi as usize]).unwrap_or(T::zero());
+                    buf[i] = handle_custom(i, a_t, b_t);
+                }
+                op => {
+                    let [a_idx, b_idx] = self.arg_indices[i];
+                    let a = buf[a_idx as usize];
+                    if op == OpCode::Powi {
+                        let exp = opcode::powi_exp_decode_raw(b_idx);
+                        buf[i] = a.powi(exp);
+                        continue;
+                    }
+                    let b = if b_idx != UNUSED {
+                        buf[b_idx as usize]
+                    } else {
+                        T::zero()
+                    };
+                    buf[i] = opcode::eval_forward(op, a, b);
+                }
+            }
+        }
+    }
+
+    /// Reverse sweep with tangent-carrying adjoints. Uses values from
+    /// [`forward_tangent`](Self::forward_tangent). Uses [`IsAllZero`] to
+    /// safely skip zero adjoints without dropping tangent contributions.
+    ///
+    /// See [`forward_tangent`](Self::forward_tangent) for custom-op accuracy
+    /// caveats — the same recording-time primal limitation applies here.
+    pub(super) fn reverse_tangent<T: NumFloat + IsAllZero>(
+        &self,
+        tangent_vals: &[T],
+        buf: &mut Vec<T>,
+    ) {
+        self.reverse_tangent_inner(tangent_vals, buf, |i| {
+            // First-order: convert primal-float partials to T.
+            let ops = super::decode_custom_operands(
+                &self.arg_indices,
+                &self.custom_second_args,
+                &self.values,
+                i,
+            );
+            let r_primal = self.values[i];
+            let (da, db) = self.custom_ops[ops.cb_idx as usize].partials(ops.a, ops.b, r_primal);
+            (T::from(da).unwrap(), T::from(db).unwrap())
+        });
+    }
+
+    /// Reverse sweep specialized for `Dual<F>`, calling [`CustomOp::partials_dual`]
+    /// so that custom op partials carry tangent information for second-order derivatives.
+    pub(super) fn reverse_tangent_dual(&self, tangent_vals: &[Dual<F>], buf: &mut Vec<Dual<F>>) {
+        self.reverse_tangent_inner(tangent_vals, buf, |i| {
+            let [a_idx, cb_idx] = self.arg_indices[i];
+            let b_idx_opt = self.custom_second_args.get(&(i as u32)).copied();
+            let a_dual = tangent_vals[a_idx as usize];
+            let b_dual = b_idx_opt
+                .map(|bi| tangent_vals[bi as usize])
+                .unwrap_or(Dual::constant(F::zero()));
+            let r_dual = tangent_vals[i];
+            self.custom_ops[cb_idx as usize].partials_dual(a_dual, b_dual, r_dual)
+        });
+    }
+
+    /// Common reverse-tangent loop. The `custom_partials` closure receives
+    /// `tape_index` for custom op slots and returns `(da, db)` as T-valued partials.
+    fn reverse_tangent_inner<T: NumFloat + IsAllZero>(
+        &self,
+        tangent_vals: &[T],
+        buf: &mut Vec<T>,
+        custom_partials: impl Fn(usize) -> (T, T),
+    ) {
+        let n = self.num_variables_count();
+        buf.clear();
+        buf.resize(n, T::zero());
+        buf[self.output_index as usize] = T::one();
+
+        for i in (0..self.opcodes.len()).rev() {
+            match self.opcodes[i] {
+                OpCode::Input | OpCode::Const => continue,
+                OpCode::Custom => {
+                    let adj = buf[i];
+                    if adj.is_all_zero() {
+                        continue;
+                    }
+                    buf[i] = T::zero();
+
+                    let [a_idx, _cb_idx] = self.arg_indices[i];
+                    let b_idx_opt = self.custom_second_args.get(&(i as u32)).copied();
+                    let (da_t, db_t) = custom_partials(i);
+                    // Zero-multiplier convention (see kernels/mod.rs).
+                    if !da_t.is_all_zero() {
+                        buf[a_idx as usize] = buf[a_idx as usize] + da_t * adj;
+                    }
+                    if let Some(bi) = b_idx_opt {
+                        if !db_t.is_all_zero() {
+                            buf[bi as usize] = buf[bi as usize] + db_t * adj;
+                        }
+                    }
+                }
+                op => {
+                    let adj = buf[i];
+                    if adj.is_all_zero() {
+                        continue;
+                    }
+                    buf[i] = T::zero();
+
+                    let [a_idx, b_idx] = self.arg_indices[i];
+                    let a = tangent_vals[a_idx as usize];
+                    if op == OpCode::Powi {
+                        let exp = opcode::powi_exp_decode_raw(b_idx);
+                        let da = opcode::powi_reverse_partial(exp, a, tangent_vals[i]);
+                        if !da.is_all_zero() {
+                            buf[a_idx as usize] = buf[a_idx as usize] + da * adj;
+                        }
+                        continue;
+                    }
+                    let b = if b_idx != UNUSED {
+                        tangent_vals[b_idx as usize]
+                    } else {
+                        T::zero()
+                    };
+                    let r = tangent_vals[i];
+                    let (da, db) = opcode::reverse_partials(op, a, b, r);
+
+                    // Zero-multiplier convention (see kernels/mod.rs).
+                    // is_all_zero, not ==: a partial with zero primal but
+                    // live tangent carries second-order information.
+                    if !da.is_all_zero() {
+                        buf[a_idx as usize] = buf[a_idx as usize] + da * adj;
+                    }
+                    if b_idx != UNUSED && !db.is_all_zero() {
+                        buf[b_idx as usize] = buf[b_idx as usize] + db * adj;
+                    }
+                }
+            }
+        }
+    }
+
+    /// Hessian-vector product via forward-over-reverse.
+    ///
+    /// Returns `(gradient, H·v)` where both are `Vec<F>` of length
+    /// [`num_inputs`](Self::num_inputs). The tape is not mutated.
+    pub fn hvp(&self, x: &[F], v: &[F]) -> (Vec<F>, Vec<F>) {
+        let mut dual_vals = Vec::new();
+        let mut adjoint_buf = Vec::new();
+        self.hvp_with_buf(x, v, &mut dual_vals, &mut adjoint_buf)
+    }
+
+    /// Like [`hvp`](Self::hvp) but reuses caller-provided buffers to avoid
+    /// allocation on repeated calls (e.g. inside [`hessian`](Self::hessian)).
+    pub fn hvp_with_buf(
+        &self,
+        x: &[F],
+        v: &[F],
+        dual_vals_buf: &mut Vec<Dual<F>>,
+        adjoint_buf: &mut Vec<Dual<F>>,
+    ) -> (Vec<F>, Vec<F>) {
+        // Deliberately not assert_scalar_output: the HVP has a better
+        // vector-valued remedy (jacobian + cotangent) than the generic
+        // record-one-output-at-a-time advice.
+        assert_eq!(
+            self.num_outputs(),
+            1,
+            "hvp is defined for scalar-output tapes only; this tape has {} \
+             outputs. For vector-valued f use `jacobian` + a caller-provided \
+             cotangent, or record one output at a time.",
+            self.num_outputs(),
+        );
+        let n = self.num_inputs as usize;
+        assert_eq!(x.len(), n, "wrong number of inputs");
+        assert_eq!(v.len(), n, "wrong number of directions");
+
+        let dual_inputs: Vec<Dual<F>> = x
+            .iter()
+            .zip(v.iter())
+            .map(|(&xi, &vi)| Dual::new(xi, vi))
+            .collect();
+
+        self.forward_tangent_dual(&dual_inputs, dual_vals_buf);
+        self.reverse_tangent_dual(dual_vals_buf, adjoint_buf);
+
+        let gradient: Vec<F> = (0..n).map(|i| adjoint_buf[i].re).collect();
+        let hvp: Vec<F> = (0..n).map(|i| adjoint_buf[i].eps).collect();
+        (gradient, hvp)
+    }
+
+    /// Like [`hvp_with_buf`](Self::hvp_with_buf) but also reuses a caller-provided
+    /// input buffer, eliminating all allocations on repeated calls.
+    pub(super) fn hvp_with_all_bufs(
+        &self,
+        x: &[F],
+        v: &[F],
+        dual_input_buf: &mut Vec<Dual<F>>,
+        dual_vals_buf: &mut Vec<Dual<F>>,
+        adjoint_buf: &mut Vec<Dual<F>>,
+    ) {
+        // Reuse the input buffer instead of allocating
+        dual_input_buf.clear();
+        dual_input_buf.extend(x.iter().zip(v.iter()).map(|(&xi, &vi)| Dual::new(xi, vi)));
+
+        self.forward_tangent_dual(dual_input_buf, dual_vals_buf);
+        self.reverse_tangent_dual(dual_vals_buf, adjoint_buf);
+    }
+
+    /// Full Hessian matrix via `n` Hessian-vector products.
+    ///
+    /// Returns `(value, gradient, hessian)` where `hessian[i][j] = ∂²f/∂x_i∂x_j`.
+    /// The tape is not mutated.
+    pub fn hessian(&self, x: &[F]) -> (F, Vec<F>, Vec<Vec<F>>) {
+        self.assert_scalar_output("hessian");
+        let n = self.num_inputs as usize;
+        assert_eq!(x.len(), n, "wrong number of inputs");
+
+        let mut dual_input_buf: Vec<Dual<F>> = Vec::with_capacity(n);
+        let mut dual_vals_buf = Vec::new();
+        let mut adjoint_buf = Vec::new();
+        let hessian = vec![vec![F::zero(); n]; n];
+        let gradient = vec![F::zero(); n];
+        let mut value = F::zero();
+
+        // Constant-output tape (n == 0): no columns to sweep.
+        if n == 0 {
+            return (self.constant_output_value(), gradient, hessian);
+        }
+
+        let mut hessian = hessian;
+        let mut gradient = gradient;
+
+        for j in 0..n {
+            // Reuse input buffer
+            dual_input_buf.clear();
+            dual_input_buf
+                .extend((0..n).map(|i| Dual::new(x[i], if i == j { F::one() } else { F::zero() })));
+
+            self.forward_tangent_dual(&dual_input_buf, &mut dual_vals_buf);
+            self.reverse_tangent_dual(&dual_vals_buf, &mut adjoint_buf);
+
+            if j == 0 {
+                value = dual_vals_buf[self.output_index as usize].re;
+                for i in 0..n {
+                    gradient[i] = adjoint_buf[i].re;
+                }
+            }
+
+            for (row, adj) in hessian.iter_mut().zip(adjoint_buf.iter()) {
+                row[j] = adj.eps;
+            }
+        }
+
+        (value, gradient, hessian)
+    }
+
+    /// Full Hessian matrix via batched forward-over-reverse.
+    ///
+    /// Processes `ceil(n/N)` batches instead of `n` individual HVPs,
+    /// computing N Hessian columns simultaneously.
+    ///
+    /// **Custom ops limitation:** For tapes containing custom ops, this method
+    /// uses first-order chain rule (linearized partials). For exact second-order
+    /// derivatives through custom ops, use `hessian` instead, which calls
+    /// `CustomOp::eval_dual` / `CustomOp::partials_dual`.
+    pub fn hessian_vec<const N: usize>(&self, x: &[F]) -> (F, Vec<F>, Vec<Vec<F>>) {
+        assert!(
+            self.custom_ops.is_empty(),
+            "hessian_vec: custom ops produce approximate (first-order) second derivatives; \
+             use eval_forward with Dual<Dual<F>> for exact Hessians through custom ops"
+        );
+        self.assert_scalar_output("hessian_vec");
+        let n = self.num_inputs as usize;
+        assert_eq!(x.len(), n, "wrong number of inputs");
+
+        let mut dual_input_buf: Vec<DualVec<F, N>> = Vec::with_capacity(n);
+        let mut dual_vals_buf: Vec<DualVec<F, N>> = Vec::new();
+        let mut adjoint_buf: Vec<DualVec<F, N>> = Vec::new();
+        let hessian = vec![vec![F::zero(); n]; n];
+        let gradient = vec![F::zero(); n];
+        let mut value = F::zero();
+
+        // Constant-output tape (n == 0): no batches to sweep.
+        if n == 0 {
+            return (self.constant_output_value(), gradient, hessian);
+        }
+
+        let mut hessian = hessian;
+        let mut gradient = gradient;
+
+        let num_batches = n.div_ceil(N);
+        for batch in 0..num_batches {
+            let base = batch * N;
+
+            // Reuse input buffer
+            dual_input_buf.clear();
+            dual_input_buf.extend((0..n).map(|i| {
+                let eps = std::array::from_fn(|lane| {
+                    let col = base + lane;
+                    if col < n && i == col {
+                        F::one()
+                    } else {
+                        F::zero()
+                    }
+                });
+                DualVec::new(x[i], eps)
+            }));
+
+            self.forward_tangent(&dual_input_buf, &mut dual_vals_buf);
+            self.reverse_tangent(&dual_vals_buf, &mut adjoint_buf);
+
+            if batch == 0 {
+                value = dual_vals_buf[self.output_index as usize].re;
+                for i in 0..n {
+                    gradient[i] = adjoint_buf[i].re;
+                }
+            }
+
+            for lane in 0..N {
+                let col = base + lane;
+                if col >= n {
+                    break;
+                }
+                for i in 0..n {
+                    hessian[i][col] = adjoint_buf[i].eps[lane];
+                }
+            }
+        }
+
+        (value, gradient, hessian)
+    }
+
+    // ── Higher-order derivatives ──
+
+    /// Third-order directional derivative: `∑_{jk} (∂³f/∂x_i∂x_j∂x_k) v1_j v2_k`.
+    ///
+    /// Given directions `v1` and `v2`, computes:
+    /// - `gradient`: `∇f(x)`
+    /// - `hvp`: `H(x) · v1` (Hessian-vector product)
+    /// - `third`: `(∂/∂v2)(H · v1)` (third-order tensor contracted with v1 and v2)
+    ///
+    /// Uses `Dual<Dual<F>>` (nested dual numbers): inner tangent for `v1`,
+    /// outer tangent for `v2`.
+    pub fn third_order_hvvp(&self, x: &[F], v1: &[F], v2: &[F]) -> (Vec<F>, Vec<F>, Vec<F>) {
+        self.assert_scalar_output("third_order_hvvp");
+        assert!(
+            self.custom_ops.is_empty(),
+            "third_order_hvvp: custom ops produce approximate (first-order) higher-order \
+             derivatives; use eval_forward with Dual<Dual<F>> for exact derivatives through \
+             custom ops"
+        );
+        let n = self.num_inputs as usize;
+        assert_eq!(x.len(), n, "wrong number of inputs");
+        assert_eq!(v1.len(), n, "wrong v1 length");
+        assert_eq!(v2.len(), n, "wrong v2 length");
+
+        // Build Dual<Dual<F>> inputs:
+        //   inner.re = x[i], inner.eps = v1[i]  (for HVP direction)
+        //   outer.re = inner, outer.eps = v2[i]  (for third-order direction)
+        //
+        // outer = Dual { re: Dual(x[i], v1[i]), eps: Dual(v2[i], 0) }
+        let dd_inputs: Vec<Dual<Dual<F>>> = (0..n)
+            .map(|i| Dual {
+                re: Dual::new(x[i], v1[i]),
+                eps: Dual::new(v2[i], F::zero()),
+            })
+            .collect();
+
+        let mut dd_vals: Vec<Dual<Dual<F>>> = Vec::new();
+        let mut dd_adj: Vec<Dual<Dual<F>>> = Vec::new();
+
+        self.forward_tangent(&dd_inputs, &mut dd_vals);
+        self.reverse_tangent(&dd_vals, &mut dd_adj);
+
+        let gradient: Vec<F> = (0..n).map(|i| dd_adj[i].re.re).collect();
+        let hvp: Vec<F> = (0..n).map(|i| dd_adj[i].re.eps).collect();
+        let third: Vec<F> = (0..n).map(|i| dd_adj[i].eps.eps).collect();
+
+        (gradient, hvp, third)
+    }
+}

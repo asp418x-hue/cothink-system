@@ -1,0 +1,13 @@
+{
+    "cSpell.words": [
+        "chrono",
+        "datetime",
+        "idempotence",
+        "librdkafka",
+        "nanos",
+        "rdkafka",
+        "redpanda",
+        "SASL",
+        "thiserror"
+    ]
+}
