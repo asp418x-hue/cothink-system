@@ -3,7 +3,3 @@ target-dir = "target_local"
 
 [target.aarch64-linux-android]
 linker = "gcc"
-
-[source.crates-io]                                   replace-with = "vendored-sources"                    
-
-[source.vendored-sources]                            directory = "vendor"
