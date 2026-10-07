@@ -1,6 +1,7 @@
 load("@gazelle//:def.bzl", "gazelle")
 load("@gazelle//:def.bzl", "gazelle")
 load("@rules_go//go:def.bzl", "go_binary", "go_library")
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 
 # gazelle:prefix cothink-system
 gazelle(name = "gazelle")
