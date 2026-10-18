@@ -2,8 +2,6 @@
 import sys
 import json
 import os
-import time
-
 import urllib.request
 import urllib.error
 
@@ -12,17 +10,12 @@ def process_task(task_id, context):
     api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
     
     if not api_key:
-        # Fallback to mock if no key is provided
-        time.sleep(0.5)
-        result = {
+        return json.dumps({
             "task_id": task_id,
-            "status": "success",
-            "provider": "mock-provider",
-            "resolution": f"LLM generated response for task {task_id}",
-            "raw_context": context,
-            "note": "No API key found in GEMINI_API_KEY or GOOGLE_API_KEY, returned mock."
-        }
-        return json.dumps(result)
+            "status": "error",
+            "provider": "unconfigured",
+            "error_msg": "Set GEMINI_API_KEY or GOOGLE_API_KEY to dispatch this agent."
+        })
         
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
     prompt = f"Please act as an autonomous agent and process the following task.\nTask ID: {task_id}\nContext: {context}"

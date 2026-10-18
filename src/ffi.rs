@@ -1,7 +1,8 @@
+use crate::history::{FOV, get_fov, get_tracker, record};
+use crate::dispatch::{AgentDispatchConfig, dispatch_agents};
 use std::ffi::{CStr, CString};
-use std::os::raw::c_char;
 use std::fs;
-use crate::history::{get_fov, get_tracker, record, FOV};
+use std::os::raw::c_char;
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
@@ -76,7 +77,13 @@ pub extern "C" fn cothink_record_event(
     }
     let event_str = unsafe { CStr::from_ptr(event).to_string_lossy() };
     let detail_str = unsafe { CStr::from_ptr(detail).to_string_lossy() };
-    record(orch_id, subagent_id, &event_str, success, detail_str.into_owned());
+    record(
+        orch_id,
+        subagent_id,
+        &event_str,
+        success,
+        detail_str.into_owned(),
+    );
     0
 }
 
@@ -94,7 +101,11 @@ pub extern "C" fn cothink_thermal_sample(
 
     let temp_path = format!("/sys/class/thermal/thermal_zone{}/temp", zone_id);
     let temp = if let Ok(content) = fs::read_to_string(&temp_path) {
-        content.trim().parse::<f64>().unwrap_or(simulated_temp * 1000.0) / 1000.0
+        content
+            .trim()
+            .parse::<f64>()
+            .unwrap_or(simulated_temp * 1000.0)
+            / 1000.0
     } else {
         simulated_temp
     };
@@ -121,10 +132,7 @@ pub extern "C" fn cothink_thermal_sample(
 
 /// Run in-process sensor frame classification
 #[unsafe(no_mangle)]
-pub extern "C" fn cothink_classify(
-    frame_id: u64,
-    out_result: *mut NativeAnomalyResult,
-) -> i32 {
+pub extern "C" fn cothink_classify(frame_id: u64, out_result: *mut NativeAnomalyResult) -> i32 {
     if out_result.is_null() {
         return -1;
     }
@@ -142,6 +150,54 @@ pub extern "C" fn cothink_classify(
     0
 }
 
+/// Dispatch agent processes and return a JSON array of per-agent outcomes.
+/// A JSON object containing `error` is returned for invalid input or runtime errors.
+#[unsafe(no_mangle)]
+pub extern "C" fn cothink_dispatch_agents(
+    orch_id: u64,
+    task_ids: *const usize,
+    task_count: usize,
+    context: *const c_char,
+    max_concurrent: usize,
+    time_dilation_factor: f64,
+) -> *mut c_char {
+    if context.is_null() || (task_count > 0 && task_ids.is_null()) || task_count > 256 {
+        return json_string(serde_json::json!({"error": "invalid dispatch input"}));
+    }
+
+    let task_ids = if task_count == 0 {
+        Vec::new()
+    } else {
+        unsafe { std::slice::from_raw_parts(task_ids, task_count) }.to_vec()
+    };
+    let context = unsafe { CStr::from_ptr(context) }
+        .to_string_lossy()
+        .into_owned();
+
+    let mut config = AgentDispatchConfig::python_agent(max_concurrent);
+    config.time_dilation_factor = time_dilation_factor;
+
+    let result = match tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+    {
+        Ok(runtime) => runtime.block_on(dispatch_agents(orch_id, &task_ids, &context, config)),
+        Err(error) => Err(format!("failed to create dispatch runtime: {error}")),
+    };
+
+    match result {
+        Ok(results) => json_string(serde_json::to_value(results).unwrap_or_default()),
+        Err(error) => json_string(serde_json::json!({"error": error})),
+    }
+}
+
+fn json_string(value: serde_json::Value) -> *mut c_char {
+    match CString::new(value.to_string()) {
+        Ok(value) => value.into_raw(),
+        Err(_) => std::ptr::null_mut(),
+    }
+}
+
 /// Execute payload metrics analysis (reads system load & meminfo)
 #[unsafe(no_mangle)]
 pub extern "C" fn cothink_execute_payload(payload_json: *const c_char) -> *mut c_char {
@@ -151,8 +207,14 @@ pub extern "C" fn cothink_execute_payload(payload_json: *const c_char) -> *mut c
         unsafe { CStr::from_ptr(payload_json).to_str().unwrap_or("") }
     };
 
-    let loadavg = fs::read_to_string("/proc/loadavg").unwrap_or_else(|_| "0.00 0.00 0.00".to_string());
-    let load_1m: f64 = loadavg.split_whitespace().next().unwrap_or("0").parse().unwrap_or(0.0);
+    let loadavg =
+        fs::read_to_string("/proc/loadavg").unwrap_or_else(|_| "0.00 0.00 0.00".to_string());
+    let load_1m: f64 = loadavg
+        .split_whitespace()
+        .next()
+        .unwrap_or("0")
+        .parse()
+        .unwrap_or(0.0);
 
     let meminfo = fs::read_to_string("/proc/meminfo").unwrap_or_default();
     let mut mem_total: f64 = 1.0;
@@ -160,10 +222,20 @@ pub extern "C" fn cothink_execute_payload(payload_json: *const c_char) -> *mut c
 
     for line in meminfo.lines() {
         if line.starts_with("MemTotal:") {
-            mem_total = line.split_whitespace().nth(1).unwrap_or("1").parse().unwrap_or(1.0);
+            mem_total = line
+                .split_whitespace()
+                .nth(1)
+                .unwrap_or("1")
+                .parse()
+                .unwrap_or(1.0);
         }
         if line.starts_with("MemAvailable:") {
-            mem_avail = line.split_whitespace().nth(1).unwrap_or("1").parse().unwrap_or(1.0);
+            mem_avail = line
+                .split_whitespace()
+                .nth(1)
+                .unwrap_or("1")
+                .parse()
+                .unwrap_or(1.0);
         }
     }
 
@@ -179,13 +251,19 @@ pub extern "C" fn cothink_execute_payload(payload_json: *const c_char) -> *mut c
     if threshold {
         let (diagnostic, solution) = if mem_usage_pct > 0.85 {
             (
-                format!("Memory starvation detected: System RAM usage is at {:.1}%. OOM killer risk is critical.", mem_usage_pct * 100.0),
-                "1. Audit running subagents and terminate idle or memory-leaking workers.\\n2. Increase swap space using `mkswap` and `swapon`.\\n3. Tune `vm.swappiness` to a higher value."
+                format!(
+                    "Memory starvation detected: System RAM usage is at {:.1}%. OOM killer risk is critical.",
+                    mem_usage_pct * 100.0
+                ),
+                "1. Audit running subagents and terminate idle or memory-leaking workers.\\n2. Increase swap space using `mkswap` and `swapon`.\\n3. Tune `vm.swappiness` to a higher value.",
             )
         } else {
             (
-                format!("CPU saturation cascade: Load average (1m) is at {:.2}, exceeding safe threshold.", load_1m),
-                "1. Inspect process queue with `top` or `htop` to identify CPU hogs.\\n2. Adjust execution delay of the swarm payload.\\n3. Lower priority of non-critical agents using `renice`."
+                format!(
+                    "CPU saturation cascade: Load average (1m) is at {:.2}, exceeding safe threshold.",
+                    load_1m
+                ),
+                "1. Inspect process queue with `top` or `htop` to identify CPU hogs.\\n2. Adjust execution delay of the swarm payload.\\n3. Lower priority of non-critical agents using `renice`.",
             )
         };
         result.push_str(&format!(

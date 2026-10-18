@@ -47,7 +47,20 @@ impl HistoryTracker {
             || event == "subagent_fail"
             || event == "subagent_cancel"
         {
-            self.active_workers.fetch_sub(1, Ordering::SeqCst);
+            // Ignore duplicate or unmatched terminal events instead of wrapping
+            // the counter to `usize::MAX`.
+            let mut active = self.active_workers.load(Ordering::Relaxed);
+            while active > 0 {
+                match self.active_workers.compare_exchange_weak(
+                    active,
+                    active - 1,
+                    Ordering::SeqCst,
+                    Ordering::Relaxed,
+                ) {
+                    Ok(_) => break,
+                    Err(actual) => active = actual,
+                }
+            }
         }
 
         let seq = self.cursor.fetch_add(1, Ordering::Relaxed);
@@ -184,17 +197,17 @@ mod tests {
 
     #[test]
     fn test_concurrent_history_recording() {
-        let tracker = get_tracker();
-        tracker.clear();
+        let tracker = std::sync::Arc::new(HistoryTracker::new());
 
         let num_threads = 20;
         let writes_per_thread = 50;
         let mut handles = vec![];
 
         for t_idx in 0..num_threads {
+            let tracker = std::sync::Arc::clone(&tracker);
             handles.push(thread::spawn(move || {
                 for i in 0..writes_per_thread {
-                    record(
+                    tracker.record_event(
                         t_idx as u64,
                         i,
                         "test_rust_event",
