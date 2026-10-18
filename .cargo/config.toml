@@ -2,5 +2,5 @@
 target-dir = "target_local"
 
 [target.aarch64-linux-android]
-linker = "gcc"
+linker = "aarch64-linux-android-gcc"
 
